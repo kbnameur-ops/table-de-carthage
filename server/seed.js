@@ -34,7 +34,15 @@ async function copierPhoto(nomPhoto) {
     return null;
   }
   const buffer = readFileSync(source);
-  return enregistrerPhotoPlat(buffer, `${nomPhoto}.jpg`);
+  try {
+    return await enregistrerPhotoPlat(buffer, `${nomPhoto}.jpg`);
+  } catch (err) {
+    // Une photo qui échoue à l'upload (réseau, store injoignable...) ne
+    // doit pas faire échouer — et donc annuler — tout l'import de la carte :
+    // le plat est créé sans photo, ajoutable depuis le salon ensuite.
+    console.warn(`  ⚠ échec de l'upload pour ${nomPhoto}.jpg : ${err.message}`);
+    return null;
+  }
 }
 
 async function semerCarte(t) {

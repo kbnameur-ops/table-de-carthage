@@ -31,7 +31,8 @@ export async function enregistrerPhotoPlat(buffer, nomFichier) {
     const { url } = await put(`plats/${nomFichier}`, jpeg, {
       access: 'public',
       contentType: 'image/jpeg',
-      addRandomSuffix: false, // nomFichier porte déjà un suffixe aléatoire (voir lib/slug.js)
+      addRandomSuffix: false, // nomFichier porte déjà un suffixe aléatoire pour un upload du salon (voir lib/slug.js) ;
+      allowOverwrite: true,   // server/seed.js réutilise un nom fixe par plat pour rester idempotent (--force)
     });
     return url;
   }
