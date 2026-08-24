@@ -36,7 +36,7 @@
       <% cat.plats.forEach((plat, iPlat) => { %>
         <div class="menu-plat">
           <% if (plat.photo) { %>
-            <img class="plat-photo" src="/uploads/plats/<%= plat.photo %>" alt="">
+            <img class="plat-photo" src="<%= plat.photo %>" alt="">
           <% } else { %>
             <div class="plat-photo plat-photo--placeholder">Sans photo</div>
           <% } %>
