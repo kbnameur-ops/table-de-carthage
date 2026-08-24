@@ -126,13 +126,13 @@
     if (!grid || typeof MENU === 'undefined') return;
 
     grid.innerHTML = MENU.map(cat => `
-      <section class="cat" data-cat="${cat.id}">
+      <section class="cat${cat.items.some(i => i.photo) ? ' cat--photos' : ''}" data-cat="${cat.id}">
         <header class="cat__head">
           <h3>${cat.name}</h3>
           <p>${cat.tagline}</p>
         </header>
         ${cat.items.map(it => `
-          <article class="dish${it.photo ? ' dish--photo' : ''}">
+          <article class="dish">
             ${it.photo ? `
               <button type="button" class="dish__thumb" data-photo="${it.photo}" data-name="${it.name}"
                       aria-label="Agrandir la photo : ${it.name}">

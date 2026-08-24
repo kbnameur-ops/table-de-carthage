@@ -53,11 +53,11 @@ const MENU = [
     name: 'Grillades',
     tagline: 'Viandes et poisson saisis à la commande',
     items: [
-      { name: 'Grillade Mixte',    desc: "Côtes d'agneau, merguez, foie et escalope de poulet", price: 22, star: true },
-      { name: "Grillade d'Agneau", desc: "Côtes d'agneau marinées au tabil",                     price: 21 },
+      { name: 'Grillade Mixte',    desc: "Côtes d'agneau, merguez, foie et escalope de poulet", price: 22, star: true, photo: 'grillade-mixte' },
+      { name: "Grillade d'Agneau", desc: "Côtes d'agneau grillées, servies avec frites et salades", price: 21, photo: 'grillade-agneau' },
       { name: 'Poisson Grillé',    desc: "Pêche du jour, huile d'olive et citron",               price: 19 },
-      { name: 'Grillade Merguez',  desc: "Merguez grillées",                            price: 16 },
-      { name: 'Grillade Escalope', desc: "Escalope de poulet marinée",                            price: 16 }
+      { name: 'Grillade Merguez',  desc: "Merguez grillées",                            price: 16, photo: 'grillade-merguez' },
+      { name: 'Grillade Escalope', desc: "Escalopes de poulet grillées, frites et salades",       price: 16, photo: 'grillade-escalope' }
     ]
   },
   {
