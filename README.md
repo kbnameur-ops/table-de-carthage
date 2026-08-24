@@ -6,7 +6,8 @@ Site statique — aucune dépendance, aucun build : il suffit d'ouvrir `index.ht
 ## Structure
 
 ```
-index.html                 page unique (hero, héritage, carte, signatures, expérience, réservation)
+index.html                 page unique (hero, héritage, carte, signatures,
+                           expérience, formules & privatisation, réservation)
 assets/css/style.css       styles + animations
 assets/js/menu-data.js     la carte (source unique : affichage + données SEO)
 assets/js/main.js          interactions
@@ -58,9 +59,29 @@ Toutes ces informations sont vérifiées. Pour changer le téléphone, remplacer
 dans les liens) et la clé `telephone` des données structurées dans
 `assets/js/main.js`.
 
-Le formulaire de réservation valide et confirme côté navigateur, mais
-**n'envoie rien** : à brancher sur un service d'envoi (Formspree, Netlify Forms,
-ou un `mailto:`) dans `bookForm()` de `assets/js/main.js`.
+## Demandes clients → WhatsApp
+
+Aucun serveur, aucun formulaire à héberger : le site compose le message et
+l'ouvre dans WhatsApp sur le **07 61 97 67 11**, il ne reste au client qu'à
+appuyer sur envoyer.
+
+- **Formulaire de réservation** — les champs (demande, nom, téléphone, date,
+  heure, couverts, précisions) sont mis en forme en un message lisible.
+  Si le navigateur bloque l'ouverture d'onglet, un lien de secours s'affiche.
+- **Boutons des formules** — « Demander la formule » et « Demander un devis »
+  ouvrent WhatsApp avec un message adapté à chaque offre.
+- **Liens directs** — section Réserver et pied de page.
+
+Le numéro est défini une seule fois, dans la constante `WHATSAPP` en tête de
+`bookForm` (`assets/js/main.js`), au format international sans `+` :
+`33761976711`. Les textes préremplis des deux boutons sont dans `offerButtons()`.
+
+## Formules & privatisation
+
+La section `#formules` présente les deux offres. Le texte est volontairement
+descriptif : **aucun tarif, capacité d'accueil ni durée n'y est avancé**, faute
+de les connaître. Ajoutez-les dans `index.html` (section « Recevoir ») dès que
+ces éléments sont arrêtés — ce sont les premières questions des clients.
 
 ## Direction artistique
 

@@ -578,3 +578,70 @@ button{font:inherit;color:inherit}
 .legal__box b{color:var(--gold-300);font-weight:400;letter-spacing:.06em}
 .legal__box a{border-bottom:1px solid rgba(201,169,97,.4)}
 .legal__box a:hover{color:var(--gold-400)}
+
+/* ══════════════ FORMULES & PRIVATISATION ══════════════ */
+.offers{position:relative;padding:clamp(5rem,11vw,9rem) 0;background:var(--cream-2);overflow:hidden}
+.offers::before{
+  content:'';position:absolute;inset:0;opacity:.045;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%230E2A4E' stroke-width='1.5'%3E%3Cpath d='M40 4 L76 40 L40 76 L4 40Z'/%3E%3Cpath d='M40 20 L60 40 L40 60 L20 40Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:80px 80px;
+}
+.offers .wrap{position:relative}
+.offers__grid{display:grid;gap:clamp(1.4rem,3vw,2.2rem);grid-template-columns:repeat(auto-fit,minmax(min(100%,360px),1fr))}
+
+.offer{
+  display:flex;flex-direction:column;background:var(--cream);
+  padding:clamp(1.8rem,3.4vw,2.8rem);border:1px solid rgba(14,42,78,.1);
+  position:relative;overflow:hidden;
+  transition:transform .6s var(--ease),box-shadow .6s var(--ease),border-color .5s;
+}
+.offer::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--gold-500),var(--gold-300));
+  transform:scaleX(0);transform-origin:left;transition:transform .7s var(--ease);
+}
+.offer:hover{transform:translateY(-6px);border-color:rgba(201,169,97,.5);box-shadow:0 44px 80px -60px rgba(14,42,78,.75)}
+.offer:hover::before{transform:scaleX(1)}
+
+.offer__icon{
+  width:64px;height:64px;display:grid;place-items:center;margin-bottom:1.4rem;
+  border:1px solid rgba(201,169,97,.5);border-radius:50%;
+  transition:background .5s var(--ease);
+}
+.offer:hover .offer__icon{background:rgba(201,169,97,.12)}
+.offer__icon svg{
+  width:30px;height:30px;fill:none;stroke:var(--navy-700);
+  stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;
+}
+.offer__icon svg .fill{fill:var(--gold-500);stroke:none}
+
+.offer h3{font-family:var(--ff-title);font-size:clamp(1.4rem,2.4vw,1.8rem);font-weight:400;margin:0 0 .35rem;color:var(--navy-800)}
+.offer__lead{
+  font-family:var(--ff-display);font-style:italic;font-size:1.1rem;
+  color:var(--gold-500);margin:0 0 1.1rem;
+}
+.offer > p{margin:0 0 1.4rem;color:var(--muted);font-size:.96rem}
+.offer__list{list-style:none;margin:0 0 1.9rem;padding:0;display:grid;gap:.6rem}
+.offer__list li{position:relative;padding-left:1.6rem;font-size:.92rem;color:#3B4A59;line-height:1.6}
+.offer__list li::before{
+  content:'';position:absolute;left:0;top:.55em;width:8px;height:8px;
+  border:1px solid var(--gold-500);transform:rotate(45deg);
+}
+.offer__cta{margin-top:auto;align-self:flex-start}
+.offers__note{text-align:center;margin:clamp(2.2rem,4vw,3.2rem) 0 0;color:var(--muted);font-size:.92rem}
+.offers__note a{color:var(--navy-800);border-bottom:1px solid var(--gold-500);transition:color .3s}
+.offers__note a:hover{color:var(--gold-500)}
+
+/* ══════════════ BOUTON & INDICATION WHATSAPP ══════════════ */
+.btn span{display:inline-flex;align-items:center;gap:.6rem}
+.btn__wa{
+  width:16px;height:16px;flex:none;fill:none;stroke:currentColor;
+  stroke-width:1.6;stroke-linejoin:round;
+}
+.btn__wa .fill{fill:currentColor;stroke:none}
+.book__hint{
+  grid-column:1 / -1;margin:.1rem 0 0;font-size:.78rem;color:var(--muted);
+  text-align:center;font-style:italic;
+}
+.socials--tight{margin-top:.6rem}
+.book__ok a{border-bottom:1px solid var(--gold-500)}

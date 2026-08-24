@@ -202,6 +202,11 @@
         { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Sunday', opens: '12:00', closes: '22:00' }
       ],
       acceptsReservations: 'True',
+      makesOffer: [
+        { '@type': 'Offer', name: "Formule dîner d'affaires", description: "Menu convenu à l'avance et service cadencé pour les repas professionnels." },
+        { '@type': 'Offer', name: 'Privatisation', description: "Établissement privatisé en exclusivité pour un événement, menu sur mesure." },
+        { '@type': 'Offer', name: 'Traiteur', description: 'Prestation traiteur hors les murs.' }
+      ],
       hasMenu: {
         '@type': 'Menu',
         hasMenuSection: MENU.map(c => ({
@@ -222,15 +227,20 @@
     document.head.appendChild(s);
   }
 
-  /* ── Formulaire de réservation ───────────────────────── */
+  /* ── WhatsApp ────────────────────────────────────────── */
+  const WHATSAPP = '33761976711';
+  const waLink = msg => 'https://wa.me/' + WHATSAPP + '?text=' + encodeURIComponent(msg);
+  const longDate = iso => new Date(iso + 'T00:00')
+    .toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  /* ── Formulaire → message WhatsApp prérempli ─────────── */
   (function bookForm () {
     const form = $('#bookForm'), out = $('#bookOk');
     if (!form) return;
 
     const date = $('#f-date');
     if (date) {
-      const today = new Date();
-      date.min = today.toISOString().slice(0, 10);
+      date.min = new Date().toISOString().slice(0, 10);
       date.value = date.value || date.min;
     }
 
@@ -239,21 +249,62 @@
       $$('input, select, textarea', form).forEach(i => i.classList.add('is-touched'));
 
       if (!form.checkValidity()) {
+        out.innerHTML = '';
         out.textContent = 'Merci de compléter les champs obligatoires.';
         out.classList.add('is-error');
         const bad = $(':invalid', form);
         if (bad) bad.focus();
         return;
       }
+
       const d = new FormData(form);
+      const motif = d.get('motif') || 'Réservation';
+      const lignes = [
+        'Bonjour La Table de Carthage,',
+        '',
+        motif === 'Réservation'
+          ? 'Je souhaite réserver une table.'
+          : `Je vous contacte au sujet de : ${motif}.`,
+        '',
+        `Nom : ${d.get('nom')}`,
+        `Téléphone : ${d.get('tel')}`,
+        `Date : ${longDate(d.get('date'))}`,
+        `Heure : ${d.get('heure')} (${d.get('service')})`,
+        `Couverts : ${d.get('couverts')}`
+      ];
+      const note = (d.get('message') || '').trim();
+      if (note) lignes.push('', `Précisions : ${note}`);
+      lignes.push('', 'Merci !');
+
+      const url = waLink(lignes.join('\n'));
+      const win = window.open(url, '_blank', 'noopener');
+
       out.classList.remove('is-error');
-      out.textContent = `Merci ${d.get('nom')} — votre demande pour ${d.get('couverts')} couvert(s) le ${
-        new Date(d.get('date') + 'T00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-      } à ${d.get('heure')} est enregistrée. Nous vous rappelons pour confirmation.`;
-      form.reset();
-      if (date) date.value = date.min;
+      out.innerHTML = win
+        ? `Merci ${escapeHtml(d.get('nom'))} — votre message est prêt dans WhatsApp. Envoyez-le et nous confirmons rapidement.`
+        : `Votre message est prêt : <a href="${url}" target="_blank" rel="noopener">ouvrir WhatsApp</a>.`;
     });
   })();
+
+  /* ── Boutons des formules → WhatsApp ─────────────────── */
+  (function offerButtons () {
+    const textes = {
+      affaires: "Bonjour La Table de Carthage,\n\nJe souhaite des informations sur votre formule dîner d'affaires (menu, tarifs et disponibilités).\n\nMerci !",
+      privatisation: "Bonjour La Table de Carthage,\n\nJe souhaite privatiser votre établissement pour un événement. Pouvez-vous me communiquer les conditions et un devis ?\n\nMerci !"
+    };
+    $$('[data-wa]').forEach(a => {
+      const t = textes[a.dataset.wa];
+      if (!t) return;
+      a.href = waLink(t);
+      a.target = '_blank';
+      a.rel = 'noopener';
+    });
+  })();
+
+  function escapeHtml (str) {
+    return String(str).replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
 
   /* ── Toile du hero : poussière d'or & constellation ──── */
   (function heroCanvas () {
