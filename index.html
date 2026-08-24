@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Table de Carthage — Restaurant Tunisien</title>
+<meta name="description" content="La Table de Carthage — cuisine tunisienne authentique : couscous, ojja, kafteji, grillades et pâtisseries orientales. Une table héritière de la civilisation punique.">
+<meta name="theme-color" content="#0E2A4E">
+<meta property="og:title" content="La Table de Carthage — Restaurant Tunisien">
+<meta property="og:description" content="Couscous, ojja, kafteji, grillades. L'héritage de Carthage dans l'assiette.">
+<meta property="og:image" content="assets/img/logo.jpg">
+<meta property="og:type" content="restaurant.restaurant">
+<link rel="icon" href="assets/img/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Jost:wght@200;300;400;500;600&family=Marcellus&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ══════════════ PRELOADER ══════════════ -->
+<div class="preloader" id="preloader">
+  <div class="preloader__inner">
+    <svg class="seal" viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="seal__ring seal__ring--out" cx="100" cy="100" r="92"/>
+      <circle class="seal__ring seal__ring--in" cx="100" cy="100" r="76"/>
+      <g class="seal__mark">
+        <path d="M60 128 Q80 108 100 128 T140 128" />
+        <path d="M78 118 V72 M122 118 V72"/>
+        <path d="M70 72 h60"/>
+        <circle cx="100" cy="58" r="7"/>
+      </g>
+    </svg>
+    <div class="preloader__text">
+      <span>L</span><span>A</span><span>&nbsp;</span><span>T</span><span>A</span><span>B</span><span>L</span><span>E</span>
+      <span>&nbsp;</span><span>D</span><span>E</span><span>&nbsp;</span><span>C</span><span>A</span><span>R</span><span>T</span><span>H</span><span>A</span><span>G</span><span>E</span>
+    </div>
+    <div class="preloader__bar"><i></i></div>
+  </div>
+</div>
+
+<!-- ══════════════ ORNEMENT DE FOND ══════════════ -->
+<div class="grain" aria-hidden="true"></div>
+<div class="cursor" id="cursor" aria-hidden="true"><span></span></div>
+
+<!-- ══════════════ NAV ══════════════ -->
+<header class="nav" id="nav">
+  <a class="nav__brand" href="#accueil" data-cursor="link">
+    <img src="assets/img/logo.jpg" alt="La Table de Carthage" class="nav__logo">
+    <span class="nav__name">La Table de Carthage</span>
+  </a>
+  <nav class="nav__links" id="navLinks" aria-label="Navigation principale">
+    <a href="#histoire" data-cursor="link">Héritage</a>
+    <a href="#carte" data-cursor="link">La Carte</a>
+    <a href="#signature" data-cursor="link">Signatures</a>
+    <a href="#experience" data-cursor="link">L'Expérience</a>
+    <a href="#reserver" class="nav__cta" data-cursor="link">Réserver</a>
+  </nav>
+  <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false"><i></i><i></i><i></i></button>
+</header>
+
+<main>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero" id="accueil">
+  <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
+
+  <div class="hero__frieze" aria-hidden="true"></div>
+
+  <div class="hero__inner">
+    <p class="hero__kicker reveal-up">Depuis les rivages de Byrsa · Cuisine tunisienne</p>
+    <h1 class="hero__title">
+      <span class="line"><em>La Table</em></span>
+      <span class="line">de <b>Carthage</b></span>
+    </h1>
+    <p class="hero__sub reveal-up" data-delay="600">
+      Là où l'épice punique rencontre la braise méditerranéenne.<br>
+      Une cuisine de mémoire, dressée comme un empire.
+    </p>
+    <div class="hero__actions reveal-up" data-delay="800">
+      <a href="#carte" class="btn btn--gold" data-cursor="link"><span>Découvrir la carte</span></a>
+      <a href="#reserver" class="btn btn--ghost" data-cursor="link"><span>Réserver une table</span></a>
+    </div>
+  </div>
+
+  <!-- Colonne punique animée -->
+  <div class="hero__column" aria-hidden="true">
+    <svg viewBox="0 0 120 420" preserveAspectRatio="xMidYMax meet">
+      <g class="col">
+        <path class="col__cap" d="M20 60 h80 v14 H20z"/>
+        <path class="col__volute" d="M28 60 q-14 0 -14 -14 t14 -12 q10 0 10 10 t-10 8"/>
+        <path class="col__volute" d="M92 60 q14 0 14 -14 t-14 -12 q-10 0 -10 10 t10 8"/>
+        <path class="col__shaft" d="M32 74 h56 v300 H32z"/>
+        <path class="col__flute" d="M44 78 V370 M60 78 V370 M76 78 V370"/>
+        <path class="col__base" d="M18 374 h84 v16 H18z"/>
+        <path class="col__base" d="M10 390 h100 v18 H10z"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero__waves" aria-hidden="true">
+    <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+      <path class="wv wv1" d="M0,96 C240,150 480,40 720,80 C960,120 1200,60 1440,100 L1440,160 L0,160Z"/>
+      <path class="wv wv2" d="M0,110 C260,60 520,140 780,100 C1020,64 1220,130 1440,90 L1440,160 L0,160Z"/>
+      <path class="wv wv3" d="M0,130 C300,100 600,160 900,124 C1140,96 1300,150 1440,126 L1440,160 L0,160Z"/>
+    </svg>
+  </div>
+
+  <a href="#histoire" class="hero__scroll" aria-label="Descendre"><i></i><span>Descendre</span></a>
+</section>
+
+<!-- ══════════════ BANDEAU DÉFILANT ══════════════ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span>Couscous au bois</span><i>✦</i><span>Ojja mijotée</span><i>✦</i><span>Grillades à la braise</span><i>✦</i>
+    <span>Harissa maison</span><i>✦</i><span>Mloukhia 7 heures</span><i>✦</i><span>Zgougou de Nabeul</span><i>✦</i>
+    <span>Couscous au bois</span><i>✦</i><span>Ojja mijotée</span><i>✦</i><span>Grillades à la braise</span><i>✦</i>
+    <span>Harissa maison</span><i>✦</i><span>Mloukhia 7 heures</span><i>✦</i><span>Zgougou de Nabeul</span><i>✦</i>
+  </div>
+</div>
+
+<!-- ══════════════ HÉRITAGE ══════════════ -->
+<section class="heritage" id="histoire">
+  <div class="mosaic" aria-hidden="true"></div>
+  <div class="wrap heritage__grid">
+    <div class="heritage__visual reveal-up">
+      <div class="medallion" data-tilt>
+        <img src="assets/img/logo.jpg" alt="Sceau de La Table de Carthage">
+        <div class="medallion__halo"></div>
+      </div>
+      <div class="heritage__stats">
+        <div class="stat"><b data-count="814">0</b><small>av. J.-C. · Fondation de Carthage</small></div>
+        <div class="stat"><b data-count="7">0</b><small>heures de mijotage pour la mloukhia</small></div>
+        <div class="stat"><b data-count="28">0</b><small>plats de la tradition tunisienne</small></div>
+      </div>
+    </div>
+
+    <div class="heritage__text">
+      <p class="eyebrow reveal-up">L'héritage</p>
+      <h2 class="h2 reveal-up">Trois millénaires<br>tiennent dans une assiette</h2>
+      <p class="lead reveal-up">
+        Élissa débarque sur la colline de Byrsa et fonde une cité qui commercera l'huile,
+        le blé, le safran et le sel de toute la Méditerranée. De cet empire de marchands
+        et de navigateurs, la Tunisie a hérité un art du mélange — le nôtre.
+      </p>
+      <p class="reveal-up">
+        Nos semoules sont roulées à la main, nos braises attisées au charbon de bois,
+        nos harissas pilées au mortier. Rien d'exotique : simplement une cuisine
+        de transmission, servie avec les honneurs qu'elle mérite.
+      </p>
+      <ul class="pillars">
+        <li class="reveal-up"><b>Le feu</b><span>Braise vive pour les grillades, mijotage lent pour les tajines et la mloukhia.</span></li>
+        <li class="reveal-up"><b>L'épice</b><span>Tabil, carvi, coriandre et harissa pilés maison, dosés à la tunisienne.</span></li>
+        <li class="reveal-up"><b>La mer</b><span>Poissons du jour et fruits de mer, comme sur les quais de La Goulette.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CARTE ══════════════ -->
+<section class="menu" id="carte">
+  <div class="wrap">
+    <header class="section-head">
+      <p class="eyebrow reveal-up">La carte</p>
+      <h2 class="h2 reveal-up">Le festin punique</h2>
+      <p class="section-head__sub reveal-up">Tous nos plats sont préparés à la commande. Prix nets, service compris.</p>
+    </header>
+
+    <div class="filters reveal-up" id="filters" role="tablist" aria-label="Catégories"></div>
+
+    <div class="menu__grid" id="menuGrid"></div>
+
+    <p class="menu__note reveal-up">
+      Une allergie, un régime particulier ? Prévenez-nous : la cuisine s'adapte.
+      Plats végétariens signalés par <i class="veg-dot" aria-hidden="true"></i>.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════ SIGNATURES ══════════════ -->
+<section class="signature" id="signature">
+  <div class="wrap">
+    <header class="section-head">
+      <p class="eyebrow reveal-up">Les signatures</p>
+      <h2 class="h2 reveal-up">Trois plats, trois récits</h2>
+    </header>
+
+    <div class="sig__grid">
+      <article class="sig reveal-up" data-tilt>
+        <span class="sig__num">01</span>
+        <h3>Couscous Royal</h3>
+        <p>Semoule roulée à la main, agneau confit, merguez, poulet doré et légumes du bouillon. Le plat des grandes tablées, celui qu'on partage en silence les premières minutes.</p>
+        <div class="sig__price">20 €</div>
+      </article>
+      <article class="sig reveal-up" data-tilt>
+        <span class="sig__num">02</span>
+        <h3>Mloukhia</h3>
+        <p>Poudre de corète mijotée sept heures durant avec son veau, jusqu'à cette profondeur presque noire. Une patience punique, servie avec du pain de semoule.</p>
+        <div class="sig__price">16,50 €</div>
+      </article>
+      <article class="sig reveal-up" data-tilt>
+        <span class="sig__num">03</span>
+        <h3>Ojja Fruits de Mer</h3>
+        <p>Tomates concassées, harissa, œufs coulants, crevettes et calamars. La poêle arrive brûlante sur la table : c'est ainsi qu'on la mange à Bizerte.</p>
+        <div class="sig__price">16 €</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ EXPÉRIENCE ══════════════ -->
+<section class="exp" id="experience">
+  <div class="exp__bg" aria-hidden="true"></div>
+  <div class="wrap exp__inner">
+    <p class="eyebrow reveal-up">L'expérience</p>
+    <h2 class="h2 reveal-up">Une salle taillée<br>dans la lumière du Sud</h2>
+    <div class="exp__cols">
+      <div class="reveal-up">
+        <h4>Bleu Sidi Bou Saïd</h4>
+        <p>Moucharabiehs, zellige et voûtes blanchies : la salle rejoue le contraste des maisons de la côte, bleu profond sur chaux vive.</p>
+      </div>
+      <div class="reveal-up">
+        <h4>Table d'hôtes</h4>
+        <p>Une grande table centrale de douze couverts pour les familles, les fêtes et les fins de service où l'on refuse de partir.</p>
+      </div>
+      <div class="reveal-up">
+        <h4>Thé & pâtisseries</h4>
+        <p>Thé vert aux pignons, makrouds et zgougou en fin de repas. Le service se prolonge, comme il se doit.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ RÉSERVATION ══════════════ -->
+<section class="book" id="reserver">
+  <div class="wrap book__grid">
+    <div class="book__side">
+      <p class="eyebrow reveal-up">Réserver</p>
+      <h2 class="h2 reveal-up">Votre table<br>vous attend</h2>
+      <p class="reveal-up">Réservation conseillée le week-end. Nous confirmons chaque demande par téléphone.</p>
+
+      <dl class="infos reveal-up">
+        <div><dt>Horaires</dt><dd>Mardi – Dimanche<br>12h00 – 14h30 · 19h00 – 23h00<br><em>Fermé le lundi</em></dd></div>
+        <div><dt>Téléphone</dt><dd><a href="tel:+33100000000" data-cursor="link">01 00 00 00 00</a></dd></div>
+        <div><dt>Adresse</dt><dd>Renseignez ici l'adresse<br>du restaurant</dd></div>
+      </dl>
+    </div>
+
+    <form class="book__form reveal-up" id="bookForm" novalidate>
+      <div class="field">
+        <input type="text" id="f-name" name="nom" required placeholder=" ">
+        <label for="f-name">Nom complet</label>
+      </div>
+      <div class="field">
+        <input type="tel" id="f-tel" name="tel" required placeholder=" ">
+        <label for="f-tel">Téléphone</label>
+      </div>
+      <div class="field field--half">
+        <input type="date" id="f-date" name="date" required placeholder=" ">
+        <label for="f-date">Date</label>
+      </div>
+      <div class="field field--half">
+        <input type="time" id="f-time" name="heure" required placeholder=" " value="20:00">
+        <label for="f-time">Heure</label>
+      </div>
+      <div class="field field--half">
+        <input type="number" id="f-cov" name="couverts" min="1" max="30" value="2" required placeholder=" ">
+        <label for="f-cov">Couverts</label>
+      </div>
+      <div class="field field--half">
+        <select id="f-serv" name="service">
+          <option>Déjeuner</option>
+          <option selected>Dîner</option>
+        </select>
+        <label for="f-serv" class="label--static">Service</label>
+      </div>
+      <div class="field">
+        <textarea id="f-msg" name="message" rows="3" placeholder=" "></textarea>
+        <label for="f-msg">Allergies, occasion, demande particulière</label>
+      </div>
+      <button type="submit" class="btn btn--gold btn--full" data-cursor="link"><span>Envoyer la demande</span></button>
+      <p class="book__ok" id="bookOk" role="status"></p>
+    </form>
+  </div>
+</section>
+
+</main>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer class="foot">
+  <div class="wrap foot__grid">
+    <div class="foot__brand">
+      <img src="assets/img/logo.jpg" alt="" class="foot__logo">
+      <p>La Table de Carthage<br><small>Cuisine tunisienne · Fait maison</small></p>
+    </div>
+    <nav class="foot__nav" aria-label="Pied de page">
+      <a href="#histoire">Héritage</a>
+      <a href="#carte">La Carte</a>
+      <a href="#signature">Signatures</a>
+      <a href="#reserver">Réserver</a>
+    </nav>
+    <div class="foot__meta">
+      <p>Mardi – Dimanche · 12h–14h30 · 19h–23h</p>
+      <p><a href="tel:+33100000000">01 00 00 00 00</a></p>
+    </div>
+  </div>
+  <div class="foot__rule" aria-hidden="true"></div>
+  <p class="foot__copy">© <span id="year"></span> La Table de Carthage — Tous droits réservés.</p>
+</footer>
+
+<script src="assets/js/menu-data.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>
