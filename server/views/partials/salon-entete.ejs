@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= titre %> — Salon · La Table de Carthage</title>
+<link rel="icon" href="/assets/img/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600&family=Marcellus&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap--large">
+    <a class="topbar__brand" href="/salon">
+      <img src="/assets/img/logo.jpg" alt="">
+      Salon
+    </a>
+    <nav class="topbar__nav">
+      <a href="/salon"<%= actif === 'dashboard' ? ' class="is-active"' : '' %>>Tableau de bord</a>
+      <a href="/salon/carte"<%= actif === 'carte' ? ' class="is-active"' : '' %>>La carte</a>
+      <a href="/salon/services"<%= actif === 'services' ? ' class="is-active"' : '' %>>Services &amp; capacité</a>
+      <a href="/salon/reservations"<%= actif === 'reservations' ? ' class="is-active"' : '' %>>Réservations</a>
+      <a href="/salon/commandes"<%= actif === 'commandes' ? ' class="is-active"' : '' %>>Commandes</a>
+      <a href="/" target="_blank">Voir le site</a>
+    </nav>
+  </div>
+</header>
+<main>
+<div class="wrap--large">

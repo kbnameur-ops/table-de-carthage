@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La Table de Carthage — Restaurant Tunisien</title>
+<meta name="description" content="Restaurant tunisien à Puteaux (92) — 6 boulevard Richard Wallace. Couscous, ojja, kafteji, grillades et pâtisseries maison. Ouvert 7j/7, sur place, à emporter et en livraison.">
+<meta name="theme-color" content="#0E2A4E">
+<meta property="og:title" content="La Table de Carthage — Restaurant Tunisien">
+<meta property="og:description" content="Restaurant tunisien à Puteaux — couscous, ojja, kafteji, grillades. L'héritage de Carthage dans l'assiette.">
+<meta property="og:locale" content="fr_FR">
+<meta name="geo.placename" content="Puteaux">
+<meta name="geo.position" content="48.878831;2.242182">
+<meta property="og:image" content="assets/img/logo.jpg">
+<meta property="og:type" content="restaurant.restaurant">
+<link rel="icon" href="assets/img/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Jost:wght@200;300;400;500;600&family=Marcellus&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<!-- ══════════════ PRELOADER ══════════════ -->
+<div class="preloader" id="preloader">
+  <div class="preloader__inner">
+    <svg class="seal" viewBox="0 0 200 200" aria-hidden="true">
+      <circle class="seal__ring seal__ring--out" cx="100" cy="100" r="92"/>
+      <circle class="seal__ring seal__ring--in" cx="100" cy="100" r="76"/>
+      <g class="seal__mark">
+        <path d="M60 128 Q80 108 100 128 T140 128" />
+        <path d="M78 118 V72 M122 118 V72"/>
+        <path d="M70 72 h60"/>
+        <circle cx="100" cy="58" r="7"/>
+      </g>
+    </svg>
+    <div class="preloader__text">
+      <span>L</span><span>A</span><span>&nbsp;</span><span>T</span><span>A</span><span>B</span><span>L</span><span>E</span>
+      <span>&nbsp;</span><span>D</span><span>E</span><span>&nbsp;</span><span>C</span><span>A</span><span>R</span><span>T</span><span>H</span><span>A</span><span>G</span><span>E</span>
+    </div>
+    <div class="preloader__bar"><i></i></div>
+  </div>
+</div>
+
+<!-- ══════════════ ORNEMENT DE FOND ══════════════ -->
+<div class="grain" aria-hidden="true"></div>
+<div class="cursor" id="cursor" aria-hidden="true"><span></span></div>
+
+<!-- ══════════════ NAV ══════════════ -->
+<header class="nav" id="nav">
+  <a class="nav__brand" href="#accueil" data-cursor="link">
+    <img src="assets/img/logo.jpg" alt="La Table de Carthage" class="nav__logo">
+    <span class="nav__name">La Table de Carthage</span>
+  </a>
+  <nav class="nav__links" id="navLinks" aria-label="Navigation principale">
+    <a href="#histoire" data-cursor="link">Héritage</a>
+    <a href="#carte" data-cursor="link">La Carte</a>
+    <a href="#signature" data-cursor="link">Signatures</a>
+    <a href="#experience" data-cursor="link">La Salle</a>
+    <a href="#formules" data-cursor="link">Privatiser</a>
+    <a href="/reserver" class="nav__cta" data-cursor="link">Réserver</a>
+  </nav>
+  <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false"><i></i><i></i><i></i></button>
+</header>
+
+<main>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero" id="accueil">
+  <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
+
+  <div class="hero__frieze" aria-hidden="true"></div>
+
+  <div class="hero__inner">
+    <p class="hero__kicker reveal-up">Depuis les rivages de Byrsa · Cuisine tunisienne</p>
+    <h1 class="hero__title">
+      <span class="line"><em>La Table</em></span>
+      <span class="line">de <b>Carthage</b></span>
+    </h1>
+    <p class="hero__sub reveal-up" data-delay="600">
+      Là où l'épice punique rencontre la table méditerranéenne.<br>
+      Une cuisine de mémoire, dressée comme un empire.
+    </p>
+    <div class="hero__actions reveal-up" data-delay="800">
+      <a href="#carte" class="btn btn--gold" data-cursor="link"><span>Découvrir la carte</span></a>
+      <a href="/reserver" class="btn btn--ghost" data-cursor="link"><span>Réserver une table</span></a>
+    </div>
+  </div>
+
+  <!-- Colonne punique animée -->
+  <div class="hero__column" aria-hidden="true">
+    <svg viewBox="0 0 120 420" preserveAspectRatio="xMidYMax meet">
+      <g class="col">
+        <path class="col__cap" d="M20 60 h80 v14 H20z"/>
+        <path class="col__volute" d="M28 60 q-14 0 -14 -14 t14 -12 q10 0 10 10 t-10 8"/>
+        <path class="col__volute" d="M92 60 q14 0 14 -14 t-14 -12 q-10 0 -10 10 t10 8"/>
+        <path class="col__shaft" d="M32 74 h56 v300 H32z"/>
+        <path class="col__flute" d="M44 78 V370 M60 78 V370 M76 78 V370"/>
+        <path class="col__base" d="M18 374 h84 v16 H18z"/>
+        <path class="col__base" d="M10 390 h100 v18 H10z"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="hero__waves" aria-hidden="true">
+    <svg viewBox="0 0 1440 160" preserveAspectRatio="none">
+      <path class="wv wv1" d="M0,96 C240,150 480,40 720,80 C960,120 1200,60 1440,100 L1440,160 L0,160Z"/>
+      <path class="wv wv2" d="M0,110 C260,60 520,140 780,100 C1020,64 1220,130 1440,90 L1440,160 L0,160Z"/>
+      <path class="wv wv3" d="M0,130 C300,100 600,160 900,124 C1140,96 1300,150 1440,126 L1440,160 L0,160Z"/>
+    </svg>
+  </div>
+
+  <a href="#histoire" class="hero__scroll" aria-label="Descendre"><i></i><span>Descendre</span></a>
+</section>
+
+<!-- ══════════════ BANDEAU DÉFILANT ══════════════ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span>Couscous</span><i>✦</i><span>Ojja</span><i>✦</i><span>Kafteji</span><i>✦</i><span>Grillades</span><i>✦</i>
+    <span>Mloukhia mijotée 7 heures</span><i>✦</i><span>Kamounia</span><i>✦</i><span>Assidet zgougou</span><i>✦</i>
+    <span>Couscous</span><i>✦</i><span>Ojja</span><i>✦</i><span>Kafteji</span><i>✦</i><span>Grillades</span><i>✦</i>
+    <span>Mloukhia mijotée 7 heures</span><i>✦</i><span>Kamounia</span><i>✦</i><span>Assidet zgougou</span><i>✦</i>
+  </div>
+</div>
+
+<!-- ══════════════ HÉRITAGE ══════════════ -->
+<section class="heritage" id="histoire">
+  <div class="mosaic" aria-hidden="true"></div>
+  <div class="wrap heritage__grid">
+    <div class="heritage__visual reveal-up">
+      <div class="medallion" data-tilt>
+        <img src="assets/img/logo.jpg" alt="Sceau de La Table de Carthage">
+        <div class="medallion__halo"></div>
+      </div>
+      <div class="heritage__stats">
+        <div class="stat"><b data-count="814">0</b><small>av. J.-C. · Fondation de Carthage</small></div>
+        <div class="stat"><b data-count="7">0</b><small>heures de mijotage pour la mloukhia</small></div>
+        <div class="stat"><b data-count="28">0</b><small>plats de la tradition tunisienne</small></div>
+      </div>
+    </div>
+
+    <div class="heritage__text">
+      <p class="eyebrow reveal-up">L'héritage</p>
+      <h2 class="h2 reveal-up">Trois millénaires<br>tiennent dans une assiette</h2>
+      <p class="lead reveal-up">
+        Élissa débarque sur la colline de Byrsa et fonde une cité qui commercera l'huile,
+        le blé, le safran et le sel de toute la Méditerranée. De cet empire de marchands
+        et de navigateurs, la Tunisie a hérité un art du mélange — le nôtre.
+      </p>
+      <p class="reveal-up">
+        Couscous, ojja, kafteji, mloukhia, kamounia : nous servons les plats que
+        l'on prépare chez nous, sans les traduire ni les adoucir. Rien d'exotique —
+        une cuisine de transmission, servie avec les honneurs qu'elle mérite.
+      </p>
+      <ul class="pillars">
+        <li class="reveal-up"><b>Le feu</b><span>Grillades saisies à la commande, mijotages longs pour la mloukhia et la kamounia.</span></li>
+        <li class="reveal-up"><b>L'épice</b><span>Tabil, carvi, coriandre et harissa : la carte est dosée à la tunisienne.</span></li>
+        <li class="reveal-up"><b>La mer</b><span>Poisson grillé du jour, crevettes et calamars pour les ojja et les pâtes.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CARTE ══════════════ -->
+<section class="menu" id="carte">
+  <div class="wrap">
+    <header class="section-head">
+      <p class="eyebrow reveal-up">La carte</p>
+      <h2 class="h2 reveal-up">Le festin punique</h2>
+      <p class="section-head__sub reveal-up">Tous nos plats sont préparés à la commande. Prix nets, service compris.</p>
+    </header>
+
+    <div class="filters reveal-up" id="filters" role="tablist" aria-label="Catégories"></div>
+
+    <div class="menu__grid" id="menuGrid"></div>
+
+    <p class="menu__note reveal-up">
+      Une allergie, un régime particulier ? Prévenez-nous : la cuisine s'adapte.
+      <span class="nowrap">Plats végétariens signalés par <i class="veg-dot" aria-hidden="true"></i>.</span>
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════ SIGNATURES ══════════════ -->
+<section class="signature" id="signature">
+  <div class="wrap">
+    <header class="section-head">
+      <p class="eyebrow reveal-up">Les signatures</p>
+      <h2 class="h2 reveal-up">Trois plats, trois récits</h2>
+    </header>
+
+    <div class="sig__grid">
+      <article class="sig reveal-up" data-tilt>
+        <img class="sig__photo" src="assets/img/plats/couscous-royal.jpg" alt="Couscous Royal" loading="lazy">
+        <span class="sig__num">01</span>
+        <h3>Couscous Royal</h3>
+        <p>Agneau, merguez et poulet réunis sur la même semoule, avec les légumes du bouillon. Le plat des grandes tablées, celui qu'on partage en silence les premières minutes.</p>
+        <div class="sig__price">20 €</div>
+      </article>
+      <article class="sig reveal-up" data-tilt>
+        <img class="sig__photo" src="assets/img/plats/mloukhia.jpg" alt="Mloukhia" loading="lazy">
+        <span class="sig__num">02</span>
+        <h3>Mloukhia</h3>
+        <p>Poudre de corète mijotée sept heures durant avec son veau, jusqu'à cette profondeur presque noire. Le plat le plus long de la carte, et celui qui se mérite.</p>
+        <div class="sig__price">16,50 €</div>
+      </article>
+      <article class="sig reveal-up" data-tilt>
+        <img class="sig__photo" src="assets/img/plats/ojja-fruits-de-mer.jpg" alt="Ojja Fruits de Mer" loading="lazy">
+        <span class="sig__num">03</span>
+        <h3>Ojja Fruits de Mer</h3>
+        <p>Tomates concassées, harissa, œufs coulants, crevettes et calamars. Le plat arrive brûlant sur la table, et le pain n'est pas facultatif.</p>
+        <div class="sig__price">16 €</div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ EXPÉRIENCE ══════════════ -->
+<section class="exp" id="experience">
+  <div class="exp__bg" aria-hidden="true"></div>
+  <div class="wrap exp__inner">
+    <div class="exp__text">
+      <p class="eyebrow reveal-up">La salle</p>
+      <h2 class="h2 reveal-up">Une grande table,<br>et de quoi patienter</h2>
+      <p class="lead reveal-up">
+        Chêne clair, fauteuils profonds, lumière du jour : la salle est nette et
+        contemporaine, sans folklore accroché aux murs. Ce qui est tunisien ici,
+        c'est ce qu'on met sur la table.
+      </p>
+      <div class="exp__cols">
+        <div class="reveal-up">
+          <h4>L'accueil</h4>
+          <p>Dattes et salade méchouia posées avant même la commande. On s'assoit, on pique, on prend le temps de choisir.</p>
+        </div>
+        <div class="reveal-up">
+          <h4>Les longues tables</h4>
+          <p>Des tables qui s'assemblent pour les familles et les grandes tablées : personne n'est relégué au bout de la salle.</p>
+        </div>
+        <div class="reveal-up">
+          <h4>Le quartier</h4>
+          <p>Front de Seine, à deux pas de La Défense — déjeuner rapide en semaine, dîners qui s'étirent le week-end.</p>
+        </div>
+      </div>
+    </div>
+
+    <figure class="exp__photo reveal-up">
+      <div class="exp__frame">
+      <img src="assets/img/salle.jpg" alt="Longue table dressée dans la salle de La Table de Carthage, dattes et salade méchouia servies à l'accueil" loading="lazy" width="1400" height="1750">
+      </div>
+      <figcaption>La grande table dressée, avant le service.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ══════════════ FORMULES & PRIVATISATION ══════════════ -->
+<section class="offers" id="formules">
+  <div class="wrap">
+    <header class="section-head">
+      <p class="eyebrow reveal-up">Recevoir</p>
+      <h2 class="h2 reveal-up">Au-delà du service</h2>
+      <p class="section-head__sub reveal-up">
+        Deux façons de nous confier une table : un déjeuner de travail cadré à la minute,
+        ou l'établissement entier rien que pour vous.
+      </p>
+    </header>
+
+    <div class="offers__grid">
+
+      <article class="offer reveal-up">
+        <div class="offer__icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <rect x="8" y="16" width="32" height="22" rx="2"/>
+            <path d="M18 16v-3a3 3 0 0 1 3-3h6a3 3 0 0 1 3 3v3"/>
+            <path d="M8 25h32"/>
+            <circle cx="24" cy="25" r="2" class="fill"/>
+          </svg>
+        </div>
+        <h3>Formule dîner d'affaires</h3>
+        <p class="offer__lead">Une table où l'on parle sérieusement.</p>
+        <p>
+          Pensée pour les rendez-vous professionnels du quartier d'affaires : un menu
+          arrêté à l'avance, un service rythmé pour tenir votre créneau, et une table
+          placée à l'écart du passage. Vous savez à l'avance ce que vous mangez,
+          ce que vous payez et à quelle heure vous ressortez.
+        </p>
+        <ul class="offer__list">
+          <li>Menu convenu en amont, sans carte à arbitrer sur place</li>
+          <li>Service cadencé pour un déjeuner ou un dîner en temps maîtrisé</li>
+          <li>Note unique, facture au nom de la société</li>
+          <li>À deux pas de La Défense et du Front de Seine</li>
+        </ul>
+        <a class="btn btn--gold offer__cta" data-wa="affaires" href="#" data-cursor="link">
+          <span>Demander la formule</span>
+        </a>
+      </article>
+
+      <article class="offer reveal-up">
+        <div class="offer__icon" aria-hidden="true">
+          <svg viewBox="0 0 48 48">
+            <path d="M10 38V22l14-10 14 10v16"/>
+            <path d="M6 22 24 9l18 13"/>
+            <path d="M19 38V28h10v10"/>
+            <circle cx="24" cy="17" r="1.8" class="fill"/>
+          </svg>
+        </div>
+        <h3>Privatisation</h3>
+        <p class="offer__lead">La salle entière, pour votre événement.</p>
+        <p>
+          Anniversaire, fiançailles, repas de famille, séminaire ou lancement :
+          nous fermons au public et la maison devient la vôtre, le temps d'un service
+          ou d'une soirée complète. Menu construit avec vous, de la formule unique
+          au buffet de spécialités tunisiennes.
+        </p>
+        <ul class="offer__list">
+          <li>Salle privatisée en exclusivité, midi ou soir</li>
+          <li>Menu sur mesure, du service à l'assiette au grand buffet</li>
+          <li>Prestation traiteur possible hors les murs</li>
+          <li>Devis établi après échange sur votre projet</li>
+        </ul>
+        <a class="btn btn--gold offer__cta" data-wa="privatisation" href="#" data-cursor="link">
+          <span>Demander un devis</span>
+        </a>
+      </article>
+
+    </div>
+
+    <p class="offers__note reveal-up">
+      Réponse la plus rapide par WhatsApp au
+      <a href="https://wa.me/33761976711" target="_blank" rel="noopener" data-cursor="link">07 61 97 67 11</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════ RÉSERVATION ══════════════ -->
+<section class="book" id="reserver">
+  <div class="wrap book__grid">
+    <div class="book__side">
+      <p class="eyebrow reveal-up">Réserver</p>
+      <h2 class="h2 reveal-up">Votre table<br>vous attend</h2>
+      <p class="reveal-up">Ouvert 7 jours sur 7, midi et soir. Réservation conseillée le week-end : le formulaire prépare votre message WhatsApp, nous confirmons dans la foulée.</p>
+
+      <dl class="infos reveal-up">
+        <div><dt>Adresse</dt><dd>
+          <a href="https://maps.google.com/?q=6+boulevard+Richard+Wallace+92800+Puteaux" target="_blank" rel="noopener" data-cursor="link">6 boulevard Richard Wallace<br>92800 Puteaux</a>
+          <em>Quartier Front de Seine · à deux pas de La Défense</em>
+        </dd></div>
+        <div><dt>Horaires</dt><dd>Lundi – Samedi · 12h00 – 23h00<br>Dimanche · 12h00 – 22h00<br><em>Ouvert 7j/7, service continu</em></dd></div>
+        <div><dt>Téléphone & WhatsApp</dt><dd>
+          <a href="tel:+33761976711" data-cursor="link">07 61 97 67 11</a>
+          <span class="socials socials--tight">
+            <a href="https://wa.me/33761976711" target="_blank" rel="noopener" aria-label="Écrire sur WhatsApp" data-cursor="link">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A10.4 10.4 0 0 0 3.6 16.2L2.5 21.5l5.4-1.1a10.4 10.4 0 0 0 12.6-16.9z"/><path d="M8.6 8c.3-.7.5-.7.9-.7h.6c.2 0 .5 0 .7.6l.8 2c.1.3 0 .5-.1.7l-.5.6c-.1.2-.3.4-.1.7a7.4 7.4 0 0 0 3.5 3c.3.2.5.1.7-.1l.7-.8c.2-.2.4-.2.6-.1l2 .9c.3.2.5.3.5.5a2 2 0 0 1-1.4 1.9c-.5.2-1.2.3-3.4-.6a11.6 11.6 0 0 1-5.6-5.4c-.6-1.4-.4-2.4.1-3.2z" class="fill nostroke"/></svg><span>WhatsApp</span></a>
+          </span>
+        </dd></div>
+        <div><dt>Suivez-nous</dt><dd class="socials">
+          <a href="https://www.instagram.com/latab_ledecarthage" target="_blank" rel="noopener" aria-label="Instagram" data-cursor="link">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r="1.2" class="fill"/></svg><span>Instagram</span></a>
+          <a href="https://www.facebook.com/p/La-Table-de-Carthage-61583761137287/" target="_blank" rel="noopener" aria-label="Facebook" data-cursor="link">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 8.5V6.8c0-.8.3-1.3 1.3-1.3H17V2.6h-2.4c-2.6 0-3.8 1.4-3.8 3.9v2H9v3h1.8V21h3.7v-9.5H17l.4-3z" class="fill nostroke"/></svg><span>Facebook</span></a>
+          <a href="https://share.google/F2eC15UbPln65rvK2" target="_blank" rel="noopener" aria-label="Fiche Google et avis" data-cursor="link">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c-3.3 0-6 2.6-6 5.9C6 13.4 12 21 12 21s6-7.6 6-12.1C18 5.6 15.3 3 12 3z"/><circle cx="12" cy="8.8" r="2.3"/></svg><span>Avis Google</span></a>
+        </dd></div>
+      </dl>
+
+      <p class="book__services reveal-up">
+        <span>Service à table</span><span>À emporter</span><span>Livraison</span><span>Traiteur</span><span>Dîner d'affaires</span><span>Privatisation</span><span>Sans alcool</span>
+      </p>
+    </div>
+
+    <div class="book__tunnels reveal-up">
+      <a class="tunnel-card" href="/reserver" data-cursor="link">
+        <h3>Réserver une table</h3>
+        <p>Choisissez une date, une heure et un nombre de couverts parmi les créneaux réellement disponibles.</p>
+        <span class="tunnel-card__cta">Voir les disponibilités →</span>
+      </a>
+      <a class="tunnel-card" href="/commander" data-cursor="link">
+        <h3>Commander à emporter</h3>
+        <p>Composez votre commande sur la carte et choisissez une heure de retrait. Règlement sur place.</p>
+        <span class="tunnel-card__cta">Composer ma commande →</span>
+      </a>
+      <p class="book__tunnels-note">
+        Dîner d'affaires, privatisation ou traiteur : passez par <a href="#formules" data-cursor="link">notre formulaire dédié</a> ou par <a href="https://wa.me/33761976711" target="_blank" rel="noopener" data-cursor="link">WhatsApp</a>.
+      </p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer class="foot">
+  <div class="wrap foot__grid">
+    <div class="foot__brand">
+      <img src="assets/img/logo.jpg" alt="" class="foot__logo">
+      <p>La Table de Carthage<br><small>Cuisine tunisienne · Fait maison</small></p>
+    </div>
+    <nav class="foot__nav" aria-label="Pied de page">
+      <a href="#histoire">Héritage</a>
+      <a href="#carte">La Carte</a>
+      <a href="#signature">Signatures</a>
+      <a href="#formules">Privatiser</a>
+      <a href="/reserver">Réserver</a>
+    </nav>
+    <div class="foot__meta">
+      <p><a href="https://maps.google.com/?q=6+boulevard+Richard+Wallace+92800+Puteaux" target="_blank" rel="noopener">6 boulevard Richard Wallace, 92800 Puteaux</a></p>
+      <p>Lun – Sam 12h–23h · Dim 12h–22h</p>
+      <p><a href="tel:+33761976711">07 61 97 67 11</a></p>
+      <p class="foot__socials">
+        <a href="https://www.instagram.com/latab_ledecarthage" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.facebook.com/p/La-Table-de-Carthage-61583761137287/" target="_blank" rel="noopener">Facebook</a>
+        <a href="https://share.google/F2eC15UbPln65rvK2" target="_blank" rel="noopener">Google</a>
+        <a href="https://wa.me/33761976711" target="_blank" rel="noopener">WhatsApp</a>
+      </p>
+    </div>
+  </div>
+  <div class="foot__rule" aria-hidden="true"></div>
+  <div class="wrap legal">
+    <button type="button" class="legal__toggle" id="legalToggle" aria-expanded="false" aria-controls="legalBox" data-cursor="link">Mentions légales</button>
+    <div class="legal__box" id="legalBox" hidden>
+      <p><b>La Table de Carthage</b> — société par actions simplifiée (SAS).<br>
+      Siège social : 6 boulevard Richard Wallace, 92800 Puteaux, France.</p>
+      <p>SIREN 100&nbsp;477&nbsp;553 · SIRET du siège 100&nbsp;477&nbsp;553&nbsp;00018 · RCS Nanterre<br>
+      TVA intracommunautaire FR30&nbsp;100477553 · Code APE 56.10A — Restauration traditionnelle.</p>
+      <p>Directeur de la publication : Ayoub Khlifi, président.<br>
+      Contact : <a href="tel:+33761976711">07 61 97 67 11</a>.</p>
+      <p>Les photographies, textes et éléments graphiques de ce site sont la propriété de La Table de Carthage.
+      Les prix affichés sont indicatifs et susceptibles d'évoluer ; la carte servie en salle fait foi.</p>
+    </div>
+  </div>
+  <p class="foot__copy">© <span id="year"></span> La Table de Carthage — 6 bd Richard Wallace, Puteaux — Tous droits réservés.</p>
+</footer>
+
+<script src="assets/js/menu-data.js"></script>
+<script src="assets/js/main.js"></script>
+</body>
+</html>

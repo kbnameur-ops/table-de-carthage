@@ -1,0 +1,64 @@
+<%- salonEntete %>
+<h1><%= titre %></h1>
+<% if (typeof erreur !== 'undefined' && erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+<form method="post" action="<%= service ? `/salon/services/${service.id}` : '/salon/services' %>" class="card" style="max-width:560px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field">
+    <label for="f-nom">Nom du service</label>
+    <input type="text" id="f-nom" name="nom" value="<%= service ? service.nom : '' %>" required maxlength="60" placeholder="Déjeuner, Dîner...">
+  </div>
+
+  <div class="field">
+    <label>Jours</label>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;padding:.5rem 0">
+      <% jours.forEach((j, i) => { %>
+        <label style="display:flex;align-items:center;gap:.4rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink)">
+          <input type="checkbox" name="jour<%= i+1 %>" style="width:auto" <%= service && service.jours.includes(String(i+1)) ? 'checked' : '' %>> <%= j %>
+        </label>
+      <% }) %>
+    </div>
+  </div>
+
+  <div class="field--row">
+    <div class="field">
+      <label for="f-debut">Ouverture</label>
+      <input type="time" id="f-debut" name="debut" value="<%= service ? service.debut : '12:00' %>" required>
+    </div>
+    <div class="field">
+      <label for="f-fin">Fermeture</label>
+      <input type="time" id="f-fin" name="fin" value="<%= service ? service.fin : '14:30' %>" required>
+    </div>
+  </div>
+
+  <div class="field--row">
+    <div class="field">
+      <label for="f-tables">Tables disponibles</label>
+      <input type="number" id="f-tables" name="tablesTotal" min="0" value="<%= service ? service.tables_total : 12 %>" required>
+      <small>Réservations simultanées maximum sur un même créneau.</small>
+    </div>
+    <div class="field">
+      <label for="f-couverts">Couverts au total</label>
+      <input type="number" id="f-couverts" name="couvertsTotal" min="0" value="<%= service ? service.couverts_total : 48 %>" required>
+      <small>Somme des convives maximum sur un même créneau.</small>
+    </div>
+  </div>
+
+  <div class="field" style="max-width:200px">
+    <label for="f-pas">Pas entre les créneaux (minutes)</label>
+    <input type="number" id="f-pas" name="pasMinutes" min="5" max="240" value="<%= service ? service.pas_minutes : 30 %>" required>
+  </div>
+
+  <% if (service) { %>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:.5rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink)">
+        <input type="checkbox" name="actif" <%= service.actif ? 'checked' : '' %> style="width:auto"> Service actif
+      </label>
+    </div>
+  <% } %>
+
+  <div class="btn-row">
+    <button type="submit" class="btn">Enregistrer</button>
+    <a class="btn btn--ghost" href="/salon/services">Annuler</a>
+  </div>
+</form>
+<%- salonPied %>

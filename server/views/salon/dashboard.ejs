@@ -1,0 +1,15 @@
+<%- salonEntete %>
+<h1>Tableau de bord</h1>
+<div class="grid grid--2" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+  <div class="stat-tuile"><b><%= resaAujourdhui.n %></b><span>Réservations aujourd'hui (<%= resaAujourdhui.couverts %> couverts)</span></div>
+  <div class="stat-tuile"><b><%= resaAttente.n %></b><span>Réservations en attente</span></div>
+  <div class="stat-tuile"><b><%= cmdAujourdhui.n %></b><span>Commandes aujourd'hui (<%= euros(cmdAujourdhui.total) %>)</span></div>
+  <div class="stat-tuile"><b><%= cmdAttente.n %></b><span>Commandes en attente</span></div>
+</div>
+<div class="btn-row">
+  <a class="btn" href="/salon/reservations">Voir les réservations</a>
+  <a class="btn" href="/salon/commandes">Voir les commandes</a>
+  <a class="btn btn--ghost" href="/salon/carte">Gérer la carte</a>
+  <a class="btn btn--ghost" href="/salon/services">Services &amp; capacité</a>
+</div>
+<%- salonPied %>

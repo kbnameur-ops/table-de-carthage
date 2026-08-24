@@ -1,0 +1,66 @@
+<%- salonEntete %>
+<h1><%= titre %></h1>
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+<form method="post" action="<%= plat ? `/salon/carte/plats/${plat.id}` : '/salon/carte/plats' %>"
+      enctype="multipart/form-data" class="card" style="max-width:560px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field">
+    <label for="f-cat">Catégorie</label>
+    <select id="f-cat" name="categorieId" required>
+      <% categories.forEach(c => { %>
+        <option value="<%= c.id %>" <%= c.id === categorieId ? 'selected' : '' %>><%= c.nom %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="field">
+    <label for="f-nom">Nom du plat</label>
+    <input type="text" id="f-nom" name="nom" value="<%= plat ? plat.nom : '' %>" required maxlength="80">
+  </div>
+  <div class="field">
+    <label for="f-desc">Description</label>
+    <textarea id="f-desc" name="description" rows="2" required maxlength="400"><%= plat ? plat.description : '' %></textarea>
+  </div>
+  <div class="field" style="max-width:160px">
+    <label for="f-prix">Prix (€)</label>
+    <input type="text" id="f-prix" name="prix" value="<%= plat ? (plat.prix_cents/100).toFixed(2).replace('.', ',') : '' %>" required placeholder="16,50">
+  </div>
+
+  <div class="field">
+    <label>Photo</label>
+    <% if (plat && plat.photo) { %>
+      <div style="margin-bottom:.6rem">
+        <img class="plat-photo" src="/uploads/plats/<%= plat.photo %>" alt="" style="width:100px;height:100px">
+        <label style="display:inline-flex;align-items:center;gap:.4rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--err);margin-left:.8rem">
+          <input type="checkbox" name="supprimerPhoto" style="width:auto"> Retirer la photo
+        </label>
+      </div>
+    <% } %>
+    <input type="file" name="photo" accept="image/jpeg,image/png,image/webp">
+    <small>Redimensionnée automatiquement (1000 px de large maximum). 8 Mo max.</small>
+  </div>
+
+  <div class="field--row">
+    <label style="display:flex;align-items:center;gap:.5rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink)">
+      <input type="checkbox" name="vegetarien" <%= plat && plat.vegetarien ? 'checked' : '' %> style="width:auto"> Végétarien
+    </label>
+    <label style="display:flex;align-items:center;gap:.5rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink)">
+      <input type="checkbox" name="signature" <%= plat && plat.signature ? 'checked' : '' %> style="width:auto"> Plat signature
+    </label>
+  </div>
+  <div class="field--row">
+    <label style="display:flex;align-items:center;gap:.5rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink)">
+      <input type="checkbox" name="aEmporter" <%= !plat || plat.a_emporter ? 'checked' : '' %> style="width:auto"> Disponible à emporter
+    </label>
+    <% if (plat) { %>
+      <label style="display:flex;align-items:center;gap:.5rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink)">
+        <input type="checkbox" name="visible" <%= plat.visible ? 'checked' : '' %> style="width:auto"> Visible sur le site
+      </label>
+    <% } %>
+  </div>
+
+  <div class="btn-row">
+    <button type="submit" class="btn">Enregistrer</button>
+    <a class="btn btn--ghost" href="/salon/carte">Annuler</a>
+  </div>
+</form>
+<%- salonPied %>

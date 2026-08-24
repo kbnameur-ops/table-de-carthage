@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= titre %> — La Table de Carthage</title>
+<link rel="icon" href="/assets/img/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500;600&family=Marcellus&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap--large">
+    <a class="topbar__brand" href="/">
+      <img src="/assets/img/logo.jpg" alt="">
+      La Table de Carthage
+    </a>
+    <nav class="topbar__nav">
+      <a href="/reserver"<%= actif === 'reserver' ? ' class="is-active"' : '' %>>Réserver</a>
+      <a href="/commander"<%= actif === 'commander' ? ' class="is-active"' : '' %>>Commander</a>
+      <% if (session.role === 'client') { %>
+        <a href="/compte"<%= actif === 'compte' ? ' class="is-active"' : '' %>>Mon espace</a>
+      <% } else { %>
+        <a href="/compte/connexion"<%= actif === 'compte' ? ' class="is-active"' : '' %>>Mon espace</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+<main>

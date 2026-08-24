@@ -1,0 +1,20 @@
+<%- entete %>
+<div class="wrap">
+  <div class="alerte alerte--ok">Votre commande a bien été enregistrée.</div>
+  <h1>Référence <%= commande.reference %></h1>
+  <div class="card">
+    <table>
+      <% lignes.forEach(l => { %>
+        <tr><td><%= l.quantite %> × <%= l.nom %></td><td style="text-align:right"><%= euros(l.prix_cents * l.quantite) %></td></tr>
+      <% }) %>
+      <tr><th>Total</th><th style="text-align:right"><%= euros(commande.total_cents) %></th></tr>
+      <tr><th>Retrait</th><td><%= dateLisible %> à <%= commande.heure %></td></tr>
+    </table>
+  </div>
+  <p class="lead">Réglement sur place au retrait. Nous vous préviendrons si la commande ne peut pas être honorée.</p>
+  <div class="btn-row">
+    <a class="btn" href="/compte/connexion">Accéder à mon espace</a>
+    <a class="btn btn--ghost" href="/">Retour à l'accueil</a>
+  </div>
+</div>
+<%- pied %>

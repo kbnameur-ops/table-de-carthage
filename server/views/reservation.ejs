@@ -1,0 +1,146 @@
+<%- entete %>
+<div class="wrap">
+  <h1>Réserver une table</h1>
+  <p class="lead">Choisissez une date et un nombre de couverts pour voir les créneaux disponibles.</p>
+
+  <% if (erreurGenerale) { %>
+    <div class="alerte alerte--erreur"><%= erreurGenerale %></div>
+  <% } %>
+
+  <form method="post" action="/reserver" id="formResa" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <div class="card">
+      <div class="field--row">
+        <div class="field <%= erreurs.date ? 'champ-invalide' : '' %>">
+          <label for="f-date">Date</label>
+          <input type="date" id="f-date" name="date" min="<%= aujourdHui %>" value="<%= valeurs.date || '' %>" required>
+          <% if (erreurs.date) { %><span class="erreur"><%= erreurs.date %></span><% } %>
+        </div>
+        <div class="field <%= erreurs.couverts ? 'champ-invalide' : '' %>">
+          <label for="f-couverts">Couverts</label>
+          <input type="number" id="f-couverts" name="couverts" min="1" max="30" value="<%= valeurs.couverts || 2 %>" required>
+          <% if (erreurs.couverts) { %><span class="erreur"><%= erreurs.couverts %></span><% } %>
+        </div>
+      </div>
+
+      <div id="zoneCreneaux">
+        <p class="lead" style="margin:0;color:var(--muted);font-size:.9rem">Choisissez une date et un nombre de couverts pour afficher les horaires disponibles.</p>
+      </div>
+      <input type="hidden" name="heure" id="f-heure" value="<%= valeurs.heure || '' %>">
+      <input type="hidden" name="serviceId" id="f-serviceId" value="<%= valeurs.serviceId || '' %>">
+      <% if (erreurs.heure) { %><p class="field"><span class="erreur"><%= erreurs.heure %></span></p><% } %>
+    </div>
+
+    <h2>Vos coordonnées</h2>
+    <div class="card">
+      <div class="field--row">
+        <div class="field <%= erreurs.prenom ? 'champ-invalide' : '' %>">
+          <label for="f-prenom">Prénom</label>
+          <input type="text" id="f-prenom" name="prenom" value="<%= valeurs.prenom || '' %>" required>
+          <% if (erreurs.prenom) { %><span class="erreur"><%= erreurs.prenom %></span><% } %>
+        </div>
+        <div class="field <%= erreurs.nom ? 'champ-invalide' : '' %>">
+          <label for="f-nom">Nom</label>
+          <input type="text" id="f-nom" name="nom" value="<%= valeurs.nom || '' %>" required>
+          <% if (erreurs.nom) { %><span class="erreur"><%= erreurs.nom %></span><% } %>
+        </div>
+      </div>
+      <div class="field--row">
+        <div class="field <%= erreurs.telephone ? 'champ-invalide' : '' %>">
+          <label for="f-telephone">Téléphone</label>
+          <input type="tel" id="f-telephone" name="telephone" value="<%= valeurs.telephone || '' %>" required>
+          <% if (erreurs.telephone) { %><span class="erreur"><%= erreurs.telephone %></span><% } %>
+        </div>
+        <div class="field <%= erreurs.email ? 'champ-invalide' : '' %>">
+          <label for="f-email">E-mail</label>
+          <input type="email" id="f-email" name="email" value="<%= valeurs.email || '' %>" required>
+          <% if (erreurs.email) { %><span class="erreur"><%= erreurs.email %></span><% } %>
+        </div>
+      </div>
+      <div class="field <%= erreurs.dateNaissance ? 'champ-invalide' : '' %>" style="max-width:220px">
+        <label for="f-naissance">Date de naissance</label>
+        <input type="date" id="f-naissance" name="dateNaissance" value="<%= valeurs.dateNaissance || '' %>" required>
+        <small>Sert uniquement à sécuriser l'accès à votre espace client.</small>
+        <% if (erreurs.dateNaissance) { %><span class="erreur"><%= erreurs.dateNaissance %></span><% } %>
+      </div>
+      <div class="field">
+        <label for="f-message">Message (facultatif)</label>
+        <textarea id="f-message" name="message" rows="3"><%= valeurs.message || '' %></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn" id="btnValider" disabled>Confirmer la réservation</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  const dateEl = document.getElementById('f-date');
+  const couvertsEl = document.getElementById('f-couverts');
+  const zone = document.getElementById('zoneCreneaux');
+  const heureEl = document.getElementById('f-heure');
+  const serviceIdEl = document.getElementById('f-serviceId');
+  const btn = document.getElementById('btnValider');
+
+  // La date et le nombre de couverts déclenchent chacun leur propre appel
+  // réseau. Si l'utilisateur enchaîne les deux vite, rien ne garantit que
+  // les réponses reviennent dans l'ordre où elles sont parties : sans garde,
+  // une réponse en retard peut écraser l'affichage d'une réponse plus
+  // récente juste après que l'utilisateur a choisi un horaire. Un jeton de
+  // séquence n'applique que la toute dernière requête lancée.
+  let sequence = 0;
+  let derniereCle = null;
+  async function chargerCreneaux() {
+    const date = dateEl.value, couverts = couvertsEl.value;
+    // Un clic sur un créneau retire le focus du champ « couverts » (ou
+    // « date », au clavier). Ce blur déclenche un événement change natif
+    // même quand la valeur n'a pas bougé depuis le dernier chargement — sans
+    // cette garde, il effacerait la liste de créneaux sous le clic en cours.
+    const cle = date + '|' + couverts;
+    if (cle === derniereCle) return;
+    derniereCle = cle;
+
+    const jeton = ++sequence;
+    heureEl.value = ''; btn.disabled = true;
+    if (!date || !couverts || couverts < 1) return;
+    zone.innerHTML = '<p class="lead" style="margin:0;font-size:.9rem">Recherche des disponibilités…</p>';
+    try {
+      const r = await fetch(`/api/disponibilites?date=${encodeURIComponent(date)}&couverts=${encodeURIComponent(couverts)}`);
+      const d = await r.json();
+      if (jeton !== sequence) return; // une saisie plus récente a pris le relais
+
+      if (!d.service) {
+        zone.innerHTML = '<div class="alerte alerte--info" style="margin:1rem 0 0">Le restaurant est fermé ce jour-là.</div>';
+        return;
+      }
+      serviceIdEl.value = d.service.id;
+      if (!d.creneaux.some(c => c.disponible)) {
+        zone.innerHTML = '<div class="alerte alerte--info" style="margin:1rem 0 0">Complet pour cette date et ce nombre de couverts. Essayez un autre jour.</div>';
+        return;
+      }
+      const boutons = d.creneaux.map(c =>
+        `<button type="button" class="creneau${c.disponible ? '' : ' is-indisponible'}" data-heure="${c.heure}" ${c.disponible ? '' : 'disabled'}>${c.heure}</button>`
+      ).join('');
+      zone.innerHTML = `<div class="field"><label>Horaire</label><div class="creneaux">${boutons}</div></div>`;
+      zone.querySelectorAll('.creneau:not([disabled])').forEach(b => {
+        b.addEventListener('click', () => {
+          zone.querySelectorAll('.creneau').forEach(x => x.classList.remove('is-choisi'));
+          b.classList.add('is-choisi');
+          heureEl.value = b.dataset.heure;
+          btn.disabled = false;
+        });
+      });
+    } catch {
+      if (jeton !== sequence) return;
+      zone.innerHTML = '<div class="alerte alerte--erreur" style="margin:1rem 0 0">Impossible de charger les disponibilités.</div>';
+    }
+  }
+  dateEl.addEventListener('change', chargerCreneaux);
+  couvertsEl.addEventListener('change', chargerCreneaux);
+  if (dateEl.value && couvertsEl.value) chargerCreneaux();
+})();
+</script>
+<%- pied %>

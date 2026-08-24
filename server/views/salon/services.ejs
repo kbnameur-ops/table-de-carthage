@@ -1,0 +1,74 @@
+<%- salonEntete %>
+<h1>Services &amp; capacité</h1>
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+<p class="lead">Un service définit des jours, une plage horaire et deux limites indépendantes par créneau : le nombre de tables (réservations simultanées) et le nombre de couverts (personnes) au total.</p>
+
+<div class="btn-row" style="margin-top:0;margin-bottom:1.5rem">
+  <a class="btn" href="/salon/services/nouveau">+ Nouveau service</a>
+</div>
+
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Service</th><th>Jours</th><th>Horaires</th><th>Tables</th><th>Couverts</th><th>Pas</th><th>Statut</th><th></th></tr></thead>
+  <tbody>
+    <% services.forEach(s => { %>
+      <tr>
+        <td><%= s.nom %></td>
+        <td><%= s.joursLabel %></td>
+        <td><%= s.debut %> – <%= s.fin %></td>
+        <td><%= s.tables_total %></td>
+        <td><%= s.couverts_total %></td>
+        <td><%= s.pas_minutes %> min</td>
+        <td><span class="badge badge--<%= s.actif ? 'confirmee' : 'annulee' %>"><%= s.actif ? 'Actif' : 'Inactif' %></span></td>
+        <td>
+          <a class="btn btn--ghost btn--sm" href="/salon/services/<%= s.id %>/modifier">Modifier</a>
+          <form method="post" action="/salon/services/<%= s.id %>/supprimer" style="display:inline" onsubmit="return confirm('Supprimer ce service ?')">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn--danger btn--sm">Supprimer</button>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+</div>
+
+<h2>Fermetures exceptionnelles</h2>
+<p class="lead" style="margin-bottom:1rem">Congés, jours fériés, privatisation complète : ces dates n'apparaissent plus dans le tunnel de réservation ni de commande.</p>
+<form method="post" action="/salon/fermetures" class="card" style="max-width:500px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field--row">
+    <div class="field">
+      <label for="f-date">Date</label>
+      <input type="date" id="f-date" name="date" required min="<%= new Date().toISOString().slice(0,10) %>">
+    </div>
+    <div class="field">
+      <label for="f-motif">Motif (facultatif)</label>
+      <input type="text" id="f-motif" name="motif" maxlength="100" placeholder="Congés annuels">
+    </div>
+  </div>
+  <button type="submit" class="btn btn--sm">Ajouter</button>
+</form>
+
+<% if (fermetures.length) { %>
+  <div class="table-scroll" style="margin-top:1.5rem">
+  <table>
+    <thead><tr><th>Date</th><th>Motif</th><th></th></tr></thead>
+    <tbody>
+      <% fermetures.forEach(f => { %>
+        <tr>
+          <td><%= f.date %></td>
+          <td><%= f.motif || '—' %></td>
+          <td>
+            <form method="post" action="/salon/fermetures/<%= f.id %>/supprimer">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="btn btn--danger btn--sm">Retirer</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  </div>
+<% } %>
+<%- salonPied %>
