@@ -42,10 +42,10 @@ const MENU = [
     name: 'Kafteji',
     tagline: 'Légumes frits puis hachés au couteau, servis chauds',
     items: [
-      { name: 'Kafteji Nature',   desc: "Courgette, poivron, pomme de terre, œuf", price: 12, veg: true },
-      { name: 'Kafteji Escalope', desc: "Escalope de poulet grillée",              price: 14 },
-      { name: 'Kafteji Merguez',  desc: "Merguez grillées",                     price: 14 },
-      { name: 'Kafteji Foie',     desc: "Foie de veau poêlé au carvi",              price: 14 }
+      { name: 'Kafteji Nature',   desc: "Courgette, poivron, pomme de terre, œuf et frites", price: 12, veg: true, photo: 'kafteji-nature' },
+      { name: 'Kafteji Escalope', desc: "Escalope de poulet grillée",              price: 14, photo: 'kafteji-escalope' },
+      { name: 'Kafteji Merguez',  desc: "Merguez grillées",                      price: 14, photo: 'kafteji-merguez' },
+      { name: 'Kafteji Foie',     desc: "Foie de veau poêlé",                     price: 14, photo: 'kafteji-foie' }
     ]
   },
   {

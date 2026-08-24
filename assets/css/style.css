@@ -707,10 +707,10 @@ button{font:inherit;color:inherit}
   opacity:0;visibility:hidden;transition:opacity .45s var(--ease),visibility .45s;
 }
 .lightbox.is-open{opacity:1;visibility:visible}
-.lightbox__fig{margin:0;max-width:min(94vw,1000px);transform:scale(.96);transition:transform .5s var(--ease)}
+.lightbox__fig{margin:0;width:fit-content;max-width:min(94vw,1000px);transform:scale(.96);transition:transform .5s var(--ease)}
 .lightbox.is-open .lightbox__fig{transform:none}
 .lightbox__fig img{
-  width:100%;max-height:76vh;object-fit:contain;display:block;
+  max-width:100%;max-height:76vh;width:auto;height:auto;display:block;margin-inline:auto;
   border:1px solid rgba(201,169,97,.4);
 }
 .lightbox__fig figcaption{
