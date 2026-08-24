@@ -17,11 +17,11 @@
       Salon
     </a>
     <nav class="topbar__nav">
-      <a href="/salon"<%= actif === 'dashboard' ? ' class="is-active"' : '' %>>Tableau de bord</a>
-      <a href="/salon/carte"<%= actif === 'carte' ? ' class="is-active"' : '' %>>La carte</a>
-      <a href="/salon/services"<%= actif === 'services' ? ' class="is-active"' : '' %>>Services &amp; capacité</a>
-      <a href="/salon/reservations"<%= actif === 'reservations' ? ' class="is-active"' : '' %>>Réservations</a>
-      <a href="/salon/commandes"<%= actif === 'commandes' ? ' class="is-active"' : '' %>>Commandes</a>
+      <a href="/salon"<%- actif === 'dashboard' ? ' class="is-active"' : '' %>>Tableau de bord</a>
+      <a href="/salon/carte"<%- actif === 'carte' ? ' class="is-active"' : '' %>>La carte</a>
+      <a href="/salon/services"<%- actif === 'services' ? ' class="is-active"' : '' %>>Services &amp; capacité</a>
+      <a href="/salon/reservations"<%- actif === 'reservations' ? ' class="is-active"' : '' %>>Réservations</a>
+      <a href="/salon/commandes"<%- actif === 'commandes' ? ' class="is-active"' : '' %>>Commandes</a>
       <a href="/" target="_blank">Voir le site</a>
     </nav>
   </div>

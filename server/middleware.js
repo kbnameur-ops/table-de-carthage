@@ -74,6 +74,20 @@ export function exigerAdmin(req, res, next) {
   next();
 }
 
+/** Titre d'onglet et entrée de nav active par vue publique. Défini ici
+ *  plutôt que dans chaque res.render : une route qui oublie de passer
+ *  `titre` produirait sinon un onglet « — La Table de Carthage ». */
+const PAGES = {
+  'reservation':            { titre: 'Réserver une table',   actif: 'reserver' },
+  'reservation-confirmee':  { titre: 'Réservation confirmée', actif: 'reserver' },
+  'commande':               { titre: 'Commander à emporter', actif: 'commander' },
+  'commande-confirmee':     { titre: 'Commande confirmée',   actif: 'commander' },
+  'compte-connexion':       { titre: 'Mon espace',           actif: 'compte' },
+  'compte-tableau':         { titre: 'Mon espace',           actif: 'compte' },
+  'salon-connexion':        { titre: 'Salon' },
+  'erreur':                 { titre: 'Erreur' },
+};
+
 /** Calcule l'en-tête et le pied de page une fois pour toutes et les
  *  injecte dans les données de chaque rendu, sans toucher chaque route une
  *  par une. Les vues appellent <%- entete %> / <%- pied %> — de simples
@@ -82,6 +96,11 @@ export function exigerAdmin(req, res, next) {
 export function injecterMiseEnPage(req, res, next) {
   const rendreOriginal = res.render.bind(res);
   res.render = (vue, donnees = {}, callback) => {
+    const defauts = PAGES[vue];
+    if (defauts) {
+      donnees.titre ??= defauts.titre;
+      donnees.actif ??= defauts.actif ?? '';
+    }
     if (donnees.entete === undefined) {
       if (vue.startsWith('salon/')) {
         donnees.salonEntete = salonEntete({ titre: donnees.titre, actif: donnees.actif });
