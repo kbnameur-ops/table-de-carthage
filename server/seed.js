@@ -1,12 +1,14 @@
 /** Reprend le contenu de assets/js/menu-data.js (source de vérité du site
  *  statique) pour peupler la base au premier démarrage, et copie les
- *  photos existantes vers le dossier servi par l'application dynamique.
+ *  photos existantes vers le stockage de l'application dynamique (Vercel
+ *  Blob si BLOB_READ_WRITE_TOKEN est défini, sinon disque local).
  *  Sans effet si la base contient déjà des catégories, sauf avec --force. */
-import { readFileSync, copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { db } from './db.js';
+import { une, executer, transaction } from './db.js';
 import { versCents } from './lib/money.js';
+import { enregistrerPhotoPlat } from './lib/image.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const racine = join(__dirname, '..');
@@ -19,85 +21,98 @@ function chargerMenuStatique() {
   return fn();
 }
 
-function dejaSemee() {
-  return db.prepare(`SELECT COUNT(*) AS n FROM categories`).get().n > 0;
+async function dejaSemee() {
+  const { n } = await une(`SELECT COUNT(*)::int AS n FROM categories`);
+  return n > 0;
 }
 
-function copierPhoto(nomPhoto) {
+async function copierPhoto(nomPhoto) {
   if (!nomPhoto) return null;
   const source = join(racine, 'assets/img/plats', `${nomPhoto}.jpg`);
-  const dest = join(racine, 'server/public/uploads/plats', `${nomPhoto}.jpg`);
   if (!existsSync(source)) {
     console.warn(`  ⚠ photo introuvable : ${nomPhoto}.jpg`);
     return null;
   }
-  mkdirSync(dirname(dest), { recursive: true });
-  copyFileSync(source, dest);
-  return `${nomPhoto}.jpg`;
+  const buffer = readFileSync(source);
+  return enregistrerPhotoPlat(buffer, `${nomPhoto}.jpg`);
 }
 
-function semerCarte() {
+async function semerCarte(t) {
   const menu = chargerMenuStatique();
-  const insCat = db.prepare(
-    `INSERT INTO categories (slug, nom, accroche, position) VALUES (?, ?, ?, ?)`
-  );
-  const insPlat = db.prepare(
-    `INSERT INTO plats (categorie_id, nom, description, prix_cents, photo, vegetarien, signature, position)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-
   let totalPlats = 0;
-  menu.forEach((cat, iCat) => {
-    const { lastInsertRowid: catId } = insCat.run(cat.id, cat.name, cat.tagline, iCat);
-    cat.items.forEach((plat, iPlat) => {
-      const photo = copierPhoto(plat.photo);
-      insPlat.run(
-        catId, plat.name, plat.desc, versCents(plat.price),
-        photo, plat.veg ? 1 : 0, plat.star ? 1 : 0, iPlat
+  for (let iCat = 0; iCat < menu.length; iCat++) {
+    const cat = menu[iCat];
+    const { id: catId } = await t.une(
+      `INSERT INTO categories (slug, nom, accroche, position) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [cat.id, cat.name, cat.tagline, iCat]
+    );
+    for (let iPlat = 0; iPlat < cat.items.length; iPlat++) {
+      const plat = cat.items[iPlat];
+      const photo = await copierPhoto(plat.photo);
+      await t.executer(
+        `INSERT INTO plats (categorie_id, nom, description, prix_cents, photo, vegetarien, signature, position)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [catId, plat.name, plat.desc, versCents(plat.price), photo, !!plat.veg, !!plat.star, iPlat]
       );
       totalPlats++;
-    });
-  });
+    }
+  }
   console.log(`✓ ${menu.length} catégories, ${totalPlats} plats importés`);
 }
 
-function semerServices() {
-  const ins = db.prepare(
-    `INSERT INTO services (nom, jours, debut, fin, tables_total, couverts_total, pas_minutes, position)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  );
+async function semerServices(t) {
   // Horaires réels du restaurant ; la capacité (tables/couverts) est un
   // point de départ à ajuster dans le salon — /salon/services.
-  ins.run('Semaine (lundi–samedi)', '123456', '12:00', '23:00', 12, 48, 30, 0);
-  ins.run('Dimanche', '7', '12:00', '22:00', 12, 48, 30, 1);
+  await t.executer(
+    `INSERT INTO services (nom, jours, debut, fin, tables_total, couverts_total, pas_minutes, position)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    ['Semaine (lundi–samedi)', '123456', '12:00', '23:00', 12, 48, 30, 0]
+  );
+  await t.executer(
+    `INSERT INTO services (nom, jours, debut, fin, tables_total, couverts_total, pas_minutes, position)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    ['Dimanche', '7', '12:00', '22:00', 12, 48, 30, 1]
+  );
   console.log('✓ 2 services créés avec une capacité de départ (12 tables, 48 couverts) — à ajuster dans le salon');
 }
 
-function semerReglages() {
-  const ins = db.prepare(
-    `INSERT INTO reglages (cle, valeur) VALUES (?, ?)
-     ON CONFLICT(cle) DO UPDATE SET valeur = excluded.valeur`
-  );
-  ins.run('nom_restaurant', 'La Table de Carthage');
-  ins.run('telephone', '+33761976711');
-  ins.run('adresse', '6 boulevard Richard Wallace, 92800 Puteaux');
+async function semerReglages(t) {
+  const reglages = [
+    ['nom_restaurant', 'La Table de Carthage'],
+    ['telephone', '+33761976711'],
+    ['adresse', '6 boulevard Richard Wallace, 92800 Puteaux'],
+  ];
+  for (const [cle, valeur] of reglages) {
+    await t.executer(
+      `INSERT INTO reglages (cle, valeur) VALUES ($1, $2)
+       ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur`,
+      [cle, valeur]
+    );
+  }
   console.log('✓ réglages généraux enregistrés');
 }
 
-const force = process.argv.includes('--force');
-if (dejaSemee() && !force) {
-  console.log('La base contient déjà des catégories : rien à faire (--force pour reforcer).');
-  process.exit(0);
+async function main() {
+  const force = process.argv.includes('--force');
+  if (await dejaSemee() && !force) {
+    console.log('La base contient déjà des catégories : rien à faire (--force pour reforcer).');
+    return;
+  }
+
+  if (force) {
+    await executer(`DELETE FROM plats`);
+    await executer(`DELETE FROM categories`);
+    await executer(`DELETE FROM services`);
+    await executer(`DELETE FROM reglages`);
+  }
+
+  await transaction(async (t) => {
+    await semerCarte(t);
+    await semerServices(t);
+    await semerReglages(t);
+  });
+
+  console.log('\nSemis terminé.');
 }
 
-if (force) {
-  db.exec(`DELETE FROM plats; DELETE FROM categories; DELETE FROM services; DELETE FROM reglages;`);
-}
-
-db.transaction(() => {
-  semerCarte();
-  semerServices();
-  semerReglages();
-})();
-
-console.log('\nSemis terminé.');
+main().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); });

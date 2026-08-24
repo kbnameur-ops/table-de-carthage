@@ -3,7 +3,7 @@
  *  Pas de création via le site : le premier compte s'obtient en ligne de
  *  commande, sur la machine qui héberge le service — c'est la garantie
  *  qu'un tiers ne peut pas s'auto-inscrire comme administrateur. */
-import { db } from './db.js';
+import { une, executer } from './db.js';
 import { hacherMotDePasse } from './lib/auth.js';
 import { emailValide } from './lib/validate.js';
 
@@ -22,13 +22,17 @@ if (motDePasse.length < 10) {
   process.exit(1);
 }
 
-const empreinte = hacherMotDePasse(motDePasse);
-const existant = db.prepare(`SELECT id FROM admins WHERE email = ?`).get(email);
+async function main() {
+  const empreinte = hacherMotDePasse(motDePasse);
+  const existant = await une(`SELECT id FROM admins WHERE email = $1`, [email]);
 
-if (existant) {
-  db.prepare(`UPDATE admins SET mot_de_passe = ?, nom = ? WHERE id = ?`).run(empreinte, nom, existant.id);
-  console.log(`✓ Mot de passe mis à jour pour ${email}`);
-} else {
-  db.prepare(`INSERT INTO admins (email, mot_de_passe, nom) VALUES (?, ?, ?)`).run(email, empreinte, nom);
-  console.log(`✓ Compte créé pour ${email}`);
+  if (existant) {
+    await executer(`UPDATE admins SET mot_de_passe = $1, nom = $2 WHERE id = $3`, [empreinte, nom, existant.id]);
+    console.log(`✓ Mot de passe mis à jour pour ${email}`);
+  } else {
+    await executer(`INSERT INTO admins (email, mot_de_passe, nom) VALUES ($1, $2, $3)`, [email, empreinte, nom]);
+    console.log(`✓ Compte créé pour ${email}`);
+  }
 }
+
+main().then(() => process.exit(0)).catch(err => { console.error(err); process.exit(1); });

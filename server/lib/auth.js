@@ -1,5 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
-import { db } from '../db.js';
+import { query, une, executer } from '../db.js';
 
 const DUREE_SESSION_JOURS = 30;
 const DUREE_INVITE_JOURS = 1;
@@ -27,27 +27,29 @@ export function verifierMotDePasse(motDePasse, stocke) {
 function nouvelleExpiration(jours) {
   const d = new Date();
   d.setDate(d.getDate() + jours);
-  return d.toISOString();
+  return d;
 }
 
-export function creerSessionInvite() {
+export async function creerSessionInvite() {
   const id = randomBytes(32).toString('hex');
   const csrf = randomBytes(32).toString('hex');
-  db.prepare(
-    `INSERT INTO sessions (id, role, sujet_id, csrf_token, expire_le) VALUES (?, 'invite', NULL, ?, ?)`
-  ).run(id, csrf, nouvelleExpiration(DUREE_INVITE_JOURS));
+  await executer(
+    `INSERT INTO sessions (id, role, sujet_id, csrf_token, expire_le) VALUES ($1, 'invite', NULL, $2, $3)`,
+    [id, csrf, nouvelleExpiration(DUREE_INVITE_JOURS)]
+  );
   return { id, role: 'invite', sujetId: null, csrf };
 }
 
-export function obtenirSession(id) {
+export async function obtenirSession(id) {
   if (!id) return null;
-  const ligne = db.prepare(
-    `SELECT id, role, sujet_id AS sujetId, csrf_token AS csrf, expire_le AS expireLe
-     FROM sessions WHERE id = ?`
-  ).get(id);
+  const ligne = await une(
+    `SELECT id, role, sujet_id AS "sujetId", csrf_token AS csrf, expire_le AS "expireLe"
+     FROM sessions WHERE id = $1`,
+    [id]
+  );
   if (!ligne) return null;
   if (new Date(ligne.expireLe) < new Date()) {
-    db.prepare(`DELETE FROM sessions WHERE id = ?`).run(id);
+    await executer(`DELETE FROM sessions WHERE id = $1`, [id]);
     return null;
   }
   return ligne;
@@ -56,14 +58,15 @@ export function obtenirSession(id) {
 /** Fait passer une session d'invité à client ou admin, en conservant son
  *  identifiant et son jeton CSRF : les formulaires déjà affichés restent
  *  valables après la connexion. */
-export function elargirSession(id, role, sujetId) {
-  db.prepare(
-    `UPDATE sessions SET role = ?, sujet_id = ?, expire_le = ? WHERE id = ?`
-  ).run(role, sujetId, nouvelleExpiration(DUREE_SESSION_JOURS), id);
+export async function elargirSession(id, role, sujetId) {
+  await executer(
+    `UPDATE sessions SET role = $1, sujet_id = $2, expire_le = $3 WHERE id = $4`,
+    [role, sujetId, nouvelleExpiration(DUREE_SESSION_JOURS), id]
+  );
 }
 
-export function detruireSession(id) {
-  db.prepare(`DELETE FROM sessions WHERE id = ?`).run(id);
+export async function detruireSession(id) {
+  await executer(`DELETE FROM sessions WHERE id = $1`, [id]);
 }
 
 // ── Anti-force brute et anti-abus ───────────────────────────
@@ -77,19 +80,20 @@ export function detruireSession(id) {
 const FENETRE_MINUTES = 15;
 const MAX_TENTATIVES = 5;
 
-export function enregistrerTentative(cle) {
-  db.prepare(`INSERT INTO tentatives (cle) VALUES (?)`).run(cle);
+export async function enregistrerTentative(cle) {
+  await executer(`INSERT INTO tentatives (cle) VALUES ($1)`, [cle]);
 }
 
-export function tropDeTentatives(cle, maxTentatives = MAX_TENTATIVES, fenetreMinutes = FENETRE_MINUTES) {
-  const { n } = db.prepare(
-    `SELECT COUNT(*) AS n FROM tentatives WHERE cle = ? AND le > datetime('now', ?)`
-  ).get(cle, `-${fenetreMinutes} minutes`);
-  return n >= maxTentatives;
+export async function tropDeTentatives(cle, maxTentatives = MAX_TENTATIVES, fenetreMinutes = FENETRE_MINUTES) {
+  const ligne = await une(
+    `SELECT COUNT(*)::int AS n FROM tentatives WHERE cle = $1 AND le > now() - ($2 || ' minutes')::interval`,
+    [cle, fenetreMinutes]
+  );
+  return ligne.n >= maxTentatives;
 }
 
-export function reinitialiserTentatives(cle) {
-  db.prepare(`DELETE FROM tentatives WHERE cle = ?`).run(cle);
+export async function reinitialiserTentatives(cle) {
+  await executer(`DELETE FROM tentatives WHERE cle = $1`, [cle]);
 }
 
 export const MINUTES_BLOCAGE = FENETRE_MINUTES;

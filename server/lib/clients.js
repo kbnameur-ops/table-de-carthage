@@ -1,4 +1,4 @@
-import { db } from '../db.js';
+import { une, executer } from '../db.js';
 import { normaliserTelephone, telephoneValide } from './phone.js';
 import { emailValide, dateNaissanceValide, texteNonVide } from './validate.js';
 
@@ -17,9 +17,9 @@ export function validerIdentite(champs) {
   return erreurs;
 }
 
-export function trouverOuCreerClient(champs) {
+export async function trouverOuCreerClient(champs) {
   const telephone = normaliserTelephone(champs.telephone);
-  const existant = db.prepare(`SELECT * FROM clients WHERE telephone = ?`).get(telephone);
+  const existant = await une(`SELECT * FROM clients WHERE telephone = $1`, [telephone]);
 
   if (existant) {
     if (existant.date_naissance !== champs.dateNaissance) {
@@ -27,17 +27,17 @@ export function trouverOuCreerClient(champs) {
     }
     // Le nom ou l'e-mail a pu changer (mariage, faute de frappe corrigée) :
     // on les met à jour, l'identité reste ancrée sur téléphone + naissance.
-    db.prepare(
-      `UPDATE clients SET prenom = ?, nom = ?, email = ? WHERE id = ?`
-    ).run(champs.prenom.trim(), champs.nom.trim(), champs.email.trim(), existant.id);
+    await executer(
+      `UPDATE clients SET prenom = $1, nom = $2, email = $3 WHERE id = $4`,
+      [champs.prenom.trim(), champs.nom.trim(), champs.email.trim(), existant.id]
+    );
     return { client: { ...existant, prenom: champs.prenom.trim(), nom: champs.nom.trim(), email: champs.email.trim() } };
   }
 
-  const { lastInsertRowid } = db.prepare(
+  const cree = await une(
     `INSERT INTO clients (prenom, nom, email, telephone, telephone_saisi, date_naissance)
-     VALUES (?, ?, ?, ?, ?, ?)`
-  ).run(champs.prenom.trim(), champs.nom.trim(), champs.email.trim(), telephone, champs.telephone.trim(), champs.dateNaissance);
-
-  const client = db.prepare(`SELECT * FROM clients WHERE id = ?`).get(lastInsertRowid);
-  return { client };
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [champs.prenom.trim(), champs.nom.trim(), champs.email.trim(), telephone, champs.telephone.trim(), champs.dateNaissance]
+  );
+  return { client: cree };
 }

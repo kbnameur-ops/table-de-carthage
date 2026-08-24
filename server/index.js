@@ -69,13 +69,24 @@ app.use((err, req, res, next) => {
 });
 
 // Entretien périodique : sessions et tentatives expirées ne doivent pas
-// s'accumuler indéfiniment dans une base censée rester petite.
-setInterval(() => {
-  nettoyerSessionsExpirees();
-  nettoyerTentativesAnciennes();
-}, 60 * 60 * 1000).unref();
+// s'accumuler indéfiniment dans une base censée rester petite. Sans objet
+// sur Vercel : une fonction serverless ne vit pas assez longtemps pour
+// qu'un setInterval s'y déclenche utilement.
+if (!process.env.VERCEL) {
+  setInterval(() => {
+    nettoyerSessionsExpirees().catch(err => console.error('Nettoyage sessions :', err));
+    nettoyerTentativesAnciennes().catch(err => console.error('Nettoyage tentatives :', err));
+  }, 60 * 60 * 1000).unref();
+}
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`La Table de Carthage — serveur démarré sur http://localhost:${port}`);
-});
+// Sur Vercel, ce module est importé par api/index.js comme gestionnaire de
+// fonction serverless : pas de app.listen(), la plateforme reçoit les
+// requêtes directement. En local/traditionnel, on écoute normalement.
+if (!process.env.VERCEL) {
+  const port = process.env.PORT || 3000;
+  app.listen(port, () => {
+    console.log(`La Table de Carthage — serveur démarré sur http://localhost:${port}`);
+  });
+}
+
+export default app;

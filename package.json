@@ -10,15 +10,17 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
+    "migrate": "node server/migrate.js",
     "seed": "node server/seed.js",
     "admin": "node server/create-admin.js",
     "test": "node --test test/**/*.test.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.7.0",
+    "@vercel/blob": "^2.8.0",
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "multer": "^2.2.0",
+    "pg": "^8.23.0",
     "sharp": "^0.35.3"
   }
 }

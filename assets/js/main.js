@@ -129,13 +129,13 @@
   // source utilisable dans ce cas.
   let MENU_ACTUELLE = typeof MENU !== 'undefined' ? MENU : [];
 
-  function cheminPhoto (nomFichier) {
-    // Un nom de fichier complet (« plat.jpg ») vient de /api/carte, servi
-    // sous /uploads/plats/. Un nom sans extension vient du secours
-    // menu-data.js, servi sous assets/img/plats/.
-    return /\.\w+$/.test(nomFichier)
-      ? `/uploads/plats/${nomFichier}`
-      : `assets/img/plats/${nomFichier}.jpg`;
+  function cheminPhoto (valeur) {
+    // /api/carte renvoie déjà une adresse utilisable telle quelle : une URL
+    // Vercel Blob (https://...) ou un chemin local (/uploads/plats/...). Un
+    // nom sans aucun de ces préfixes vient du secours menu-data.js, servi
+    // sous assets/img/plats/.
+    if (/^https?:\/\//.test(valeur) || valeur.startsWith('/')) return valeur;
+    return `assets/img/plats/${valeur}.jpg`;
   }
 
   async function chargerCarteActuelle () {
@@ -303,7 +303,10 @@
               description: i.desc,
               offers: { '@type': 'Offer', price: i.price.toFixed(2), priceCurrency: 'EUR' }
             };
-            if (i.photo) item.image = base + cheminPhoto(i.photo).replace(/^\//, '');
+            if (i.photo) {
+              const chemin = cheminPhoto(i.photo);
+              item.image = /^https?:\/\//.test(chemin) ? chemin : base + chemin.replace(/^\//, '');
+            }
             return item;
           })
         }))

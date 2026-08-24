@@ -1,4 +1,3 @@
-import { db } from './db.js';
 import { creerSessionInvite, obtenirSession } from './lib/auth.js';
 import { entete, pied, salonEntete, salonPied } from './lib/layout.js';
 
@@ -30,18 +29,22 @@ function poserCookie(res, nom, valeur, jours) {
 
 /** Attache req.session (toujours défini) et res.locals pour les vues.
  *  Toute requête, même anonyme, obtient une session pour porter son
- *  jeton CSRF. */
-export function sessionMiddleware(req, res, next) {
-  let id = lireCookie(req, COOKIE);
-  let session = obtenirSession(id);
-  if (!session) {
-    session = creerSessionInvite();
-    poserCookie(res, COOKIE, session.id, 1);
+ *  jeton CSRF. Asynchrone : la session vit désormais en Postgres. */
+export async function sessionMiddleware(req, res, next) {
+  try {
+    let id = lireCookie(req, COOKIE);
+    let session = await obtenirSession(id);
+    if (!session) {
+      session = await creerSessionInvite();
+      poserCookie(res, COOKIE, session.id, 1);
+    }
+    req.session = session;
+    res.locals.csrfToken = session.csrf;
+    res.locals.session = session;
+    next();
+  } catch (err) {
+    next(err);
   }
-  req.session = session;
-  res.locals.csrfToken = session.csrf;
-  res.locals.session = session;
-  next();
 }
 
 export function verifierCsrf(req, res, next) {
@@ -105,9 +108,4 @@ export function redirigerRetour(req, res, parDefaut) {
     } catch { /* Referer absent ou invalide */ }
   }
   res.redirect(parDefaut);
-}
-
-export function chargerReglages() {
-  const lignes = db.prepare(`SELECT cle, valeur FROM reglages`).all();
-  return Object.fromEntries(lignes.map(l => [l.cle, l.valeur]));
 }

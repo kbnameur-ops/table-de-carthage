@@ -1,23 +1,32 @@
 # La Table de Carthage
 
 Site et back-office du restaurant tunisien **La Table de Carthage** — application
-dynamique Node.js/Express/SQLite : réservation en ligne avec disponibilités
+dynamique Node.js/Express/Postgres : réservation en ligne avec disponibilités
 réelles, commande à emporter, espace client, et un salon (back-office) pour
-tout gérer sans toucher au code.
+tout gérer sans toucher au code. Pensée pour tourner sur Vercel (Vercel
+Postgres/Neon + Vercel Blob) aussi bien que sur un serveur classique.
 
-## Démarrage rapide
+## Démarrage rapide (développement local)
+
+Prérequis : un Postgres accessible en local (ex. `postgresql://postgres:devlocal@127.0.0.1:5432/table_de_carthage`).
 
 ```bash
 npm install
-npm run seed        # importe la carte de départ et crée 2 services
+createdb table_de_carthage        # ou via psql : CREATE DATABASE table_de_carthage;
+npm run migrate      # applique server/schema.sql (idempotent)
+npm run seed          # importe la carte de départ et crée 2 services
 npm run admin -- "vous@exemple.fr" "un-mot-de-passe-d-au-moins-10-caracteres" "Votre nom"
-npm start            # http://localhost:3000
+npm start              # http://localhost:3000
 ```
 
 - Le site public est servi à `/`.
 - Le salon (back-office) est à `/salon/connexion`, avec le compte créé ci-dessus.
-- La base est un unique fichier SQLite : `data/restaurant.db` (créé au premier lancement).
-  Sauvegarder = copier ce fichier.
+- Sans variable d'environnement, l'app se connecte à
+  `postgresql://postgres:devlocal@127.0.0.1:5432/table_de_carthage` — sinon
+  définir `POSTGRES_URL` ou `DATABASE_URL`.
+- Les photos de plats sont stockées sur disque local
+  (`server/public/uploads/plats/`) tant que `BLOB_READ_WRITE_TOKEN` n'est pas
+  défini ; avec ce jeton, elles partent sur Vercel Blob (voir « Déploiement »).
 
 `npm run dev` relance le serveur automatiquement à chaque modification de fichier
 (`node --watch`) — pratique en développement, à ne pas utiliser en production.
@@ -25,18 +34,25 @@ npm start            # http://localhost:3000
 ## Architecture
 
 ```
+api/
+  index.js               point d'entrée Vercel : réexporte server/index.js
 server/
   index.js              point d'entrée : assemble middlewares et routes
-  db.js                 connexion SQLite, applique schema.sql au démarrage
-  schema.sql             tables (voir plus bas)
-  seed.js                importe assets/js/menu-data.js dans la base (une fois)
-  create-admin.js        crée/réinitialise un compte salon (ligne de commande)
-  middleware.js          session, jeton CSRF, exigerClient/exigerAdmin
+                          (exporte l'app Express ; écoute sur PORT en local,
+                          se contente d'être importée sur Vercel)
+  db.js                  connexion Postgres (pg), transaction(), appliquerSchema()
+  migrate.js              applique server/schema.sql (npm run migrate)
+  schema.sql              tables (voir plus bas)
+  seed.js                 importe assets/js/menu-data.js dans la base (une fois)
+  create-admin.js         crée/réinitialise un compte salon (ligne de commande)
+  middleware.js           session, jeton CSRF, exigerClient/exigerAdmin
   lib/
     auth.js               mots de passe (scrypt), sessions, anti-force-brute
     clients.js             identification client (téléphone + date de naissance)
     availability.js        calcul des créneaux disponibles par service
-    money.js, phone.js, validate.js, slug.js, reference.js, image.js, layout.js
+    image.js               photos de plats : Vercel Blob ou disque local selon
+                            BLOB_READ_WRITE_TOKEN
+    money.js, phone.js, validate.js, slug.js, reference.js, layout.js
   routes/
     api.js, api_carte.js           disponibilités + carte publique (JSON)
     reservation.js, commande.js    tunnels publics
@@ -46,8 +62,9 @@ server/
   views/                 gabarits EJS (tunnels, compte, salon)
   public/
     css/app.css           styles de l'application (tunnels, compte, salon)
-    uploads/plats/         photos des plats gérées depuis le salon
-data/restaurant.db       base SQLite (non versionnée)
+    uploads/plats/         photos des plats (mode disque local uniquement,
+                            non versionné)
+vercel.json               réécrit toutes les routes vers la fonction api/index.js
 test/                     tests automatisés (node --test)
 ```
 
@@ -136,23 +153,59 @@ trouve déjà (nom, contact, historique de commandes).
 
 ## Base de données
 
-Un seul fichier SQLite (`data/restaurant.db`), en mode WAL. Tables
-principales : `categories`, `plats`, `services`, `fermetures`, `clients`,
-`reservations`, `commandes` + `commande_lignes`, `admins`, `sessions`,
-`tentatives`, `reglages`. Le détail de chaque colonne et sa raison d'être
-sont commentés dans `server/schema.sql`.
+Postgres (Vercel Postgres/Neon en production, un Postgres ordinaire en
+développement ou sur un VPS). Tables principales : `categories`, `plats`,
+`services`, `fermetures`, `clients`, `reservations`, `commandes` +
+`commande_lignes`, `admins`, `sessions`, `tentatives`, `reglages`. Le détail
+de chaque colonne et sa raison d'être sont commentés dans `server/schema.sql`.
+Les montants sont en centimes (entiers) ; les dates métier restent en texte
+ISO plutôt qu'en `DATE`/`TIME` natifs (voir l'en-tête du fichier).
 
-## Déploiement
+`server/db.js` n'applique jamais le schéma automatiquement au démarrage
+(une fonction serverless démarre à chaque requête froide, ce serait coûteux
+et inutile) : lancer `npm run migrate` explicitement, une fois, après avoir
+provisionné la base.
 
-- Définir `NODE_ENV=production` (active `Secure` sur le cookie de session —
-  indispensable dès que le site est servi en HTTPS, ce qu'il doit être).
-- `PORT` (par défaut 3000) et `DB_PATH` (par défaut `data/restaurant.db`)
-  sont configurables par variable d'environnement.
+## Déploiement sur Vercel (recommandé)
+
+L'app est un unique projet Vercel : une fonction serverless (`api/index.js`)
+sert tout (vitrine, tunnels, espace client, salon), routée par `vercel.json`.
+Un système de fichiers serverless étant éphémère, la base et les photos de
+plats vivent hors de la fonction :
+
+1. **Provisionner une base Postgres** — Vercel Postgres ou Neon (intégration
+   Vercel) depuis l'onglet Storage du projet. Vercel y ajoute automatiquement
+   les variables `POSTGRES_URL`/`DATABASE_URL`.
+2. **Provisionner un store Vercel Blob** — même onglet Storage. Vercel ajoute
+   `BLOB_READ_WRITE_TOKEN` automatiquement ; dès qu'il est présent, les
+   photos de plats uploadées depuis le salon partent sur Blob au lieu du
+   disque local (voir `server/lib/image.js`).
+3. **Appliquer le schéma** une fois la base créée : en local, avec les
+   variables d'environnement de production dans le shell (`vercel env pull`
+   puis `npm run migrate`), ou en exécutant `node server/migrate.js` depuis
+   n'importe quel environnement ayant accès à `POSTGRES_URL`.
+4. **Semer la carte de départ** (`npm run seed`, mêmes variables) et créer le
+   premier compte salon (`npm run admin -- ...`) — les deux tournent en
+   local contre la base de production, il n'y a rien à exécuter côté Vercel.
+5. **Déployer** (`vercel deploy` ou intégration Git) : `vercel.json` route
+   toutes les requêtes vers `api/index.js`, qui réexporte l'app Express de
+   `server/index.js`.
+
+Le cookie de session est marqué `Secure` dès que `NODE_ENV=production` (mis
+par défaut sur Vercel) — le site y est nécessairement servi en HTTPS.
+
+## Déploiement traditionnel (VPS)
+
+- Provisionner un Postgres classique et définir `DATABASE_URL` (ou
+  `POSTGRES_URL`) en conséquence ; `npm run migrate` une fois pour créer les
+  tables.
+- Ne pas définir `BLOB_READ_WRITE_TOKEN` : les photos de plats restent alors
+  sur le disque local (`server/public/uploads/plats/`) — à inclure dans les
+  sauvegardes, avec la base elle-même (`pg_dump`).
+- Définir `NODE_ENV=production` (active `Secure` sur le cookie de session).
 - Faire tourner `node server/index.js` derrière un reverse proxy (Nginx,
   Caddy) qui termine le TLS — un VPS à quelques euros par mois suffit
   largement (le trafic d'un restaurant reste modeste).
-- Sauvegarder régulièrement `data/restaurant.db` (copie de fichier : il n'y a
-  rien d'autre côté base de données).
 
 ## Tests
 
