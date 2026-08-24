@@ -14,6 +14,8 @@ assets/js/main.js          interactions
 assets/img/logo.jpg        sceau de la maison
 assets/img/salle.jpg       photo de la salle
 assets/img/plats/          photos des plats (nommées comme la clé `photo`)
+                           couscous-agneau-alt.jpg n'est pas utilisée : c'est
+                           la photo d'agneau précédente, gardée en réserve
 ```
 
 ## Modifier la carte

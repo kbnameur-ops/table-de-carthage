@@ -413,7 +413,8 @@ button{font:inherit;color:inherit}
 .signature{padding:clamp(5rem,11vw,9rem) 0;background:var(--cream-2)}
 .sig__grid{display:grid;gap:1.6rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
 .sig{
-  position:relative;background:var(--cream);padding:2.6rem 1.9rem 2rem;
+  --sig-pad:1.9rem;
+  position:relative;background:var(--cream);padding:2.6rem var(--sig-pad) 2rem;
   border:1px solid rgba(14,42,78,.1);overflow:hidden;isolation:isolate;
   transition:transform .6s var(--ease),box-shadow .6s var(--ease);
 }
@@ -731,3 +732,18 @@ button{font:inherit;color:inherit}
 .lightbox__close:focus-visible{outline:2px solid var(--gold-500);outline-offset:3px}
 
 .nowrap{white-space:nowrap}
+
+/* ══════════════ PHOTO SUR LES CARTES SIGNATURE ══════════════ */
+.sig{padding-top:0;overflow:hidden}
+.sig__photo{
+  /* max-width:none : la règle globale img{max-width:100%} plafonnerait la
+     largeur à celle du contenu et annulerait le débord sur les marges. */
+  width:calc(100% + 2 * var(--sig-pad));max-width:none;
+  margin:0 calc(-1 * var(--sig-pad)) 1.8rem;
+  height:210px;object-fit:cover;display:block;
+  filter:saturate(.92);
+  transition:transform .9s var(--ease),filter .7s var(--ease);
+}
+.sig:hover .sig__photo{transform:scale(1.05);filter:saturate(1.05)}
+.sig__num{top:220px;right:1.1rem}
+@media (max-width:600px){.sig__photo{height:170px}.sig__num{top:180px}}

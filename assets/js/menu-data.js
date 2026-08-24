@@ -10,11 +10,11 @@ const MENU = [
     name: 'Couscous',
     tagline: 'Semoule, bouillon et légumes, servis en généreuses assiettes',
     items: [
-      { name: 'Couscous Royal',        desc: "Agneau, merguez et poulet réunis dans le même plat", price: 20,    star: true },
-      { name: "Couscous à l'Agneau",   desc: "Épaule confite au bouillon safrané",                 price: 16.50, photo: 'couscous-agneau' },
-      { name: 'Couscous au Merguez',   desc: "Merguez grillées",                        price: 15.50 },
-      { name: 'Couscous au Poulet',    desc: "Cuisse dorée, légumes fondants",                      price: 15.50 },
-      { name: 'Couscous Végétarien',   desc: "Sept légumes, pois chiches, harissa à part",          price: 13,    veg: true }
+      { name: 'Couscous Royal',        desc: "Agneau, merguez et poulet réunis dans le même plat", price: 20,    star: true, photo: 'couscous-royal' },
+      { name: "Couscous à l'Agneau",   desc: "Morceaux d'agneau, pois chiches et légumes du bouillon", price: 16.50, photo: 'couscous-agneau' },
+      { name: 'Couscous au Merguez',   desc: "Merguez et légumes du bouillon",          price: 15.50, photo: 'couscous-merguez' },
+      { name: 'Couscous au Poulet',    desc: "Cuisse de poulet et légumes du bouillon",              price: 15.50, photo: 'couscous-poulet' },
+      { name: 'Couscous Végétarien',   desc: "Légumes du bouillon, sans viande",                    price: 13,    veg: true, photo: 'couscous-vegetarien' }
     ]
   },
   {
