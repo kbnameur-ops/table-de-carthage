@@ -29,7 +29,7 @@
     <label>Photo</label>
     <% if (plat && plat.photo) { %>
       <div style="margin-bottom:.6rem">
-        <img class="plat-photo" src="/uploads/plats/<%= plat.photo %>" alt="" style="width:100px;height:100px">
+        <img class="plat-photo" src="<%= plat.photo %>" alt="" style="width:100px;height:100px">
         <label style="display:inline-flex;align-items:center;gap:.4rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--err);margin-left:.8rem">
           <input type="checkbox" name="supprimerPhoto" style="width:auto"> Retirer la photo
         </label>

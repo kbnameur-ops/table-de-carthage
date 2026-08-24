@@ -1,8 +1,12 @@
 <%- entete %>
+<div class="page-head">
+  <div class="wrap">
+    <p class="page-head__kicker">La Table de Carthage</p>
+    <h1>Commander à emporter</h1>
+    <p class="lead">Composez votre commande, choisissez une heure de retrait. Le paiement se fait sur place, au retrait.</p>
+  </div>
+</div>
 <div class="wrap">
-  <h1>Commander à emporter</h1>
-  <p class="lead">Composez votre commande, choisissez une heure de retrait. Le paiement se fait sur place, au retrait.</p>
-
   <% if (erreurGenerale) { %>
     <div class="alerte alerte--erreur"><%= erreurGenerale %></div>
   <% } %>
@@ -18,7 +22,9 @@
           <% cat.plats.forEach(plat => { %>
             <div class="menu-plat">
               <% if (plat.photo) { %>
-                <img class="plat-photo" src="/uploads/plats/<%= plat.photo %>" alt="">
+                <img class="plat-photo" src="<%= plat.photo %>" alt="">
+              <% } else { %>
+                <div class="plat-photo plat-photo--placeholder" aria-hidden="true"><%= plat.nom.charAt(0) %></div>
               <% } %>
               <div class="menu-plat__infos">
                 <h4><%= plat.nom %><% if (plat.vegetarien) { %> <span class="badge badge--veg">Végé</span><% } %></h4>

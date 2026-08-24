@@ -1,8 +1,12 @@
 <%- entete %>
+<div class="page-head">
+  <div class="wrap">
+    <p class="page-head__kicker">La Table de Carthage</p>
+    <h1>Réserver une table</h1>
+    <p class="lead">Choisissez une date et un nombre de couverts pour voir les créneaux disponibles.</p>
+  </div>
+</div>
 <div class="wrap">
-  <h1>Réserver une table</h1>
-  <p class="lead">Choisissez une date et un nombre de couverts pour voir les créneaux disponibles.</p>
-
   <% if (erreurGenerale) { %>
     <div class="alerte alerte--erreur"><%= erreurGenerale %></div>
   <% } %>
