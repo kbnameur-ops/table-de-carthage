@@ -175,10 +175,33 @@
       '@context': 'https://schema.org',
       '@type': 'Restaurant',
       name: 'La Table de Carthage',
+      description: "Restaurant tunisien à Puteaux : couscous, ojja, kafteji, grillades au charbon de bois et pâtisseries maison.",
+      image: location.origin + location.pathname.replace(/[^/]*$/, '') + 'assets/img/logo.jpg',
       servesCuisine: ['Tunisienne', 'Méditerranéenne', 'Nord-africaine'],
       priceRange: '€€',
       currenciesAccepted: 'EUR',
-      openingHours: ['Tu-Su 12:00-14:30', 'Tu-Su 19:00-23:00'],
+      paymentAccepted: 'Espèces, Carte bancaire',
+      telephone: '+33761976711',
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: '6 boulevard Richard Wallace',
+        postalCode: '92800',
+        addressLocality: 'Puteaux',
+        addressRegion: 'Île-de-France',
+        addressCountry: 'FR'
+      },
+      geo: { '@type': 'GeoCoordinates', latitude: 48.878831, longitude: 2.242182 },
+      hasMap: 'https://maps.google.com/?q=6+boulevard+Richard+Wallace+92800+Puteaux',
+      sameAs: [
+        'https://www.instagram.com/latab_ledecarthage',
+        'https://www.facebook.com/p/La-Table-de-Carthage-61583761137287/',
+        'https://annuaire-entreprises.data.gouv.fr/entreprise/la-table-de-carthage-100477553'
+      ],
+      openingHoursSpecification: [
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'], opens: '12:00', closes: '23:00' },
+        { '@type': 'OpeningHoursSpecification', dayOfWeek: 'Sunday', opens: '12:00', closes: '22:00' }
+      ],
+      acceptsReservations: 'True',
       hasMenu: {
         '@type': 'Menu',
         hasMenuSection: MENU.map(c => ({
@@ -321,6 +344,18 @@
         ticking = false;
       });
     }, { passive: true });
+  })();
+
+  /* ── Mentions légales ────────────────────────────────── */
+  (function legal () {
+    const btn = $('#legalToggle'), box = $('#legalBox');
+    if (!btn || !box) return;
+    btn.addEventListener('click', () => {
+      const open = box.hasAttribute('hidden');
+      box.toggleAttribute('hidden', !open);
+      btn.setAttribute('aria-expanded', String(open));
+      btn.classList.toggle('is-open', open);
+    });
   })();
 
   observeReveals();
