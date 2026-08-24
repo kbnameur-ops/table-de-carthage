@@ -55,7 +55,7 @@ const MENU = [
     items: [
       { name: 'Grillade Mixte',    desc: "Côtes d'agneau, merguez, foie et escalope de poulet", price: 22, star: true, photo: 'grillade-mixte' },
       { name: "Grillade d'Agneau", desc: "Côtes d'agneau grillées, servies avec frites et salades", price: 21, photo: 'grillade-agneau' },
-      { name: 'Poisson Grillé',    desc: "Pêche du jour, huile d'olive et citron",               price: 19 },
+      { name: 'Poisson Grillé',    desc: "Poisson entier grillé, citron, frites et salades",     price: 19, photo: 'poisson-grille' },
       { name: 'Grillade Merguez',  desc: "Merguez grillées",                            price: 16, photo: 'grillade-merguez' },
       { name: 'Grillade Escalope', desc: "Escalopes de poulet grillées, frites et salades",       price: 16, photo: 'grillade-escalope' }
     ]
@@ -65,10 +65,10 @@ const MENU = [
     name: 'Divers',
     tagline: 'Les classiques de la maison',
     items: [
-      { name: 'Mloukhia',           desc: "Poudre de corète mijotée 7 h avec son veau", price: 16.50, star: true },
-      { name: 'Kamounia',           desc: "Ragoût au cumin, longuement mijoté",          price: 16 },
-      { name: 'Assiette Tunisienne',desc: "Salade méchouia, thon, œuf, olives, câpres",  price: 12 },
-      { name: 'Assiette de Frites', desc: "Frites à partager",                                price: 4, veg: true }
+      { name: 'Mloukhia',           desc: "Poudre de corète mijotée 7 h avec son veau", price: 16.50, star: true, photo: 'mloukhia' },
+      { name: 'Kamounia',           desc: "Ragoût mijoté au cumin",                      price: 16, photo: 'kamounia' },
+      { name: 'Assiette Tunisienne',desc: "Légumes en dés, thon, œuf, pommes de terre, olives et câpres", price: 12, photo: 'assiette-tunisienne' },
+      { name: 'Assiette de Frites', desc: "Frites à partager",                            price: 4, veg: true, photo: 'frites' }
     ]
   },
   {
