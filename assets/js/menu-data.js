@@ -76,10 +76,10 @@ const MENU = [
     name: 'Desserts',
     tagline: 'Les douceurs tunisiennes pour finir',
     items: [
-      { name: 'Assidet Zgougou',      desc: "Crème de graines de pin d'Alep, crème vanille", price: 6, veg: true, star: true },
-      { name: 'Bouza',                desc: "Crème de sorgho aux fruits secs",                price: 7, veg: true },
-      { name: 'Jwajem',               desc: "Douceur traditionnelle au miel",                 price: 6, veg: true },
-      { name: 'Pâtisserie Tunisienne',desc: "Assortiment du jour : makroud, baklawa, kaak",   price: 6, veg: true }
+      { name: 'Assidet Zgougou',      desc: "Crème de graines de pin d'Alep, crème vanille et fruits secs", price: 6, veg: true, star: true, photo: 'assidet-zgougou' },
+      { name: 'Bouza',                desc: "Crème de sorgho aux fruits secs",                price: 7, veg: true, photo: 'bouza' },
+      { name: 'Jwajem',               desc: "Coupe crémeuse, fruits frais et fruits secs",    price: 6, veg: true, photo: 'jwajem' },
+      { name: 'Pâtisserie Tunisienne',desc: "Assortiment aux amandes, pistaches et pignons",  price: 6, veg: true, photo: 'patisserie-tunisienne' }
     ]
   }
 ];
