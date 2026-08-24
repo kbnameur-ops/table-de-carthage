@@ -98,7 +98,21 @@ permettent à Google d'afficher le menu et la fiche établissement dans ses
 résultats. Testez-les avec le
 [test des résultats enrichis](https://search.google.com/test/rich-results).
 
+## Version en fichier unique
+
+```bash
+node build.mjs              # → dist/index.html  (page autonome)
+node build.mjs --fragment   # → dist/artifact.html (sans <html>/<head>/<body>)
+```
+
+Le CSS, le JavaScript et le logo sont incorporés dans le HTML : `dist/index.html`
+s'ouvre par double-clic, s'envoie par mail et s'héberge n'importe où, sans le
+dossier `assets`. Pratique pour montrer le site ou le déposer chez un hébergeur
+qui n'accepte qu'un fichier. `dist/` n'est pas versionné : relancez le build
+après chaque modification.
+
 ## Mise en ligne
 
 N'importe quel hébergement statique : GitHub Pages, Netlify, Vercel, ou un
-simple dossier sur un serveur web.
+simple dossier sur un serveur web. Déposez `index.html` et le dossier `assets`,
+ou le seul `dist/index.html`.
