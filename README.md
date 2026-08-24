@@ -53,9 +53,10 @@ et dans les données structurées de `assets/js/main.js` :
 | APE | 56.10A — Restauration traditionnelle |
 | Forme | SAS · RCS Nanterre · Président : Ayoub Khlifi |
 
-> **À vérifier** : le numéro de téléphone provient des annuaires en ligne
-> (Pages Jaunes). Confirmez-le avant la mise en ligne — il apparaît 4 fois dans
-> `index.html`, sous la forme `07 61 97 67 11` et `tel:+33761976711`.
+Toutes ces informations sont vérifiées. Pour changer le téléphone, remplacer les
+4 occurrences dans `index.html` (`07 61 97 67 11` à l'affichage, `tel:+33761976711`
+dans les liens) et la clé `telephone` des données structurées dans
+`assets/js/main.js`.
 
 Le formulaire de réservation valide et confirme côté navigateur, mais
 **n'envoie rien** : à brancher sur un service d'envoi (Formspree, Netlify Forms,
