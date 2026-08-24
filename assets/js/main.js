@@ -132,7 +132,12 @@
           <p>${cat.tagline}</p>
         </header>
         ${cat.items.map(it => `
-          <article class="dish">
+          <article class="dish${it.photo ? ' dish--photo' : ''}">
+            ${it.photo ? `
+              <button type="button" class="dish__thumb" data-photo="${it.photo}" data-name="${it.name}"
+                      aria-label="Agrandir la photo : ${it.name}">
+                <img src="assets/img/plats/${it.photo}.jpg" alt="${it.name}" loading="lazy">
+              </button>` : ''}
             <h4 class="dish__name">
               ${it.name}
               ${it.veg ? '<i class="veg-dot" title="Végétarien" aria-label="Végétarien"></i>' : ''}
@@ -157,6 +162,7 @@
         b.setAttribute('aria-selected', String(on));
       });
       const f = btn.dataset.filter;
+      grid.classList.toggle('is-single', f !== 'all');
       $$('.cat', grid).forEach(sec => {
         const show = f === 'all' || sec.dataset.cat === f;
         sec.classList.toggle('is-hidden', !show);
@@ -166,17 +172,64 @@
 
     observeReveals();
     injectSchema();
+    lightbox(grid);
   })();
+
+  /* ── Visionneuse plein écran ─────────────────────────── */
+  function lightbox (scope) {
+    const box = document.createElement('div');
+    box.className = 'lightbox';
+    box.setAttribute('aria-hidden', 'true');
+    box.innerHTML = `
+      <button type="button" class="lightbox__close" aria-label="Fermer">&times;</button>
+      <figure class="lightbox__fig">
+        <img alt="">
+        <figcaption></figcaption>
+      </figure>`;
+    document.body.appendChild(box);
+
+    const img = $('img', box), cap = $('figcaption', box);
+    let opener = null;
+
+    const open = btn => {
+      opener = btn;
+      img.src = btn.querySelector('img').src;
+      img.alt = btn.dataset.name;
+      cap.textContent = btn.dataset.name;
+      box.classList.add('is-open');
+      box.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('is-locked');
+      $('.lightbox__close', box).focus();
+    };
+    const close = () => {
+      box.classList.remove('is-open');
+      box.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('is-locked');
+      if (opener) opener.focus();
+    };
+
+    scope.addEventListener('click', e => {
+      const btn = e.target.closest('.dish__thumb');
+      if (btn) open(btn);
+    });
+    box.addEventListener('click', e => {
+      if (e.target === box || e.target.closest('.lightbox__close')) close();
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && box.classList.contains('is-open')) close();
+    });
+  }
 
   /* ── Données structurées (SEO) ───────────────────────── */
   function injectSchema () {
     if (typeof MENU === 'undefined') return;
+    const base = location.origin + location.pathname.replace(/[^/]*$/, '');
     const data = {
       '@context': 'https://schema.org',
       '@type': 'Restaurant',
       name: 'La Table de Carthage',
       description: "Restaurant tunisien à Puteaux : couscous, ojja, kafteji, grillades au charbon de bois et pâtisseries maison.",
-      image: location.origin + location.pathname.replace(/[^/]*$/, '') + 'assets/img/logo.jpg',
+      image: base + 'assets/img/logo.jpg',
       servesCuisine: ['Tunisienne', 'Méditerranéenne', 'Nord-africaine'],
       priceRange: '€€',
       currenciesAccepted: 'EUR',
@@ -212,12 +265,16 @@
         hasMenuSection: MENU.map(c => ({
           '@type': 'MenuSection',
           name: c.name,
-          hasMenuItem: c.items.map(i => ({
-            '@type': 'MenuItem',
-            name: i.name,
-            description: i.desc,
-            offers: { '@type': 'Offer', price: i.price.toFixed(2), priceCurrency: 'EUR' }
-          }))
+          hasMenuItem: c.items.map(i => {
+            const item = {
+              '@type': 'MenuItem',
+              name: i.name,
+              description: i.desc,
+              offers: { '@type': 'Offer', price: i.price.toFixed(2), priceCurrency: 'EUR' }
+            };
+            if (i.photo) item.image = base + 'assets/img/plats/' + i.photo + '.jpg';
+            return item;
+          })
         }))
       }
     };

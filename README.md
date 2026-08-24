@@ -12,6 +12,8 @@ assets/css/style.css       styles + animations
 assets/js/menu-data.js     la carte (source unique : affichage + données SEO)
 assets/js/main.js          interactions
 assets/img/logo.jpg        sceau de la maison
+assets/img/salle.jpg       photo de la salle
+assets/img/plats/          photos des plats (nommées comme la clé `photo`)
 ```
 
 ## Modifier la carte
@@ -32,6 +34,16 @@ Tout se passe dans `assets/js/menu-data.js`. Chaque catégorie :
 - `price` : nombre en euros (`16.5` s'affiche « 16,50 € »).
 - `star: true` : badge **Signature**.
 - `veg: true` : pastille verte « végétarien ».
+- `photo: 'nom-du-fichier'` : affiche une vignette cliquable. Déposez l'image
+  dans `assets/img/plats/nom-du-fichier.jpg` — largeur 1000 px, qualité 82,
+  c'est le réglage utilisé pour les photos actuelles.
+
+### Règle d'écriture des descriptions
+
+Ne décrivez que ce qui est vérifiable : les ingrédients du plat. **Pas de
+procédé ni d'origine** (« roulé à la main », « au charbon de bois », « zgougou
+de Nabeul ») tant que ce n'est pas confirmé par la cuisine — ces mentions
+engagent le restaurant auprès du client.
 
 Le bouton de filtre et les données structurées `schema.org/Restaurant`
 (référencement Google) se régénèrent automatiquement.
@@ -107,7 +119,9 @@ node build.mjs --fragment   # → dist/artifact.html (sans <html>/<head>/<body>)
 
 Le CSS, le JavaScript et le logo sont incorporés dans le HTML : `dist/index.html`
 s'ouvre par double-clic, s'envoie par mail et s'héberge n'importe où, sans le
-dossier `assets`. Pratique pour montrer le site ou le déposer chez un hébergeur
+dossier `assets`. Les images des données structurées y sont retirées (elles
+pointeraient vers des fichiers absents) : **pour la mise en production,
+déployez la version multi-fichiers**, qui garde le référencement complet. Pratique pour montrer le site ou le déposer chez un hébergeur
 qui n'accepte qu'un fichier. `dist/` n'est pas versionné : relancez le build
 après chaque modification.
 

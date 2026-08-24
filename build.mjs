@@ -16,8 +16,15 @@ const html = read('./index.html');
 const css  = read('./assets/css/style.css');
 const data = read('./assets/js/menu-data.js');
 const main = read('./assets/js/main.js');
-const logo = 'data:image/jpeg;base64,' +
-  readFileSync(new URL('./assets/img/logo.jpg', import.meta.url)).toString('base64');
+const dataUri = f => 'data:image/jpeg;base64,' +
+  readFileSync(new URL(f, import.meta.url)).toString('base64');
+const logo = dataUri('./assets/img/logo.jpg');
+
+// Chaque photo référencée dans le HTML ou construite par le JS depuis menu-data
+const photos = new Map([['assets/img/salle.jpg', dataUri('./assets/img/salle.jpg')]]);
+for (const [, nom] of data.matchAll(/photo: '([\w-]+)'/g)) {
+  photos.set(`assets/img/plats/${nom}.jpg`, dataUri(`./assets/img/plats/${nom}.jpg`));
+}
 
 // Les remplacements passent par des fonctions : dans une chaîne de
 // remplacement, `$$` et `$&` sont des motifs spéciaux qui corrompraient le code.
@@ -26,6 +33,22 @@ let out = html
   .replace('<script src="assets/js/menu-data.js"></script>\n<script src="assets/js/main.js"></script>',
            () => `<script>\n${data}\n${main}\n</script>`)
   .replaceAll('assets/img/logo.jpg', () => logo);
+
+// Le JS compose ses chemins d'image à l'exécution : on les fait pointer vers
+// une table nom → image incorporée, déclarée en tête du script.
+const table = Object.fromEntries(
+  [...photos].filter(([k]) => k.includes('/plats/'))
+             .map(([k, v]) => [k.split('/').pop().replace('.jpg', ''), v]));
+
+out = out
+  .replace('assets/img/plats/${it.photo}.jpg', () => '${PHOTOS[it.photo]}')
+  // Les données structurées pointeraient vers des fichiers absents de cette
+  // version : mieux vaut aucune image qu'une URL morte.
+  .replace("if (i.photo) item.image = base + 'assets/img/plats/' + i.photo + '.jpg';", '')
+  .replace("image: base + 'assets/img/logo.jpg',", '')
+  .replace('<script>', () => `<script>\nconst PHOTOS = ${JSON.stringify(table)};`);
+
+for (const [chemin, uri] of photos) out = out.replaceAll(chemin, () => uri);
 
 if (fragment) {
   const head = out.slice(out.indexOf('<head>') + 6, out.indexOf('</head>'));

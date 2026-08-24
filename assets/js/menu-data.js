@@ -8,11 +8,11 @@ const MENU = [
   {
     id: 'couscous',
     name: 'Couscous',
-    tagline: 'Semoule roulée à la main, bouillon de légumes du jour',
+    tagline: 'Semoule, bouillon et légumes, servis en généreuses assiettes',
     items: [
       { name: 'Couscous Royal',        desc: "Agneau, merguez et poulet réunis dans le même plat", price: 20,    star: true },
-      { name: "Couscous à l'Agneau",   desc: "Épaule confite au bouillon safrané",                 price: 16.50 },
-      { name: 'Couscous au Merguez',   desc: "Merguez grillées à la braise",                        price: 15.50 },
+      { name: "Couscous à l'Agneau",   desc: "Épaule confite au bouillon safrané",                 price: 16.50, photo: 'couscous-agneau' },
+      { name: 'Couscous au Merguez',   desc: "Merguez grillées",                        price: 15.50 },
       { name: 'Couscous au Poulet',    desc: "Cuisse dorée, légumes fondants",                      price: 15.50 },
       { name: 'Couscous Végétarien',   desc: "Sept légumes, pois chiches, harissa à part",          price: 13,    veg: true }
     ]
@@ -22,9 +22,9 @@ const MENU = [
     name: 'Pâtes',
     tagline: 'Nos pâtes à la tunisienne, sauce longuement mijotée',
     items: [
-      { name: 'Pâtes au Poulet',        desc: "Sauce rouge légèrement relevée",            price: 15 },
-      { name: "Pâtes à l'Agneau",       desc: "Morceaux d'agneau mijotés au tabil",        price: 16.50 },
-      { name: 'Pâtes aux Fruits de Mer',desc: "Crevettes, calamars, parfum d'ail et persil",price: 18 }
+      { name: 'Pâtes au Poulet',        desc: "Sauce rouge légèrement relevée",            price: 15,    photo: 'pates-poulet' },
+      { name: "Pâtes à l'Agneau",       desc: "Morceaux d'agneau mijotés au tabil",        price: 16.50, photo: 'pates-agneau' },
+      { name: 'Pâtes aux Fruits de Mer',desc: "Crevettes, calamars, moules et palourdes",   price: 18,    photo: 'pates-fruits-de-mer' }
     ]
   },
   {
@@ -32,9 +32,9 @@ const MENU = [
     name: 'Ojja',
     tagline: 'Servie brûlante dans sa poêle, œufs coulants',
     items: [
-      { name: 'Ojja Nature',        desc: "Tomate, poivron, harissa, œufs",       price: 12, veg: true },
-      { name: 'Ojja Merguez',       desc: "Merguez maison tranchées",             price: 14 },
-      { name: 'Ojja Fruits de Mer', desc: "Crevettes et calamars du jour",        price: 16, star: true }
+      { name: 'Ojja Nature',        desc: "Tomate, poivron, harissa, œufs",       price: 12, veg: true, photo: 'ojja-nature' },
+      { name: 'Ojja Merguez',       desc: "Merguez tranchées dans la sauce",      price: 14, photo: 'ojja-merguez' },
+      { name: 'Ojja Fruits de Mer', desc: "Crevettes, calamars et moules",        price: 16, star: true, photo: 'ojja-fruits-de-mer' }
     ]
   },
   {
@@ -44,19 +44,19 @@ const MENU = [
     items: [
       { name: 'Kafteji Nature',   desc: "Courgette, poivron, pomme de terre, œuf", price: 12, veg: true },
       { name: 'Kafteji Escalope', desc: "Escalope de poulet grillée",              price: 14 },
-      { name: 'Kafteji Merguez',  desc: "Merguez de la maison",                     price: 14 },
+      { name: 'Kafteji Merguez',  desc: "Merguez grillées",                     price: 14 },
       { name: 'Kafteji Foie',     desc: "Foie de veau poêlé au carvi",              price: 14 }
     ]
   },
   {
     id: 'grillades',
     name: 'Grillades',
-    tagline: 'Au charbon de bois, servies avec frites ou salade',
+    tagline: 'Viandes et poisson saisis à la commande',
     items: [
       { name: 'Grillade Mixte',    desc: "Côtes d'agneau, merguez, foie et escalope de poulet", price: 22, star: true },
       { name: "Grillade d'Agneau", desc: "Côtes d'agneau marinées au tabil",                     price: 21 },
       { name: 'Poisson Grillé',    desc: "Pêche du jour, huile d'olive et citron",               price: 19 },
-      { name: 'Grillade Merguez',  desc: "Merguez maison à la braise",                            price: 16 },
+      { name: 'Grillade Merguez',  desc: "Merguez grillées",                            price: 16 },
       { name: 'Grillade Escalope', desc: "Escalope de poulet marinée",                            price: 16 }
     ]
   },
@@ -68,13 +68,13 @@ const MENU = [
       { name: 'Mloukhia',           desc: "Poudre de corète mijotée 7 h avec son veau", price: 16.50, star: true },
       { name: 'Kamounia',           desc: "Ragoût au cumin, longuement mijoté",          price: 16 },
       { name: 'Assiette Tunisienne',desc: "Salade méchouia, thon, œuf, olives, câpres",  price: 12 },
-      { name: 'Assiette de Frites', desc: "Frites maison",                                price: 4, veg: true }
+      { name: 'Assiette de Frites', desc: "Frites à partager",                                price: 4, veg: true }
     ]
   },
   {
     id: 'desserts',
     name: 'Desserts',
-    tagline: 'Douceurs de Nabeul, de Sfax et de Tunis',
+    tagline: 'Les douceurs tunisiennes pour finir',
     items: [
       { name: 'Assidet Zgougou',      desc: "Crème de graines de pin d'Alep, crème vanille", price: 6, veg: true, star: true },
       { name: 'Bouza',                desc: "Crème de sorgho aux fruits secs",                price: 7, veg: true },
