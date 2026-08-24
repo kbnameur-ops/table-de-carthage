@@ -36,8 +36,12 @@ app.use(express.urlencoded({ extended: false, limit: '200kb' }));
 app.use(express.json({ limit: '200kb' }));
 
 // ── Session (toujours définie, même pour un visiteur anonyme) ─
-app.use(sessionMiddleware);
+// injecterMiseEnPage doit passer avant sessionMiddleware : si la session
+// échoue (base injoignable, schéma pas encore appliqué...), le gestionnaire
+// d'erreurs plus bas appelle quand même res.render('erreur', ...), qui a
+// besoin d'entete/pied déjà injectés pour ne pas planter à son tour.
 app.use(injecterMiseEnPage);
+app.use(sessionMiddleware);
 
 // ── Routes ──────────────────────────────────────────────────
 app.use('/api', api);

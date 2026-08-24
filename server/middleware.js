@@ -87,7 +87,10 @@ export function injecterMiseEnPage(req, res, next) {
         donnees.salonEntete = salonEntete({ titre: donnees.titre, actif: donnees.actif });
         donnees.salonPied = salonPied({ csrfToken: donnees.csrfToken ?? res.locals.csrfToken });
       } else {
-        donnees.entete = entete({ titre: donnees.titre, session: donnees.session ?? req.session, actif: donnees.actif });
+        // req.session peut être absent si sessionMiddleware a échoué avant
+        // de l'attacher (ex. base injoignable) : on retombe sur un visiteur
+        // anonyme plutôt que de planter le rendu de la page d'erreur elle-même.
+        donnees.entete = entete({ titre: donnees.titre, session: donnees.session ?? req.session ?? { role: 'invite' }, actif: donnees.actif });
         donnees.pied = pied();
       }
     }
