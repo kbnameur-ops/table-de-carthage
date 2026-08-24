@@ -1,0 +1,52 @@
+<%- salonEntete %>
+<h1>Réservations</h1>
+
+<form method="get" action="/salon/reservations" class="filtre-bar">
+  <div class="field">
+    <label for="f-date">Date</label>
+    <input type="date" id="f-date" name="date" value="<%= date %>" onchange="this.form.submit()">
+  </div>
+  <div class="field">
+    <label for="f-statut">Statut</label>
+    <select id="f-statut" name="statut" onchange="this.form.submit()">
+      <option value="">Tous</option>
+      <% statuts.forEach(s => { %>
+        <option value="<%= s %>" <%= s === statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+      <% }) %>
+    </select>
+  </div>
+  <div class="stat-tuile" style="padding:.8rem 1.2rem"><b style="font-size:1.4rem"><%= total %></b><span>Couverts ce jour</span></div>
+</form>
+
+<% if (!reservations.length) { %>
+  <p class="vide">Aucune réservation pour cette date.</p>
+<% } else { %>
+<div class="table-scroll">
+<table>
+  <thead><tr><th>Heure</th><th>Client</th><th>Contact</th><th>Couverts</th><th>Motif</th><th>Message</th><th>Statut</th></tr></thead>
+  <tbody>
+    <% reservations.forEach(r => { %>
+      <tr>
+        <td><%= r.heure %></td>
+        <td><%= r.prenom %> <%= r.nom %><br><small style="color:var(--muted)"><%= r.reference %></small></td>
+        <td><a href="tel:<%= r.telephone_saisi %>"><%= r.telephone_saisi %></a><br><small><%= r.email %></small></td>
+        <td><%= r.couverts %></td>
+        <td><%= r.motif %></td>
+        <td style="max-width:220px"><%= r.message || '—' %></td>
+        <td>
+          <form method="post" action="/salon/reservations/<%= r.id %>/statut">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <select name="statut" onchange="this.form.submit()" class="badge badge--<%= r.statut.replace('_','') %>" style="border:0;padding:.3rem .5rem">
+              <% statuts.forEach(s => { %>
+                <option value="<%= s %>" <%= s === r.statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+              <% }) %>
+            </select>
+          </form>
+        </td>
+      </tr>
+    <% }) %>
+  </tbody>
+</table>
+</div>
+<% } %>
+<%- salonPied %>

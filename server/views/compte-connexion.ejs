@@ -1,0 +1,22 @@
+<%- entete %>
+<div class="wrap">
+  <h1>Mon espace</h1>
+  <p class="lead">Retrouvez vos réservations et commandes avec le numéro de téléphone et la date de naissance donnés lors de votre première visite.</p>
+
+  <% if (erreurGenerale) { %><div class="alerte alerte--erreur"><%= erreurGenerale %></div><% } %>
+
+  <form method="post" action="/compte/connexion" class="card" style="max-width:420px" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="f-telephone">Téléphone</label>
+      <input type="tel" id="f-telephone" name="telephone" value="<%= valeurs.telephone || '' %>" required autofocus>
+    </div>
+    <div class="field">
+      <label for="f-naissance">Date de naissance</label>
+      <input type="date" id="f-naissance" name="dateNaissance" value="<%= valeurs.dateNaissance || '' %>" required>
+    </div>
+    <button type="submit" class="btn">Accéder à mon espace</button>
+  </form>
+  <p class="lead" style="margin-top:1.5rem;font-size:.85rem">Pas encore de compte ? Il se crée automatiquement lors de votre première <a href="/reserver">réservation</a> ou <a href="/commander">commande</a>.</p>
+</div>
+<%- pied %>

@@ -747,3 +747,17 @@ button{font:inherit;color:inherit}
 .sig:hover .sig__photo{transform:scale(1.05);filter:saturate(1.05)}
 .sig__num{top:220px;right:1.1rem}
 @media (max-width:600px){.sig__photo{height:170px}.sig__num{top:180px}}
+
+/* ══════════════ TUNNELS DE RÉSERVATION / COMMANDE ══════════════ */
+.book__tunnels{display:grid;gap:1.4rem;grid-template-columns:1fr 1fr}
+@media (max-width:640px){.book__tunnels{grid-template-columns:1fr}}
+.tunnel-card{
+  display:block;background:#fff;border:1px solid rgba(14,42,78,.12);padding:2rem 1.7rem;
+  transition:transform .5s var(--ease),box-shadow .5s var(--ease),border-color .4s;
+}
+.tunnel-card:hover{transform:translateY(-4px);box-shadow:0 30px 60px -45px rgba(14,42,78,.5);border-color:var(--gold-500)}
+.tunnel-card h3{font-family:var(--ff-title);font-weight:400;font-size:1.3rem;margin:0 0 .6rem;color:var(--navy-800)}
+.tunnel-card p{margin:0 0 1.1rem;color:var(--muted);font-size:.92rem}
+.tunnel-card__cta{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-500)}
+.book__tunnels-note{grid-column:1/-1;text-align:center;color:var(--muted);font-size:.85rem;margin:.3rem 0 0}
+.book__tunnels-note a{border-bottom:1px solid var(--gold-500)}

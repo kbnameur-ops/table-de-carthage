@@ -1,0 +1,24 @@
+<%- salonEntete %>
+<h1><%= titre %></h1>
+<% if (typeof erreur !== 'undefined' && erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+<form method="post" action="<%= categorie ? `/salon/carte/categories/${categorie.id}` : '/salon/carte/categories' %>" class="card" style="max-width:520px">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field">
+    <label for="f-nom">Nom</label>
+    <input type="text" id="f-nom" name="nom" value="<%= categorie ? categorie.nom : '' %>" required maxlength="60">
+  </div>
+  <div class="field">
+    <label for="f-accroche">Accroche (sous-titre affiché sur le site)</label>
+    <input type="text" id="f-accroche" name="accroche" value="<%= categorie ? categorie.accroche : '' %>" maxlength="150">
+  </div>
+  <% if (categorie) { %>
+    <div class="field">
+      <label><input type="checkbox" name="visible" <%= categorie.visible ? 'checked' : '' %> style="width:auto;margin-right:.5rem"> Visible sur le site</label>
+    </div>
+  <% } %>
+  <div class="btn-row">
+    <button type="submit" class="btn">Enregistrer</button>
+    <a class="btn btn--ghost" href="/salon/carte">Annuler</a>
+  </div>
+</form>
+<%- salonPied %>

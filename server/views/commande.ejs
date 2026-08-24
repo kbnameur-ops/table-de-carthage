@@ -1,0 +1,154 @@
+<%- entete %>
+<div class="wrap">
+  <h1>Commander à emporter</h1>
+  <p class="lead">Composez votre commande, choisissez une heure de retrait. Le paiement se fait sur place, au retrait.</p>
+
+  <% if (erreurGenerale) { %>
+    <div class="alerte alerte--erreur"><%= erreurGenerale %></div>
+  <% } %>
+
+  <form method="post" action="/commander" id="formCommande" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <h2>La carte</h2>
+    <% categories.forEach(cat => { %>
+      <div class="card">
+        <h3 style="margin:0 0 1rem;font-family:var(--ff-title);font-weight:400;color:var(--gold-500)"><%= cat.nom %></h3>
+        <div class="menu-carte">
+          <% cat.plats.forEach(plat => { %>
+            <div class="menu-plat">
+              <% if (plat.photo) { %>
+                <img class="plat-photo" src="/uploads/plats/<%= plat.photo %>" alt="">
+              <% } %>
+              <div class="menu-plat__infos">
+                <h4><%= plat.nom %><% if (plat.vegetarien) { %> <span class="badge badge--veg">Végé</span><% } %></h4>
+                <p><%= plat.description %></p>
+              </div>
+              <div class="menu-plat__prix"><%= euros(plat.prix_cents) %></div>
+              <div class="menu-plat__qte">
+                <input type="number" min="0" max="20" value="<%= (valeurs.quantites || {})[plat.id] || 0 %>"
+                       name="qte_<%= plat.id %>" data-prix="<%= plat.prix_cents %>" class="js-qte">
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
+
+    <div class="panier-total">
+      <span>Total</span>
+      <strong id="totalPanier">0,00 €</strong>
+    </div>
+    <% if (erreurs.panier) { %><div class="alerte alerte--erreur"><%= erreurs.panier %></div><% } %>
+
+    <h2>Retrait</h2>
+    <div class="card">
+      <div class="field--row">
+        <div class="field <%= erreurs.date ? 'champ-invalide' : '' %>">
+          <label for="f-date">Date</label>
+          <input type="date" id="f-date" name="date" min="<%= aujourdHui %>" value="<%= valeurs.date || '' %>" required>
+          <% if (erreurs.date) { %><span class="erreur"><%= erreurs.date %></span><% } %>
+        </div>
+        <div class="field <%= erreurs.heure ? 'champ-invalide' : '' %>">
+          <label for="f-heure-select">Heure de retrait</label>
+          <select id="f-heure-select" name="heure" required>
+            <option value="">— choisir une date —</option>
+          </select>
+          <% if (erreurs.heure) { %><span class="erreur"><%= erreurs.heure %></span><% } %>
+        </div>
+      </div>
+    </div>
+
+    <h2>Vos coordonnées</h2>
+    <div class="card">
+      <div class="field--row">
+        <div class="field <%= erreurs.prenom ? 'champ-invalide' : '' %>">
+          <label for="f-prenom">Prénom</label>
+          <input type="text" id="f-prenom" name="prenom" value="<%= valeurs.prenom || '' %>" required>
+          <% if (erreurs.prenom) { %><span class="erreur"><%= erreurs.prenom %></span><% } %>
+        </div>
+        <div class="field <%= erreurs.nom ? 'champ-invalide' : '' %>">
+          <label for="f-nom">Nom</label>
+          <input type="text" id="f-nom" name="nom" value="<%= valeurs.nom || '' %>" required>
+          <% if (erreurs.nom) { %><span class="erreur"><%= erreurs.nom %></span><% } %>
+        </div>
+      </div>
+      <div class="field--row">
+        <div class="field <%= erreurs.telephone ? 'champ-invalide' : '' %>">
+          <label for="f-telephone">Téléphone</label>
+          <input type="tel" id="f-telephone" name="telephone" value="<%= valeurs.telephone || '' %>" required>
+          <% if (erreurs.telephone) { %><span class="erreur"><%= erreurs.telephone %></span><% } %>
+        </div>
+        <div class="field <%= erreurs.email ? 'champ-invalide' : '' %>">
+          <label for="f-email">E-mail</label>
+          <input type="email" id="f-email" name="email" value="<%= valeurs.email || '' %>" required>
+          <% if (erreurs.email) { %><span class="erreur"><%= erreurs.email %></span><% } %>
+        </div>
+      </div>
+      <div class="field <%= erreurs.dateNaissance ? 'champ-invalide' : '' %>" style="max-width:220px">
+        <label for="f-naissance">Date de naissance</label>
+        <input type="date" id="f-naissance" name="dateNaissance" value="<%= valeurs.dateNaissance || '' %>" required>
+        <small>Sert uniquement à sécuriser l'accès à votre espace client.</small>
+        <% if (erreurs.dateNaissance) { %><span class="erreur"><%= erreurs.dateNaissance %></span><% } %>
+      </div>
+      <div class="field">
+        <label for="f-message">Message (facultatif)</label>
+        <textarea id="f-message" name="message" rows="3"><%= valeurs.message || '' %></textarea>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn">Valider la commande</button>
+    </div>
+  </form>
+</div>
+
+<script>
+(function () {
+  const qteInputs = Array.from(document.querySelectorAll('.js-qte'));
+  const totalEl = document.getElementById('totalPanier');
+  function recalc() {
+    const total = qteInputs.reduce((s, i) => s + (parseInt(i.value, 10) || 0) * parseInt(i.dataset.prix, 10), 0);
+    totalEl.textContent = (total / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+  }
+  qteInputs.forEach(i => i.addEventListener('input', recalc));
+  recalc();
+
+  const dateEl = document.getElementById('f-date');
+  const heureSel = document.getElementById('f-heure-select');
+  const heureVoulue = <%- JSON.stringify(valeurs.heure || '') %>;
+  // Même précaution que sur /reserver : ne jamais laisser une réponse
+  // périmée (date changée deux fois de suite) écraser la plus récente.
+  let sequenceHoraires = 0;
+  let derniereDateChargee = null;
+  async function chargerHoraires() {
+    // Cliquer dans le <select> retire le focus du champ date : même piège
+    // que sur /reserver, un blur peut redéclencher 'change' sans que la
+    // date ait changé, et effacerait la liste au moment où l'utilisateur
+    // l'ouvre. On ignore les rechargements pour une date déjà chargée.
+    if (dateEl.value === derniereDateChargee) return;
+    derniereDateChargee = dateEl.value;
+
+    const jeton = ++sequenceHoraires;
+    heureSel.innerHTML = '<option value="">Chargement…</option>';
+    if (!dateEl.value) { heureSel.innerHTML = '<option value="">— choisir une date —</option>'; return; }
+    try {
+      const r = await fetch(`/api/horaires-retrait?date=${encodeURIComponent(dateEl.value)}`);
+      const d = await r.json();
+      if (jeton !== sequenceHoraires) return;
+      if (!d.creneaux.length) {
+        heureSel.innerHTML = '<option value="">Fermé ce jour-là</option>';
+        return;
+      }
+      heureSel.innerHTML = d.creneaux.map(h => `<option value="${h}">${h}</option>`).join('');
+      if (d.creneaux.includes(heureVoulue)) heureSel.value = heureVoulue;
+    } catch {
+      if (jeton !== sequenceHoraires) return;
+      heureSel.innerHTML = '<option value="">Indisponible</option>';
+    }
+  }
+  dateEl.addEventListener('change', chargerHoraires);
+  if (dateEl.value) chargerHoraires();
+})();
+</script>
+<%- pied %>

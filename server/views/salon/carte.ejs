@@ -1,0 +1,80 @@
+<%- salonEntete %>
+<h1>La carte</h1>
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+<div class="btn-row" style="margin-top:0;margin-bottom:2rem">
+  <a class="btn" href="/salon/carte/categories/nouvelle">+ Nouvelle catégorie</a>
+</div>
+
+<% categories.forEach((cat, iCat) => { %>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.8rem">
+      <div>
+        <h2 style="margin:0"><%= cat.nom %> <% if (!cat.visible) { %><span class="badge badge--annulee">Masquée</span><% } %></h2>
+        <p style="margin:.2rem 0 0;color:var(--muted);font-size:.88rem"><%= cat.accroche %></p>
+      </div>
+      <div class="btn-row" style="margin:0">
+        <form method="post" action="/salon/carte/categories/<%= cat.id %>/position" style="display:inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="sens" value="monter">
+          <button type="submit" class="btn btn--ghost btn--sm" <%= iCat === 0 ? 'disabled' : '' %>>↑</button>
+        </form>
+        <form method="post" action="/salon/carte/categories/<%= cat.id %>/position" style="display:inline">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <input type="hidden" name="sens" value="descendre">
+          <button type="submit" class="btn btn--ghost btn--sm" <%= iCat === categories.length - 1 ? 'disabled' : '' %>>↓</button>
+        </form>
+        <a class="btn btn--ghost btn--sm" href="/salon/carte/categories/<%= cat.id %>/modifier">Modifier</a>
+        <form method="post" action="/salon/carte/categories/<%= cat.id %>/supprimer" style="display:inline"
+              onsubmit="return confirm('Supprimer la catégorie « <%= cat.nom %> » et ses <%= cat.plats.length %> plat(s) ?')">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="btn btn--danger btn--sm">Supprimer</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="menu-carte" style="margin-top:1.2rem">
+      <% cat.plats.forEach((plat, iPlat) => { %>
+        <div class="menu-plat">
+          <% if (plat.photo) { %>
+            <img class="plat-photo" src="/uploads/plats/<%= plat.photo %>" alt="">
+          <% } else { %>
+            <div class="plat-photo plat-photo--placeholder">Sans photo</div>
+          <% } %>
+          <div class="menu-plat__infos">
+            <h4>
+              <%= plat.nom %>
+              <% if (plat.vegetarien) { %><span class="badge badge--veg">Végé</span><% } %>
+              <% if (plat.signature) { %><span class="badge badge--signature">Signature</span><% } %>
+              <% if (!plat.visible) { %><span class="badge badge--annulee">Masqué</span><% } %>
+              <% if (!plat.a_emporter) { %><span class="badge badge--attente">Sur place seulement</span><% } %>
+            </h4>
+            <p><%= plat.description %></p>
+          </div>
+          <div class="menu-plat__prix"><%= euros(plat.prix_cents) %></div>
+          <div class="btn-row" style="margin:0">
+            <form method="post" action="/salon/carte/plats/<%= plat.id %>/position" style="display:inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="sens" value="monter">
+              <button type="submit" class="btn btn--ghost btn--sm" <%= iPlat === 0 ? 'disabled' : '' %>>↑</button>
+            </form>
+            <form method="post" action="/salon/carte/plats/<%= plat.id %>/position" style="display:inline">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="sens" value="descendre">
+              <button type="submit" class="btn btn--ghost btn--sm" <%= iPlat === cat.plats.length - 1 ? 'disabled' : '' %>>↓</button>
+            </form>
+            <a class="btn btn--ghost btn--sm" href="/salon/carte/plats/<%= plat.id %>/modifier">Modifier</a>
+            <form method="post" action="/salon/carte/plats/<%= plat.id %>/supprimer" style="display:inline"
+                  onsubmit="return confirm('Supprimer « <%= plat.nom %> » ?')">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="btn btn--danger btn--sm">Supprimer</button>
+            </form>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn--ghost btn--sm" href="/salon/carte/plats/nouveau?categorie=<%= cat.id %>">+ Ajouter un plat dans « <%= cat.nom %> »</a>
+    </div>
+  </div>
+<% }) %>
+<%- salonPied %>

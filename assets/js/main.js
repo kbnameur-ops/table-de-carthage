@@ -121,11 +121,40 @@
   const euro = n => n.toLocaleString('fr-FR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';
 
   /* ── Rendu de la carte ───────────────────────────────── */
-  (function renderMenu () {
-    const grid = $('#menuGrid'), filters = $('#filters');
-    if (!grid || typeof MENU === 'undefined') return;
+  // La carte vient désormais du salon (base de données), servie en direct
+  // par /api/carte : une modification faite dans le salon est visible par
+  // les clients sans redéploiement. Si cette route est inaccessible — export
+  // en fichier unique via build.mjs, page ouverte hors serveur — on retombe
+  // sur menu-data.js, chargé juste avant ce script, qui reste la seule
+  // source utilisable dans ce cas.
+  let MENU_ACTUELLE = typeof MENU !== 'undefined' ? MENU : [];
 
-    grid.innerHTML = MENU.map(cat => `
+  function cheminPhoto (nomFichier) {
+    // Un nom de fichier complet (« plat.jpg ») vient de /api/carte, servi
+    // sous /uploads/plats/. Un nom sans extension vient du secours
+    // menu-data.js, servi sous assets/img/plats/.
+    return /\.\w+$/.test(nomFichier)
+      ? `/uploads/plats/${nomFichier}`
+      : `assets/img/plats/${nomFichier}.jpg`;
+  }
+
+  async function chargerCarteActuelle () {
+    try {
+      const r = await fetch('/api/carte');
+      if (!r.ok) throw new Error('réponse HTTP ' + r.status);
+      const menu = await r.json();
+      if (Array.isArray(menu) && menu.length) MENU_ACTUELLE = menu;
+    } catch {
+      // Hors ligne ou export autonome : la carte embarquée dans
+      // menu-data.js sert de secours, déjà assignée ci-dessus.
+    }
+  }
+
+  function dessinerCarte () {
+    const grid = $('#menuGrid'), filters = $('#filters');
+    if (!grid || !MENU_ACTUELLE.length) return;
+
+    grid.innerHTML = MENU_ACTUELLE.map(cat => `
       <section class="cat${cat.items.some(i => i.photo) ? ' cat--photos' : ''}" data-cat="${cat.id}">
         <header class="cat__head">
           <h3>${cat.name}</h3>
@@ -136,7 +165,7 @@
             ${it.photo ? `
               <button type="button" class="dish__thumb" data-photo="${it.photo}" data-name="${it.name}"
                       aria-label="Agrandir la photo : ${it.name}">
-                <img src="assets/img/plats/${it.photo}.jpg" alt="${it.name}" loading="lazy">
+                <img src="${cheminPhoto(it.photo)}" alt="${it.name}" loading="lazy">
               </button>` : ''}
             <h4 class="dish__name">
               ${it.name}
@@ -148,7 +177,7 @@
           </article>`).join('')}
       </section>`).join('');
 
-    const cats = [{ id: 'all', name: 'Tout' }].concat(MENU.map(c => ({ id: c.id, name: c.name })));
+    const cats = [{ id: 'all', name: 'Tout' }].concat(MENU_ACTUELLE.map(c => ({ id: c.id, name: c.name })));
     filters.innerHTML = cats.map((c, i) =>
       `<button type="button" role="tab" data-filter="${c.id}" class="${i === 0 ? 'is-active' : ''}" aria-selected="${i === 0}">${c.name}</button>`
     ).join('');
@@ -173,7 +202,9 @@
     observeReveals();
     injectSchema();
     lightbox(grid);
-  })();
+  }
+
+  chargerCarteActuelle().then(dessinerCarte);
 
   /* ── Visionneuse plein écran ─────────────────────────── */
   function lightbox (scope) {
@@ -222,8 +253,8 @@
 
   /* ── Données structurées (SEO) ───────────────────────── */
   function injectSchema () {
-    if (typeof MENU === 'undefined') return;
-    const base = location.origin + location.pathname.replace(/[^/]*$/, '');
+    if (!MENU_ACTUELLE.length) return;
+    const base = location.origin + '/';
     const data = {
       '@context': 'https://schema.org',
       '@type': 'Restaurant',
@@ -262,7 +293,7 @@
       ],
       hasMenu: {
         '@type': 'Menu',
-        hasMenuSection: MENU.map(c => ({
+        hasMenuSection: MENU_ACTUELLE.map(c => ({
           '@type': 'MenuSection',
           name: c.name,
           hasMenuItem: c.items.map(i => {
@@ -272,7 +303,7 @@
               description: i.desc,
               offers: { '@type': 'Offer', price: i.price.toFixed(2), priceCurrency: 'EUR' }
             };
-            if (i.photo) item.image = base + 'assets/img/plats/' + i.photo + '.jpg';
+            if (i.photo) item.image = base + cheminPhoto(i.photo).replace(/^\//, '');
             return item;
           })
         }))

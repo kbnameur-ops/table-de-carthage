@@ -58,7 +58,7 @@
     <a href="#signature" data-cursor="link">Signatures</a>
     <a href="#experience" data-cursor="link">La Salle</a>
     <a href="#formules" data-cursor="link">Privatiser</a>
-    <a href="#reserver" class="nav__cta" data-cursor="link">Réserver</a>
+    <a href="/reserver" class="nav__cta" data-cursor="link">Réserver</a>
   </nav>
   <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false"><i></i><i></i><i></i></button>
 </header>
@@ -83,7 +83,7 @@
     </p>
     <div class="hero__actions reveal-up" data-delay="800">
       <a href="#carte" class="btn btn--gold" data-cursor="link"><span>Découvrir la carte</span></a>
-      <a href="#reserver" class="btn btn--ghost" data-cursor="link"><span>Réserver une table</span></a>
+      <a href="/reserver" class="btn btn--ghost" data-cursor="link"><span>Réserver une table</span></a>
     </div>
   </div>
 
@@ -367,56 +367,21 @@
       </p>
     </div>
 
-    <form class="book__form reveal-up" id="bookForm" novalidate>
-      <div class="field">
-        <select id="f-motif" name="motif">
-          <option value="Réservation">Réserver une table</option>
-          <option value="Dîner d'affaires">Formule dîner d'affaires</option>
-          <option value="Privatisation">Privatiser l'établissement</option>
-          <option value="Traiteur">Prestation traiteur</option>
-        </select>
-        <label for="f-motif" class="label--static">Votre demande</label>
-      </div>
-      <div class="field">
-        <input type="text" id="f-name" name="nom" required placeholder=" ">
-        <label for="f-name">Nom complet</label>
-      </div>
-      <div class="field">
-        <input type="tel" id="f-tel" name="tel" required placeholder=" ">
-        <label for="f-tel">Téléphone</label>
-      </div>
-      <div class="field field--half">
-        <input type="date" id="f-date" name="date" required placeholder=" ">
-        <label for="f-date">Date</label>
-      </div>
-      <div class="field field--half">
-        <input type="time" id="f-time" name="heure" required placeholder=" " value="20:00">
-        <label for="f-time">Heure</label>
-      </div>
-      <div class="field field--half">
-        <input type="number" id="f-cov" name="couverts" min="1" max="30" value="2" required placeholder=" ">
-        <label for="f-cov">Couverts</label>
-      </div>
-      <div class="field field--half">
-        <select id="f-serv" name="service">
-          <option>Déjeuner</option>
-          <option selected>Dîner</option>
-        </select>
-        <label for="f-serv" class="label--static">Service</label>
-      </div>
-      <div class="field">
-        <textarea id="f-msg" name="message" rows="3" placeholder=" "></textarea>
-        <label for="f-msg">Allergies, occasion, demande particulière</label>
-      </div>
-      <button type="submit" class="btn btn--gold btn--full" data-cursor="link">
-        <span>
-          <svg class="btn__wa" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5A10.4 10.4 0 0 0 3.6 16.2L2.5 21.5l5.4-1.1a10.4 10.4 0 0 0 12.6-16.9z"/><path d="M8.6 8c.3-.7.5-.7.9-.7h.6c.2 0 .5 0 .7.6l.8 2c.1.3 0 .5-.1.7l-.5.6c-.1.2-.3.4-.1.7a7.4 7.4 0 0 0 3.5 3c.3.2.5.1.7-.1l.7-.8c.2-.2.4-.2.6-.1l2 .9c.3.2.5.3.5.5a2 2 0 0 1-1.4 1.9c-.5.2-1.2.3-3.4-.6a11.6 11.6 0 0 1-5.6-5.4c-.6-1.4-.4-2.4.1-3.2z" class="fill"/></svg>
-          Envoyer sur WhatsApp
-        </span>
-      </button>
-      <p class="book__hint">Votre demande s'ouvre dans WhatsApp, déjà rédigée. Il ne reste qu'à l'envoyer.</p>
-      <p class="book__ok" id="bookOk" role="status"></p>
-    </form>
+    <div class="book__tunnels reveal-up">
+      <a class="tunnel-card" href="/reserver" data-cursor="link">
+        <h3>Réserver une table</h3>
+        <p>Choisissez une date, une heure et un nombre de couverts parmi les créneaux réellement disponibles.</p>
+        <span class="tunnel-card__cta">Voir les disponibilités →</span>
+      </a>
+      <a class="tunnel-card" href="/commander" data-cursor="link">
+        <h3>Commander à emporter</h3>
+        <p>Composez votre commande sur la carte et choisissez une heure de retrait. Règlement sur place.</p>
+        <span class="tunnel-card__cta">Composer ma commande →</span>
+      </a>
+      <p class="book__tunnels-note">
+        Dîner d'affaires, privatisation ou traiteur : passez par <a href="#formules" data-cursor="link">notre formulaire dédié</a> ou par <a href="https://wa.me/33761976711" target="_blank" rel="noopener" data-cursor="link">WhatsApp</a>.
+      </p>
+    </div>
   </div>
 </section>
 
@@ -434,7 +399,7 @@
       <a href="#carte">La Carte</a>
       <a href="#signature">Signatures</a>
       <a href="#formules">Privatiser</a>
-      <a href="#reserver">Réserver</a>
+      <a href="/reserver">Réserver</a>
     </nav>
     <div class="foot__meta">
       <p><a href="https://maps.google.com/?q=6+boulevard+Richard+Wallace+92800+Puteaux" target="_blank" rel="noopener">6 boulevard Richard Wallace, 92800 Puteaux</a></p>

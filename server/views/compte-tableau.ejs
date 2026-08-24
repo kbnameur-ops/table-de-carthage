@@ -1,0 +1,72 @@
+<%- entete %>
+<div class="wrap">
+  <h1>Bonjour <%= client.prenom %></h1>
+  <p class="lead"><%= client.email %> · <%= client.telephone_saisi %></p>
+
+  <% if (message) { %><div class="alerte alerte--ok"><%= message %></div><% } %>
+
+  <h2>Réservations</h2>
+  <% if (!reservations.length) { %>
+    <p class="vide">Aucune réservation pour l'instant.</p>
+  <% } else { %>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Référence</th><th>Date</th><th>Heure</th><th>Couverts</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        <% reservations.forEach(r => { %>
+          <tr>
+            <td><%= r.reference %></td>
+            <td><%= r.date %></td>
+            <td><%= r.heure %></td>
+            <td><%= r.couverts %></td>
+            <td><span class="badge badge--<%= r.statut.replace('_','') %>"><%= libellesStatutResa[r.statut] %></span></td>
+            <td>
+              <% if (r.annulable) { %>
+                <form method="post" action="/compte/reservations/<%= r.id %>/annuler" onsubmit="return confirm('Annuler cette réservation ?')">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="btn btn--danger btn--sm">Annuler</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table></div>
+  <% } %>
+
+  <h2>Commandes à emporter</h2>
+  <% if (!commandes.length) { %>
+    <p class="vide">Aucune commande pour l'instant.</p>
+  <% } else { %>
+    <div class="table-scroll"><table>
+      <thead><tr><th>Référence</th><th>Retrait</th><th>Total</th><th>Statut</th><th></th></tr></thead>
+      <tbody>
+        <% commandes.forEach(c => { %>
+          <tr>
+            <td><%= c.reference %></td>
+            <td><%= c.date %> à <%= c.heure %></td>
+            <td><%= euros(c.total_cents) %></td>
+            <td><span class="badge badge--<%= c.statut.replace('_','') %>"><%= libellesStatutCmd[c.statut] %></span></td>
+            <td>
+              <% if (c.annulable) { %>
+                <form method="post" action="/compte/commandes/<%= c.id %>/annuler" onsubmit="return confirm('Annuler cette commande ?')">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="btn btn--danger btn--sm">Annuler</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table></div>
+  <% } %>
+
+  <div class="btn-row">
+    <a class="btn" href="/reserver">Nouvelle réservation</a>
+    <a class="btn btn--ghost" href="/commander">Nouvelle commande</a>
+    <form method="post" action="/compte/deconnexion">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn--ghost">Se déconnecter</button>
+    </form>
+  </div>
+</div>
+<%- pied %>

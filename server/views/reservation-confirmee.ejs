@@ -1,0 +1,19 @@
+<%- entete %>
+<div class="wrap">
+  <div class="alerte alerte--ok">Votre demande de réservation a bien été enregistrée.</div>
+  <h1>Référence <%= reservation.reference %></h1>
+  <div class="card">
+    <table>
+      <tr><th>Date</th><td><%= dateLisible %></td></tr>
+      <tr><th>Heure</th><td><%= reservation.heure %></td></tr>
+      <tr><th>Couverts</th><td><%= reservation.couverts %></td></tr>
+      <tr><th>Statut</th><td><span class="badge badge--attente">En attente de confirmation</span></td></tr>
+    </table>
+  </div>
+  <p class="lead">Nous confirmons chaque réservation par téléphone avant le service. Conservez cette référence : elle apparaît aussi dans votre espace client.</p>
+  <div class="btn-row">
+    <a class="btn" href="/compte/connexion">Accéder à mon espace</a>
+    <a class="btn btn--ghost" href="/">Retour à l'accueil</a>
+  </div>
+</div>
+<%- pied %>
