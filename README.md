@@ -54,7 +54,7 @@ et dans les données structurées de `assets/js/main.js` :
 | Forme | SAS · RCS Nanterre · Président : Ayoub Khlifi |
 
 Toutes ces informations sont vérifiées. Pour changer le téléphone, remplacer les
-4 occurrences dans `index.html` (`07 61 97 67 11` à l'affichage, `tel:+33761976711`
+3 occurrences dans `index.html` (`07 61 97 67 11` à l'affichage, `tel:+33761976711`
 dans les liens) et la clé `telephone` des données structurées dans
 `assets/js/main.js`.
 
