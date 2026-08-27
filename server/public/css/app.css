@@ -372,3 +372,128 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
   .carte-presence__actions input[type=time],
   .carte-presence__actions select{min-height:44px}
 }
+
+/* ── Compteur + / − du panier ─────────────────────────────── */
+.compteur{
+  display:flex;align-items:center;gap:0;border:1px solid rgba(14,42,78,.2);
+  border-radius:999px;overflow:hidden;background:#fff;flex-shrink:0;
+  transition:border-color .25s var(--ease);
+}
+.compteur.est-actif{border-color:var(--gold-500)}
+.compteur__btn{
+  width:42px;height:42px;border:0;background:none;cursor:pointer;flex-shrink:0;
+  font-size:1.35rem;line-height:1;color:var(--navy-800);
+  display:flex;align-items:center;justify-content:center;
+  transition:background .2s,color .2s;
+}
+.compteur__btn:hover{background:var(--cream-2)}
+.compteur__btn:active{background:var(--gold-500);color:#fff}
+.compteur .js-qte{
+  width:44px;border:0;border-left:1px solid rgba(14,42,78,.12);
+  border-right:1px solid rgba(14,42,78,.12);
+  text-align:center;font:inherit;font-size:1rem;padding:.55rem 0;
+  -moz-appearance:textfield;background:none;color:var(--ink);
+}
+.compteur .js-qte::-webkit-outer-spin-button,
+.compteur .js-qte::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.compteur .js-qte:focus{outline:2px solid var(--gold-500);outline-offset:-2px}
+
+.menu-plat.est-choisi{border-color:rgba(201,169,97,.55);background:#FFFDF8}
+.panier-total span em{font-style:normal;font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-300);margin-left:.6rem}
+
+/* ── Navigation par jour (réservations, commandes) ─────────── */
+.nav-jour{
+  display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1.2rem;
+  background:#fff;border:1px solid rgba(14,42,78,.07);border-radius:999px;
+  padding:.5rem .6rem;box-shadow:0 1px 2px rgba(14,42,78,.04);
+}
+.nav-jour__fleche{
+  width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;line-height:1;color:var(--navy-800);background:var(--cream-2);flex-shrink:0;
+  transition:background .25s,color .25s;
+}
+.nav-jour__fleche:hover{background:var(--navy-800);color:#fff}
+.nav-jour__centre{text-align:center;flex:1;min-width:0}
+.nav-jour__centre strong{
+  display:block;font-family:var(--ff-title);font-weight:400;font-size:1.15rem;
+  color:var(--navy-800);text-transform:capitalize;
+}
+.nav-jour__centre small{display:block;font-size:.78rem;color:var(--muted)}
+
+.raccourcis-jour{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.raccourcis-jour .est-actif{background:var(--navy-800);color:#fff;border-color:var(--navy-800)}
+.raccourcis-jour .est-actif:hover{background:var(--navy-800);color:#fff}
+.tuile--compacte{padding:.6rem 1.1rem;margin-left:auto}
+.tuile--compacte b{font-size:1.4rem}
+
+/* ── Tuiles cliquables du tableau de bord ─────────────────── */
+.tuiles--dashboard{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.tuile--lien{
+  display:block;text-align:left;padding:1.2rem 1.3rem;
+  transition:transform .25s var(--ease),box-shadow .25s var(--ease),border-color .25s;
+}
+.tuile--lien:hover{
+  transform:translateY(-2px);border-color:rgba(201,169,97,.5);
+  box-shadow:0 14px 30px -18px rgba(14,42,78,.35);
+}
+.tuile--lien b{font-size:2.3rem}
+.tuile--lien span{display:block;color:var(--navy-800);font-size:.74rem;letter-spacing:.08em}
+.tuile--lien em{display:block;margin-top:.3rem;font-style:normal;font-size:.78rem;color:var(--muted)}
+
+.acces-rapide{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem}
+.acces{
+  background:#fff;border:1px solid rgba(14,42,78,.07);border-radius:10px;padding:1.1rem 1.2rem;
+  display:block;transition:transform .25s var(--ease),box-shadow .25s var(--ease),border-color .25s;
+  box-shadow:0 1px 2px rgba(14,42,78,.04);
+}
+.acces:hover{transform:translateY(-2px);border-color:rgba(201,169,97,.5);box-shadow:0 14px 30px -18px rgba(14,42,78,.3)}
+.acces b{display:block;font-family:var(--ff-title);font-weight:400;font-size:1.08rem;color:var(--navy-800);margin-bottom:.25rem}
+.acces span{display:block;font-size:.84rem;color:var(--muted);line-height:1.45}
+
+/* ── Cloche et badge de notifications ─────────────────────── */
+.salonbar__actions{display:flex;align-items:center;gap:.7rem;flex-shrink:0}
+.salonbar__cloche{
+  position:relative;width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(250,246,236,.75);border:1px solid rgba(250,246,236,.2);
+  transition:color .25s,border-color .25s,background .25s;
+}
+.salonbar__cloche:hover,.salonbar__cloche.is-active{color:var(--gold-400);border-color:var(--gold-400)}
+.salonbar__badge{
+  position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;
+  border-radius:999px;background:var(--err);color:#fff;
+  font-size:.68rem;font-weight:500;line-height:20px;text-align:center;
+  border:2px solid var(--navy-900);
+}
+.salonbar__badge.est-vide{display:none}
+
+/* ── Liste des notifications ──────────────────────────────── */
+.liste-notifs{display:flex;flex-direction:column;gap:.7rem}
+.notif{
+  background:#fff;border:1px solid rgba(14,42,78,.08);border-left:4px solid var(--gold-500);
+  border-radius:8px;padding:.95rem 1.1rem;display:flex;align-items:center;gap:1rem;
+  box-shadow:0 1px 2px rgba(14,42,78,.04);
+}
+.notif--reservation{border-left-color:var(--navy-700)}
+.notif--commande{border-left-color:#4C9A5E}
+.notif--annulation_reservation,.notif--annulation_commande{border-left-color:var(--err)}
+.notif.est-lue{opacity:.55;background:#FAFBFC}
+.notif__corps{flex:1;min-width:0}
+.notif__titre{
+  display:block;font-family:var(--ff-title);font-weight:400;font-size:1.02rem;
+  color:var(--navy-800);margin-bottom:.15rem;
+}
+.notif__titre:hover{color:var(--gold-500)}
+.notif__detail{margin:0 0 .25rem;font-size:.85rem;color:var(--muted)}
+.notif__quand{font-size:.75rem;color:var(--muted);opacity:.8}
+
+@media (max-width:640px){
+  .nav-jour__centre strong{font-size:1rem}
+  .tuiles--dashboard{grid-template-columns:1fr 1fr}
+  .tuile--lien b{font-size:1.8rem}
+  .acces-rapide{grid-template-columns:1fr}
+  .tuile--compacte{margin-left:0;flex:1 1 100%;text-align:center}
+  .notif{flex-direction:column;align-items:stretch;gap:.7rem}
+  .raccourcis-jour{flex:1 1 100%}
+  .raccourcis-jour .btn{flex:1}
+}

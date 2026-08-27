@@ -1,0 +1,40 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Notifications</h1>
+  <p class="lead">Tout ce qui arrive de la part des clients : nouvelles réservations, nouvelles commandes, et leurs annulations.</p>
+</div>
+
+<% const nonLues = notifications.filter(n => !n.lue).length; %>
+<% if (nonLues) { %>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1.5rem">
+    <form method="post" action="/salon/notifications/tout-lu">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn--sm">Tout marquer comme lu (<%= nonLues %>)</button>
+    </form>
+  </div>
+<% } %>
+
+<% if (!notifications.length) { %>
+  <div class="alerte alerte--info">Rien pour l'instant. Les nouvelles réservations et commandes apparaîtront ici.</div>
+<% } else { %>
+  <div class="liste-notifs">
+    <% notifications.forEach(n => { %>
+      <div class="notif notif--<%= n.type %><%= n.lue ? ' est-lue' : '' %>">
+        <div class="notif__corps">
+          <a class="notif__titre" href="<%= n.lien %>"><%= n.titre %></a>
+          <p class="notif__detail"><%= n.detail %></p>
+          <time class="notif__quand" datetime="<%= n.cree_le.toISOString() %>">
+            <%= n.cree_le.toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) %>
+          </time>
+        </div>
+        <% if (!n.lue) { %>
+          <form method="post" action="/salon/notifications/<%= n.id %>/lue">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn--ghost btn--sm">Marquer lu</button>
+          </form>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+<%- salonPied %>

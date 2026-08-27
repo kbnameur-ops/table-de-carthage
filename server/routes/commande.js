@@ -7,6 +7,7 @@ import { genererReference } from '../lib/reference.js';
 import { euros } from '../lib/money.js';
 import { verifierCsrf } from '../middleware.js';
 import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
+import { notifier, quand } from '../lib/notifications.js';
 
 const MAX_SOUMISSIONS_15MIN = 20;
 
@@ -121,6 +122,14 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
           [commande.id, l.plat_id, l.nom, l.prix_cents, l.quantite]
         );
       }
+    });
+
+    const nbPlats = panier.lignes.reduce((n, l) => n + l.quantite, 0);
+    await notifier({
+      type: 'commande',
+      titre: `Nouvelle commande — ${euros(panier.total)}`,
+      detail: `${client.prenom} ${client.nom} · retrait ${quand(b.date, b.heure)} · ${nbPlats} article${nbPlats > 1 ? 's' : ''} · ${client.telephone_saisi}`,
+      lien: `/salon/commandes?date=${b.date}`,
     });
 
     res.redirect(`/commander/confirmation?ref=${encodeURIComponent(reference)}`);

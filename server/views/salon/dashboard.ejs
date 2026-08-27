@@ -1,15 +1,57 @@
 <%- salonEntete %>
-<h1>Tableau de bord</h1>
-<div class="grid grid--2" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
-  <div class="stat-tuile"><b><%= resaAujourdhui.n %></b><span>Réservations aujourd'hui (<%= resaAujourdhui.couverts %> couverts)</span></div>
-  <div class="stat-tuile"><b><%= resaAttente.n %></b><span>Réservations en attente</span></div>
-  <div class="stat-tuile"><b><%= cmdAujourdhui.n %></b><span>Commandes aujourd'hui (<%= euros(cmdAujourdhui.total) %>)</span></div>
-  <div class="stat-tuile"><b><%= cmdAttente.n %></b><span>Commandes en attente</span></div>
+<div class="page-titre">
+  <h1>Tableau de bord</h1>
+  <p class="lead">L'essentiel du jour. Chaque tuile mène directement à l'écran concerné.</p>
 </div>
-<div class="btn-row">
-  <a class="btn" href="/salon/reservations">Voir les réservations</a>
-  <a class="btn" href="/salon/commandes">Voir les commandes</a>
-  <a class="btn btn--ghost" href="/salon/carte">Gérer la carte</a>
-  <a class="btn btn--ghost" href="/salon/services">Services &amp; capacité</a>
+
+<div class="tuiles tuiles--dashboard">
+  <a class="tuile tuile--lien" href="/salon/reservations?date=<%= aujourdHui %>">
+    <b><%= resaAujourdhui.n %></b>
+    <span>Réservations aujourd'hui</span>
+    <em><%= resaAujourdhui.couverts %> couvert<%= resaAujourdhui.couverts > 1 ? 's' : '' %></em>
+  </a>
+  <a class="tuile tuile--lien<%= resaAttente.n ? ' tuile--accent' : '' %>" href="/salon/reservations?date=a-venir&statut=en_attente">
+    <b><%= resaAttente.n %></b>
+    <span>Réservations en attente</span>
+    <em><%= resaAttente.n ? 'à confirmer' : 'rien à traiter' %></em>
+  </a>
+  <a class="tuile tuile--lien" href="/salon/commandes?date=<%= aujourdHui %>">
+    <b><%= cmdAujourdhui.n %></b>
+    <span>Commandes aujourd'hui</span>
+    <em><%= euros(cmdAujourdhui.total) %></em>
+  </a>
+  <a class="tuile tuile--lien<%= cmdAttente.n ? ' tuile--accent' : '' %>" href="/salon/commandes?date=a-venir&statut=en_attente">
+    <b><%= cmdAttente.n %></b>
+    <span>Commandes en attente</span>
+    <em><%= cmdAttente.n ? 'à confirmer' : 'rien à traiter' %></em>
+  </a>
+</div>
+
+<h2>Accès rapide</h2>
+<div class="acces-rapide">
+  <a class="acces" href="/salon/salle">
+    <b>Salle</b>
+    <span>Plan de salle du créneau en cours : occuper ou libérer une table.</span>
+  </a>
+  <a class="acces" href="/salon/reservations">
+    <b>Réservations</b>
+    <span>Le carnet, jour par jour, avec les statuts.</span>
+  </a>
+  <a class="acces" href="/salon/commandes">
+    <b>Commandes à emporter</b>
+    <span>Le détail des paniers et les heures de retrait.</span>
+  </a>
+  <a class="acces" href="/salon/carte">
+    <b>La carte</b>
+    <span>Catégories, plats, photos et prix.</span>
+  </a>
+  <a class="acces" href="/salon/services">
+    <b>Services &amp; tables</b>
+    <span>Horaires, capacité de la salle, fermetures.</span>
+  </a>
+  <a class="acces" href="/salon/equipe">
+    <b>Équipe</b>
+    <span>Effectif, planning de la semaine, présences.</span>
+  </a>
 </div>
 <%- salonPied %>

@@ -1,33 +1,59 @@
 <%- salonEntete %>
-<h1>Commandes à emporter</h1>
+<div class="page-titre">
+  <h1>Commandes à emporter</h1>
+</div>
 
-<form method="get" action="/salon/commandes" class="filtre-bar">
+<div class="nav-jour">
+  <% if (!aVenir) { %>
+    <a class="nav-jour__fleche" href="/salon/commandes?date=<%= veille %><%= statut ? '&statut=' + statut : '' %>" aria-label="Jour précédent">‹</a>
+  <% } %>
+  <div class="nav-jour__centre">
+    <strong><%= libelle %></strong>
+    <% if (!aVenir) { %><small><%= new Date(date + 'T00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) %></small><% } %>
+  </div>
+  <% if (!aVenir) { %>
+    <a class="nav-jour__fleche" href="/salon/commandes?date=<%= lendemain %><%= statut ? '&statut=' + statut : '' %>" aria-label="Jour suivant">›</a>
+  <% } %>
+</div>
+
+<form method="get" action="/salon/commandes" class="barre-filtres">
   <div class="field">
-    <label for="f-date">Date</label>
-    <input type="date" id="f-date" name="date" value="<%= date %>" onchange="this.form.submit()">
+    <label for="f-date">Aller au jour</label>
+    <input type="date" id="f-date" name="date" value="<%= date || aujourdHui %>" onchange="this.form.submit()">
   </div>
   <div class="field">
     <label for="f-statut">Statut</label>
     <select id="f-statut" name="statut" onchange="this.form.submit()">
       <option value="">Tous</option>
       <% statuts.forEach(s => { %>
-        <option value="<%= s %>" <%= s === statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+        <option value="<%= s %>" <%- s === statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
       <% }) %>
     </select>
   </div>
-  <div class="stat-tuile" style="padding:.8rem 1.2rem"><b style="font-size:1.4rem"><%= euros(total) %></b><span>Total ce jour</span></div>
+  <div class="raccourcis-jour">
+    <a class="btn btn--ghost btn--sm<%= date === aujourdHui ? ' est-actif' : '' %>" href="/salon/commandes<%= statut ? '?statut=' + statut : '' %>">Aujourd'hui</a>
+    <a class="btn btn--ghost btn--sm<%= aVenir ? ' est-actif' : '' %>" href="/salon/commandes?date=a-venir<%= statut ? '&statut=' + statut : '' %>">Tout ce qui vient</a>
+  </div>
+  <div class="tuile tuile--compacte"><b><%= euros(total) %></b><span>Total</span></div>
+  <noscript><button type="submit" class="btn btn--sm">Afficher</button></noscript>
 </form>
 
 <% if (!commandes.length) { %>
-  <p class="vide">Aucune commande pour cette date.</p>
+  <p class="vide">Aucune commande<%= statut ? ' avec ce statut' : '' %> <%= aVenir ? 'à venir' : 'pour ce jour' %>.</p>
 <% } else { %>
 <div class="table-scroll">
 <table>
-  <thead><tr><th>Heure</th><th>Client</th><th>Contact</th><th>Détail</th><th>Total</th><th>Message</th><th>Statut</th></tr></thead>
+  <thead><tr>
+    <% if (aVenir) { %><th>Jour</th><% } %>
+    <th>Retrait</th><th>Client</th><th>Contact</th><th>Détail</th><th>Total</th><th>Message</th><th>Statut</th>
+  </tr></thead>
   <tbody>
     <% commandes.forEach(c => { %>
       <tr>
-        <td><%= c.heure %></td>
+        <% if (aVenir) { %>
+          <td><small><%= new Date(c.date + 'T00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) %></small></td>
+        <% } %>
+        <td><strong><%= c.heure %></strong></td>
         <td><%= c.prenom %> <%= c.nom %><br><small style="color:var(--muted)"><%= c.reference %></small></td>
         <td><a href="tel:<%= c.telephone_saisi %>"><%= c.telephone_saisi %></a><br><small><%= c.email %></small></td>
         <td>
@@ -42,7 +68,7 @@
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <select name="statut" onchange="this.form.submit()" class="badge badge--<%= c.statut.replace('_','') %>" style="border:0;padding:.3rem .5rem">
               <% statuts.forEach(s => { %>
-                <option value="<%= s %>" <%= s === c.statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+                <option value="<%= s %>" <%- s === c.statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
               <% }) %>
             </select>
           </form>

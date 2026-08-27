@@ -19,7 +19,17 @@
         <small>Salon</small>
       </span>
     </a>
-    <a class="salonbar__voir" href="/" target="_blank" rel="noopener">Voir le site ↗</a>
+    <div class="salonbar__actions">
+      <a class="salonbar__cloche<%- actif === 'notifications' ? ' is-active' : '' %>" href="/salon/notifications" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" aria-hidden="true" width="20" height="20">
+          <path d="M12 3a5.5 5.5 0 0 0-5.5 5.5v3.2L5 15.5h14l-1.5-3.8V8.5A5.5 5.5 0 0 0 12 3Z"
+                fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M10 18a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        <span class="salonbar__badge<%- notifs ? '' : ' est-vide' %>" id="badgeNotifs"><%= notifs %></span>
+      </a>
+      <a class="salonbar__voir" href="/" target="_blank" rel="noopener">Voir le site ↗</a>
+    </div>
   </div>
   <nav class="salonbar__nav" aria-label="Navigation du salon">
     <a href="/salon"<%- actif === 'dashboard' ? ' class="is-active"' : '' %>>Tableau de bord</a>
@@ -31,5 +41,31 @@
     <a href="/salon/equipe"<%- actif === 'equipe' ? ' class="is-active"' : '' %>>Équipe</a>
   </nav>
 </header>
+<script>
+// Rafraîchit le badge sans recharger la page : c'est ce qui fait qu'une
+// réservation prise pendant le service se signale toute seule. On interroge
+// seulement quand l'onglet est visible — inutile de sonder un écran de
+// tablette en veille dans un coin du passe.
+(function () {
+  const badge = document.getElementById('badgeNotifs');
+  if (!badge) return;
+  let enCours = false;
+  async function rafraichir() {
+    if (enCours || document.hidden) return;
+    enCours = true;
+    try {
+      const r = await fetch('/salon/api/notifications', { headers: { 'Accept': 'application/json' } });
+      if (r.ok) {
+        const { n } = await r.json();
+        badge.textContent = n;
+        badge.classList.toggle('est-vide', !n);
+      }
+    } catch { /* réseau instable en salle : on retentera au prochain tour */ }
+    finally { enCours = false; }
+  }
+  setInterval(rafraichir, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) rafraichir(); });
+})();
+</script>
 <main>
 <div class="wrap--large">

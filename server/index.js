@@ -1,7 +1,7 @@
 import express from 'express';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { sessionMiddleware, injecterMiseEnPage } from './middleware.js';
+import { sessionMiddleware, injecterMiseEnPage, chargerNotifications } from './middleware.js';
 import { nettoyerSessionsExpirees, nettoyerTentativesAnciennes } from './db.js';
 
 import { api } from './routes/api.js';
@@ -44,6 +44,7 @@ app.use(express.json({ limit: '200kb' }));
 // besoin d'entete/pied déjà injectés pour ne pas planter à son tour.
 app.use(injecterMiseEnPage);
 app.use(sessionMiddleware);
+app.use(chargerNotifications);
 
 // ── Routes ──────────────────────────────────────────────────
 app.use('/api', api);

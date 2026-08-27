@@ -8,6 +8,7 @@ import {
   enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
 } from '../lib/auth.js';
 import { exigerClient, verifierCsrf } from '../middleware.js';
+import { notifier, quand } from '../lib/notifications.js';
 
 export const compteRouter = Router();
 
@@ -86,20 +87,45 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
 
 compteRouter.post('/compte/reservations/:id/annuler', exigerClient, verifierCsrf, async (req, res, next) => {
   try {
-    await executer(
-      `UPDATE reservations SET statut = 'annulee' WHERE id = $1 AND client_id = $2 AND statut NOT IN ('annulee','honoree')`,
+    // RETURNING ne renvoie une ligne que si l'annulation a bien eu lieu :
+    // on ne notifie donc pas pour un identifiant qui n'appartient pas au
+    // client, ou pour une réservation déjà annulée.
+    const annulee = await une(
+      `UPDATE reservations SET statut = 'annulee'
+        WHERE id = $1 AND client_id = $2 AND statut NOT IN ('annulee','honoree')
+        RETURNING reference, date, heure, couverts`,
       [req.params.id, req.clientId]
     );
+    if (annulee) {
+      const client = await une(`SELECT prenom, nom FROM clients WHERE id = $1`, [req.clientId]);
+      await notifier({
+        type: 'annulation_reservation',
+        titre: `Réservation annulée — ${annulee.couverts} couvert${annulee.couverts > 1 ? 's' : ''}`,
+        detail: `${client.prenom} ${client.nom} · ${quand(annulee.date, annulee.heure)} · ${annulee.reference}`,
+        lien: `/salon/reservations?date=${annulee.date}`,
+      });
+    }
     res.redirect('/compte?msg=' + encodeURIComponent('Réservation annulée.'));
   } catch (err) { next(err); }
 });
 
 compteRouter.post('/compte/commandes/:id/annuler', exigerClient, verifierCsrf, async (req, res, next) => {
   try {
-    await executer(
-      `UPDATE commandes SET statut = 'annulee' WHERE id = $1 AND client_id = $2 AND statut NOT IN ('annulee','retiree')`,
+    const annulee = await une(
+      `UPDATE commandes SET statut = 'annulee'
+        WHERE id = $1 AND client_id = $2 AND statut NOT IN ('annulee','retiree')
+        RETURNING reference, date, heure, total_cents`,
       [req.params.id, req.clientId]
     );
+    if (annulee) {
+      const client = await une(`SELECT prenom, nom FROM clients WHERE id = $1`, [req.clientId]);
+      await notifier({
+        type: 'annulation_commande',
+        titre: `Commande annulée — ${euros(annulee.total_cents)}`,
+        detail: `${client.prenom} ${client.nom} · retrait ${quand(annulee.date, annulee.heure)} · ${annulee.reference}`,
+        lien: `/salon/commandes?date=${annulee.date}`,
+      });
+    }
     res.redirect('/compte?msg=' + encodeURIComponent('Commande annulée.'));
   } catch (err) { next(err); }
 });

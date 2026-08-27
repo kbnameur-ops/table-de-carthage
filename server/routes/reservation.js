@@ -6,6 +6,7 @@ import { validerIdentite, trouverOuCreerClient } from '../lib/clients.js';
 import { genererReference } from '../lib/reference.js';
 import { verifierCsrf } from '../middleware.js';
 import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
+import { notifier, quand } from '../lib/notifications.js';
 
 const MAX_SOUMISSIONS_15MIN = 20;
 
@@ -77,6 +78,13 @@ reservationRouter.post('/reserver', verifierCsrf, async (req, res, next) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'Réservation', $8)`,
       [reference, client.id, service.id, table.id, b.date, b.heure, couverts, (b.message || '').trim()]
     );
+
+    await notifier({
+      type: 'reservation',
+      titre: `Nouvelle réservation — ${couverts} couvert${couverts > 1 ? 's' : ''}`,
+      detail: `${client.prenom} ${client.nom} · ${quand(b.date, b.heure)} · table ${table.nom} · ${client.telephone_saisi}`,
+      lien: `/salon/reservations?date=${b.date}`,
+    });
 
     res.redirect(`/reserver/confirmation?ref=${encodeURIComponent(reference)}`);
   } catch (err) { next(err); }

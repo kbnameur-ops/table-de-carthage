@@ -5,7 +5,8 @@ import {
   verifierMotDePasse, elargirSession, detruireSession,
   enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
 } from '../lib/auth.js';
-import { exigerAdmin, verifierCsrf } from '../middleware.js';
+import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
+import { listerNotifications, compterNonLues, marquerLue, toutMarquerLu } from '../lib/notifications.js';
 import { euros } from '../lib/money.js';
 
 export const salonRouter = Router();
@@ -68,8 +69,41 @@ salonRouter.get('/salon', exigerAdmin, async (req, res, next) => {
     res.render('salon/dashboard', {
       titre: 'Tableau de bord', actif: 'dashboard',
       resaAujourdhui, resaAttente, cmdAujourdhui, cmdAttente,
-      euros,
+      aujourdHui, euros,
       csrfToken: res.locals.csrfToken,
     });
+  } catch (err) { next(err); }
+});
+
+// ── Notifications ──────────────────────────────────────────
+salonRouter.get('/salon/notifications', exigerAdmin, async (req, res, next) => {
+  try {
+    res.render('salon/notifications', {
+      titre: 'Notifications', actif: 'notifications',
+      notifications: await listerNotifications(),
+      csrfToken: res.locals.csrfToken,
+    });
+  } catch (err) { next(err); }
+});
+
+/** Sondée par la barre du salon pour rafraîchir le badge sans recharger la
+ *  page : c'est ce qui donne l'impression que la notification « arrive ». */
+salonRouter.get('/salon/api/notifications', exigerAdmin, async (req, res, next) => {
+  try {
+    res.json({ n: await compterNonLues() });
+  } catch (err) { next(err); }
+});
+
+salonRouter.post('/salon/notifications/:id/lue', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    await marquerLue(req.params.id);
+    redirigerRetour(req, res, '/salon/notifications');
+  } catch (err) { next(err); }
+});
+
+salonRouter.post('/salon/notifications/tout-lu', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    await toutMarquerLu();
+    redirigerRetour(req, res, '/salon/notifications');
   } catch (err) { next(err); }
 });
