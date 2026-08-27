@@ -12,6 +12,8 @@ import { compteRouter } from './routes/compte.js';
 import { salonRouter } from './routes/salon.js';
 import { salonCarteRouter } from './routes/salon_carte.js';
 import { salonServicesRouter } from './routes/salon_services.js';
+import { salonSalleRouter } from './routes/salon_salle.js';
+import { salonEquipeRouter } from './routes/salon_equipe.js';
 import { salonReservationsRouter } from './routes/salon_reservations.js';
 import { salonCommandesRouter } from './routes/salon_commandes.js';
 
@@ -52,6 +54,8 @@ app.use(compteRouter);
 app.use(salonRouter);
 app.use(salonCarteRouter);
 app.use(salonServicesRouter);
+app.use(salonSalleRouter);
+app.use(salonEquipeRouter);
 app.use(salonReservationsRouter);
 app.use(salonCommandesRouter);
 

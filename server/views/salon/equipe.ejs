@@ -1,0 +1,85 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Équipe</h1>
+  <p class="lead">Les personnes qui travaillent au restaurant. Une fois créées, elles apparaissent dans le planning et la feuille de présence.</p>
+</div>
+
+<div class="sous-onglets">
+  <a href="/salon/equipe" class="is-active">Équipe</a>
+  <a href="/salon/planning">Planning</a>
+  <a href="/salon/presences">Présences</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
+<div class="card" style="margin-bottom:1.8rem">
+  <h2 style="margin-top:0">Ajouter une personne</h2>
+  <form method="post" action="/salon/equipe" class="ligne-champs">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="f-prenom">Prénom</label>
+      <input type="text" id="f-prenom" name="prenom" required maxlength="40">
+    </div>
+    <div class="field">
+      <label for="f-nom">Nom</label>
+      <input type="text" id="f-nom" name="nom" required maxlength="40">
+    </div>
+    <div class="field">
+      <label for="f-poste">Poste</label>
+      <input type="text" id="f-poste" name="poste" list="postes" maxlength="40" placeholder="Salle">
+      <datalist id="postes">
+        <% postes.forEach(p => { %><option value="<%= p %>"><% }) %>
+      </datalist>
+    </div>
+    <div class="field">
+      <label for="f-tel">Téléphone</label>
+      <input type="tel" id="f-tel" name="telephone" maxlength="30">
+    </div>
+    <button type="submit" class="btn">Ajouter</button>
+  </form>
+</div>
+
+<% if (!employes.length) { %>
+  <div class="alerte alerte--info">Personne dans l'équipe pour l'instant.</div>
+<% } else { %>
+  <div class="liste-tables">
+    <% employes.forEach(e => { %>
+      <form method="post" action="/salon/equipe/<%= e.id %>" class="card carte-table<%= e.actif ? '' : ' est-inactive' %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="ligne-champs ligne-champs--serree">
+          <div class="field">
+            <label>Prénom</label>
+            <input type="text" name="prenom" value="<%= e.prenom %>" required maxlength="40">
+          </div>
+          <div class="field">
+            <label>Nom</label>
+            <input type="text" name="nom" value="<%= e.nom %>" required maxlength="40">
+          </div>
+          <div class="field">
+            <label>Poste</label>
+            <input type="text" name="poste" value="<%= e.poste %>" list="postes" maxlength="40">
+          </div>
+          <div class="field">
+            <label>Téléphone</label>
+            <input type="tel" name="telephone" value="<%= e.telephone %>" maxlength="30">
+          </div>
+          <div class="field">
+            <label>E-mail</label>
+            <input type="email" name="email" value="<%= e.email %>" maxlength="120">
+          </div>
+          <label class="case">
+            <input type="checkbox" name="actif" <%- e.actif ? 'checked' : '' %>>
+            <span>Dans l'effectif</span>
+          </label>
+        </div>
+        <div class="btn-row btn-row--serree">
+          <button type="submit" class="btn btn--sm">Enregistrer</button>
+          <button type="submit" class="btn btn--danger btn--sm"
+                  formaction="/salon/equipe/<%= e.id %>/supprimer"
+                  onclick="return confirm('Supprimer <%= e.prenom %> <%= e.nom %> ? Son planning et ses pointages seront effacés.')">Supprimer</button>
+        </div>
+      </form>
+    <% }) %>
+  </div>
+<% } %>
+<%- salonPied %>

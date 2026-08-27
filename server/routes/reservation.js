@@ -48,10 +48,11 @@ reservationRouter.post('/reserver', verifierCsrf, async (req, res, next) => {
     // Le créneau affiché a pu se remplir entre le chargement de la page et
     // l'envoi du formulaire : on ne fait jamais confiance à l'heure soumise
     // sans la revérifier contre l'état actuel des réservations.
-    let service = null;
+    let service = null, table = null;
     if (!erreurs.date && !erreurs.couverts && !erreurs.heure) {
       const v = await creneauEncoreValide(b.date, b.heure, couverts);
       service = v.service;
+      table = v.table;
       if (!v.valide) erreurs.heure = "Ce créneau n'est plus disponible. Merci d'en choisir un autre.";
     }
 
@@ -72,9 +73,9 @@ reservationRouter.post('/reserver', verifierCsrf, async (req, res, next) => {
 
     const reference = genererReference('RES');
     await executer(
-      `INSERT INTO reservations (reference, client_id, service_id, date, heure, couverts, motif, message)
-       VALUES ($1, $2, $3, $4, $5, $6, 'Réservation', $7)`,
-      [reference, client.id, service.id, b.date, b.heure, couverts, (b.message || '').trim()]
+      `INSERT INTO reservations (reference, client_id, service_id, table_id, date, heure, couverts, motif, message)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'Réservation', $8)`,
+      [reference, client.id, service.id, table.id, b.date, b.heure, couverts, (b.message || '').trim()]
     );
 
     res.redirect(`/reserver/confirmation?ref=${encodeURIComponent(reference)}`);

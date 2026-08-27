@@ -17,7 +17,8 @@ body{
   margin:0;background:var(--cream);color:var(--ink);font-family:var(--ff-body);
   font-weight:300;line-height:1.6;font-size:16px;
 }
-a{color:inherit}
+a{color:inherit;text-decoration:none}
+a:not([class]):hover{text-decoration:underline}
 .wrap{width:min(100% - 2.5rem, 980px);margin-inline:auto}
 .wrap--large{width:min(100% - 2.5rem, 1240px);margin-inline:auto}
 
@@ -182,3 +183,192 @@ tbody tr:hover{background:var(--cream-2)}
 .vide{text-align:center;padding:3rem 1rem;color:var(--muted)}
 
 footer.app-foot{text-align:center;padding:2rem 0;color:var(--muted);font-size:.8rem}
+
+/* ═══════════════════════════════════════════════════════════
+   Le salon (back-office)
+   Pensé pour une tablette posée près du passe : cibles tactiles
+   larges, densité d'information forte, lisible d'un coup d'œil.
+   ═══════════════════════════════════════════════════════════ */
+body.salon{background:#F4F6F9}
+
+.salonbar{
+  background:linear-gradient(160deg,var(--navy-900),var(--navy-800));
+  color:var(--cream);position:sticky;top:0;z-index:50;
+  box-shadow:0 2px 18px -8px rgba(7,26,49,.6);
+}
+.salonbar__haut{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:.8rem clamp(1rem,3vw,2rem) .6rem;
+}
+.salonbar__brand{display:flex;align-items:center;gap:.75rem;min-width:0}
+.salonbar__brand img{width:40px;height:40px;border-radius:50%;object-fit:cover;border:1px solid rgba(201,169,97,.5);flex-shrink:0}
+.salonbar__brand span{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.salonbar__brand b{
+  font-family:var(--ff-title);font-weight:400;font-size:1.02rem;letter-spacing:.04em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.salonbar__brand small{font-size:.64rem;letter-spacing:.28em;text-transform:uppercase;color:var(--gold-400)}
+.salonbar__voir{
+  font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(250,246,236,.7);
+  border:1px solid rgba(250,246,236,.25);border-radius:999px;padding:.45rem .9rem;white-space:nowrap;
+  transition:border-color .3s,color .3s;
+}
+.salonbar__voir:hover{color:var(--gold-400);border-color:var(--gold-400)}
+
+/* Sur mobile la barre défile horizontalement plutôt que de passer à la
+   ligne : l'onglet actif reste visible sans écraser le contenu. */
+.salonbar__nav{
+  display:flex;gap:.2rem;padding:0 clamp(1rem,3vw,2rem);
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.salonbar__nav::-webkit-scrollbar{display:none}
+.salonbar__nav a{
+  padding:.7rem .95rem;font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(250,246,236,.62);border-bottom:2px solid transparent;white-space:nowrap;
+  transition:color .25s,border-color .25s;
+}
+.salonbar__nav a:hover{color:var(--cream)}
+.salonbar__nav a.is-active{color:var(--gold-400);border-color:var(--gold-500)}
+
+body.salon main{padding:clamp(1.5rem,3vw,2.5rem) 0 4rem}
+body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7rem,3.4vw,2.3rem);margin:0 0 .25em}
+.page-titre{margin-bottom:1.8rem}
+.page-titre .lead{margin-bottom:0}
+.fil{font-size:.75rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0 0 .5rem}
+.fil a{color:var(--gold-500)}
+
+.sous-onglets{
+  display:flex;gap:.4rem;margin-bottom:1.6rem;flex-wrap:wrap;
+  border-bottom:1px solid rgba(14,42,78,.12);
+}
+.sous-onglets a{
+  padding:.6rem 1.1rem;font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .25s;
+}
+.sous-onglets a:hover{color:var(--navy-800)}
+.sous-onglets a.is-active{color:var(--navy-800);border-color:var(--gold-500);font-weight:400}
+
+.barre-filtres{
+  display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;margin-bottom:1.8rem;
+  background:#fff;border:1px solid rgba(14,42,78,.07);border-radius:10px;padding:1rem 1.2rem;
+}
+.barre-filtres .field{margin-bottom:0;min-width:150px}
+
+/* ── Tuiles de synthèse ───────────────────────────────────── */
+.tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin-bottom:1.8rem}
+.tuile{
+  background:#fff;border:1px solid rgba(14,42,78,.07);border-radius:10px;padding:1.1rem 1rem;
+  text-align:center;box-shadow:0 1px 2px rgba(14,42,78,.04);
+}
+.tuile b{display:block;font-family:var(--ff-display);font-weight:600;font-size:2rem;color:var(--navy-800);line-height:1.1}
+.tuile span{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tuile--accent b{color:var(--gold-500)}
+
+/* ── Plan de salle ────────────────────────────────────────── */
+.plan-salle{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:1rem}
+.table-carte{
+  background:#fff;border:1px solid rgba(14,42,78,.1);border-left:4px solid var(--muted);
+  border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.7rem;
+  box-shadow:0 1px 2px rgba(14,42,78,.04);
+}
+.table-carte__tete{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem}
+.table-carte__tete b{font-family:var(--ff-title);font-weight:400;font-size:1.1rem;color:var(--navy-800)}
+.table-carte__cap{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.table-carte__info{margin:0;font-size:.85rem;line-height:1.45}
+.table-carte__note{margin:0;font-size:.72rem;color:var(--muted);font-style:italic}
+.table-carte__form{display:flex;flex-direction:column;gap:.55rem}
+.table-carte__champ{display:flex;align-items:center;gap:.5rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.table-carte__champ input{width:70px;padding:.45rem .5rem;border:1px solid rgba(14,42,78,.2);border-radius:3px;font:inherit;text-align:center}
+.btn--bloc{width:100%}
+
+.table-carte--libre{border-left-color:#4C9A5E}
+.table-carte--resa{border-left-color:var(--navy-700);background:#F7FAFE}
+.table-carte--manuel{border-left-color:var(--gold-500);background:#FEFBF3}
+.table-carte--hs{border-left-color:#C3CBD4;opacity:.6}
+
+.legende{display:flex;gap:1.2rem;flex-wrap:wrap;align-items:center;margin-top:1.5rem;font-size:.78rem;color:var(--muted)}
+.pastille{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:.35rem;vertical-align:-1px}
+.pastille--libre{background:#4C9A5E}
+.pastille--resa{background:var(--navy-700)}
+.pastille--manuel{background:var(--gold-500)}
+.pastille--hs{background:#C3CBD4}
+
+/* ── Formulaires en ligne (tables, équipe) ────────────────── */
+.ligne-champs{display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end}
+.ligne-champs .field{margin-bottom:0;flex:1 1 150px;min-width:120px}
+.ligne-champs--serree{gap:.7rem}
+.ligne-champs--serree .field{flex:1 1 110px}
+.field--court{flex:0 0 100px !important;min-width:90px}
+.aide{font-size:.78rem;color:var(--muted);margin:.9rem 0 0}
+
+.liste-tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.liste-tables .card{margin-top:0}
+.carte-table{padding:1.1rem}
+.carte-table.est-inactive{opacity:.6;background:#FAFBFC}
+.btn-row--serree{margin-top:1rem;gap:.5rem}
+.case{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--muted);white-space:nowrap;padding-bottom:.55rem}
+.case input{width:18px;height:18px;accent-color:var(--navy-800)}
+
+/* ── Planning ─────────────────────────────────────────────── */
+.nav-semaine{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.4rem}
+.nav-semaine strong{font-family:var(--ff-title);font-weight:400;font-size:1.05rem;color:var(--navy-800)}
+
+.grille-planning{background:#fff;border-radius:10px;overflow:hidden;min-width:760px}
+.grille-planning th,.grille-planning td{border:1px solid rgba(14,42,78,.08);vertical-align:top;padding:.6rem .5rem}
+.grille-planning thead th{background:#F0F3F7;text-align:center}
+.grille-planning .jour-nom{display:block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-800)}
+.grille-planning .jour-num{display:block;font-size:.68rem;color:var(--muted);text-transform:none;letter-spacing:0}
+.grille-planning .est-aujourdhui{background:#FDF8EC}
+.grille-planning .col-personne{min-width:150px;background:#FAFBFC}
+.grille-planning .col-personne small{color:var(--muted);font-size:.72rem}
+.grille-planning .col-total{text-align:center;background:#FAFBFC;white-space:nowrap}
+.grille-planning tbody tr:hover{background:transparent}
+
+.shift{
+  display:flex;align-items:center;justify-content:space-between;gap:.3rem;
+  background:var(--navy-800);color:#fff;border-radius:4px;padding:.28rem .45rem;
+  font-size:.76rem;margin-bottom:.3rem;
+}
+.shift form{display:flex}
+.shift__x{
+  background:none;border:0;color:rgba(255,255,255,.65);cursor:pointer;
+  font-size:1rem;line-height:1;padding:0 .1rem;
+}
+.shift__x:hover{color:#fff}
+.shift__note{display:block;color:var(--muted);font-size:.7rem;margin-bottom:.35rem}
+
+/* ── Présences ────────────────────────────────────────────── */
+.carte-presence{border-left:4px solid var(--muted);padding:1.1rem}
+.carte-presence--present{border-left-color:#4C9A5E}
+.carte-presence--absent{border-left-color:var(--err)}
+.carte-presence--conge,.carte-presence--maladie{border-left-color:var(--gold-500)}
+.carte-presence--attente{border-left-color:#C3CBD4}
+.carte-presence__tete{display:flex;align-items:center;justify-content:space-between;gap:.7rem;margin-bottom:.6rem}
+.carte-presence__tete strong{font-family:var(--ff-title);font-weight:400;font-size:1.05rem;color:var(--navy-800)}
+.carte-presence__tete small{display:block;color:var(--muted);font-size:.75rem}
+.carte-presence__prevu,.carte-presence__reel{margin:0 0 .5rem;font-size:.85rem;color:var(--muted)}
+.carte-presence__reel strong{color:var(--navy-800)}
+.carte-presence__actions{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;margin-top:.9rem}
+.carte-presence__actions form{display:flex;gap:.35rem;align-items:center}
+.carte-presence__actions input[type=time],.carte-presence__actions select{
+  padding:.45rem .5rem;border:1px solid rgba(14,42,78,.2);border-radius:3px;font:inherit;font-size:.85rem;
+}
+
+/* ── Écrans étroits (téléphone) ───────────────────────────── */
+@media (max-width:640px){
+  .wrap,.wrap--large{width:min(100% - 1.6rem, 1240px)}
+  .plan-salle{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.7rem}
+  .liste-tables{grid-template-columns:1fr}
+  .tuiles{grid-template-columns:repeat(2,1fr);gap:.7rem}
+  .tuile b{font-size:1.6rem}
+  .barre-filtres{padding:.9rem 1rem}
+  .barre-filtres .field{min-width:0;flex:1 1 130px}
+  .carte-presence__actions{gap:.4rem}
+  .carte-presence__actions form{flex:1 1 100%}
+  .carte-presence__actions .btn{flex:1}
+  /* Cibles tactiles : un doigt vaut ~9 mm, on ne descend pas sous 44 px. */
+  .btn--sm{padding:.6rem 1rem}
+  .table-carte__champ input,
+  .carte-presence__actions input[type=time],
+  .carte-presence__actions select{min-height:44px}
+}

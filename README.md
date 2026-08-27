@@ -58,6 +58,7 @@ server/
     reservation.js, commande.js    tunnels publics
     compte.js                       espace client
     salon.js, salon_carte.js, salon_services.js,
+    salon_salle.js, salon_equipe.js,
     salon_reservations.js, salon_commandes.js   back-office
   views/                 gabarits EJS (tunnels, compte, salon)
   public/
@@ -81,12 +82,21 @@ Accessible à `/salon/connexion` avec un compte créé via `npm run admin`.
   « végétarien », autoriser ou non à emporter. Chaque plat peut recevoir une
   photo (JPEG/PNG/WebP, 8 Mo max) : elle est automatiquement redimensionnée
   à 1000 px de large et recompressée en JPEG qualité 82.
-- **Services & capacité** (`/salon/services`) — un service définit des jours,
-  une plage horaire et un pas entre créneaux (ex. 30 min), avec deux limites
-  *indépendantes* : le nombre de **tables** (réservations simultanées) et le
-  nombre de **couverts** (personnes) au total sur un même créneau. On peut
-  aussi déclarer des **fermetures exceptionnelles** (congés, jour férié,
-  privatisation) qui retirent une date des deux tunnels.
+- **Services** (`/salon/services`) — un service définit des jours, une plage
+  horaire et un pas entre créneaux (ex. 30 min). Sa **capacité vient des
+  tables** qu'on y configure (`/salon/services/:id/tables`) : autant de tables
+  que l'on veut, chacune avec son nombre de couverts. On peut aussi déclarer
+  des **fermetures exceptionnelles** (congés, jour férié, privatisation) qui
+  retirent une date des deux tunnels.
+- **Salle** (`/salon/salle`) — le plan de salle sur un créneau donné. Chaque
+  table y est libre, prise par une réservation, ou cochée occupée à la main
+  (client sans réservation). Ce sont les **deux seules façons d'occuper une
+  table**, et elles se combinent : la disponibilité offerte aux clients en
+  découle directement.
+- **Équipe** (`/salon/equipe`) — les personnes qui travaillent au restaurant,
+  leur **planning** hebdomadaire (shifts, avec total d'heures par personne)
+  et la **feuille de présence** du jour (pointage arrivée/départ, congé,
+  maladie, absence).
 - **Réservations** (`/salon/reservations`) — vue par date et par statut
   (en attente, confirmée, honorée, annulée, absente), avec le total de
   couverts du jour et un changement de statut en un clic.
@@ -100,10 +110,11 @@ est servie en direct par `/api/carte` (voir plus bas).
 ## Les tunnels publics
 
 **Réservation** (`/reserver`) — le client choisit une date et un nombre de
-couverts ; les créneaux affichés viennent du service du jour et excluent ceux
-déjà complets (table ou couverts). Le créneau est revérifié côté serveur au
-moment de la confirmation, pour ne jamais faire confiance à un affichage qui
-aurait pu se périmer de quelques secondes.
+couverts ; les créneaux affichés sont ceux où il reste **une table libre assez
+grande**. À la confirmation, le serveur revérifie la disponibilité et attribue
+la plus petite table qui convient — placer deux personnes sur une table de
+huit gâcherait la salle. On ne fait jamais confiance à un affichage qui aurait
+pu se périmer de quelques secondes.
 
 **Commande à emporter** (`/commander`) — la carte (uniquement les plats
 autorisés à emporter), un panier avec quantités, une heure de retrait parmi
@@ -155,8 +166,10 @@ trouve déjà (nom, contact, historique de commandes).
 
 Postgres (Vercel Postgres/Neon en production, un Postgres ordinaire en
 développement ou sur un VPS). Tables principales : `categories`, `plats`,
-`services`, `fermetures`, `clients`, `reservations`, `commandes` +
-`commande_lignes`, `admins`, `sessions`, `tentatives`, `reglages`. Le détail
+`services` + `tables_resto` et `occupations` (la capacité et son remplissage),
+`fermetures`, `clients`, `reservations`, `commandes` + `commande_lignes`,
+`employes` + `plannings` + `pointages` (l'équipe), `admins`, `sessions`,
+`tentatives`, `reglages`. Le détail
 de chaque colonne et sa raison d'être sont commentés dans `server/schema.sql`.
 Les montants sont en centimes (entiers) ; les dates métier restent en texte
 ISO plutôt qu'en `DATE`/`TIME` natifs (voir l'en-tête du fichier).

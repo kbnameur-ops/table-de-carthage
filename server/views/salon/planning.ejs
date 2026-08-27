@@ -1,0 +1,110 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Planning</h1>
+  <p class="lead">Les shifts prévus, semaine par semaine. Une même personne peut avoir deux shifts le même jour (coupure midi / soir).</p>
+</div>
+
+<div class="sous-onglets">
+  <a href="/salon/equipe">Équipe</a>
+  <a href="/salon/planning" class="is-active">Planning</a>
+  <a href="/salon/presences">Présences</a>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
+<div class="nav-semaine">
+  <a class="btn btn--ghost btn--sm" href="/salon/planning?semaine=<%= semainePrecedente %>">← Semaine précédente</a>
+  <strong>Semaine du <%= new Date(lundi + 'T00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) %></strong>
+  <a class="btn btn--ghost btn--sm" href="/salon/planning?semaine=<%= semaineSuivante %>">Semaine suivante →</a>
+</div>
+
+<% if (!employes.length) { %>
+  <div class="alerte alerte--info">
+    Aucune personne active dans l'équipe. <a href="/salon/equipe">Ajouter quelqu'un →</a>
+  </div>
+<% } else { %>
+
+  <div class="table-scroll">
+    <table class="grille-planning">
+      <thead>
+        <tr>
+          <th class="col-personne">Personne</th>
+          <% jours.forEach(j => { %>
+            <th<%- j === aujourdHui ? ' class="est-aujourdhui"' : '' %>>
+              <span class="jour-nom"><%= new Date(j + 'T00:00').toLocaleDateString('fr-FR', { weekday: 'short' }) %></span>
+              <span class="jour-num"><%= new Date(j + 'T00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) %></span>
+            </th>
+          <% }) %>
+          <th class="col-total">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% employes.forEach(e => { %>
+          <tr>
+            <td class="col-personne">
+              <strong><%= e.prenom %> <%= e.nom %></strong>
+              <% if (e.poste) { %><br><small><%= e.poste %></small><% } %>
+            </td>
+            <% jours.forEach(j => { %>
+              <td<%- j === aujourdHui ? ' class="est-aujourdhui"' : '' %>>
+                <% grille.get(e.id)[j].forEach(s => { %>
+                  <div class="shift">
+                    <span><%= s.debut %>–<%= s.fin %></span>
+                    <form method="post" action="/salon/planning/<%= s.id %>/supprimer">
+                      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                      <button type="submit" class="shift__x" title="Retirer ce shift">×</button>
+                    </form>
+                  </div>
+                  <% if (s.note) { %><small class="shift__note"><%= s.note %></small><% } %>
+                <% }) %>
+              </td>
+            <% }) %>
+            <td class="col-total">
+              <% const m = heuresParEmploye.get(e.id); %>
+              <strong><%= Math.floor(m / 60) %> h<%= m % 60 ? String(m % 60).padStart(2, '0') : '' %></strong>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:1.8rem">
+    <h2 style="margin-top:0">Ajouter un shift</h2>
+    <form method="post" action="/salon/planning" class="ligne-champs">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="field">
+        <label for="f-employe">Personne</label>
+        <select id="f-employe" name="employeId" required>
+          <% employes.forEach(e => { %>
+            <option value="<%= e.id %>"><%= e.prenom %> <%= e.nom %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-jour">Jour</label>
+        <select id="f-jour" name="date" required>
+          <% jours.forEach(j => { %>
+            <option value="<%= j %>"<%- j === aujourdHui ? ' selected' : '' %>>
+              <%= new Date(j + 'T00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="field field--court">
+        <label for="f-debut">Début</label>
+        <input type="time" id="f-debut" name="debut" value="11:00" required>
+      </div>
+      <div class="field field--court">
+        <label for="f-fin">Fin</label>
+        <input type="time" id="f-fin" name="fin" value="15:00" required>
+      </div>
+      <div class="field">
+        <label for="f-note">Note</label>
+        <input type="text" id="f-note" name="note" maxlength="120" placeholder="Facultatif">
+      </div>
+      <button type="submit" class="btn">Ajouter</button>
+    </form>
+  </div>
+<% } %>
+<%- salonPied %>

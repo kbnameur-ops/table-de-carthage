@@ -1,0 +1,66 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <p class="fil"><a href="/salon/services">Services</a> · <%= service.nom %></p>
+  <h1>Tables de la salle</h1>
+  <p class="lead">
+    La capacité du service découle de ces tables : une réservation n'est acceptée
+    que s'il reste une table libre assez grande. Total actuel :
+    <strong><%= tables.filter(t => t.actif).length %> tables · <%= total %> places</strong>.
+  </p>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
+<div class="card" style="margin-bottom:1.8rem">
+  <h2 style="margin-top:0">Ajouter des tables</h2>
+  <form method="post" action="/salon/services/<%= service.id %>/tables" class="ligne-champs">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="f-nom">Nom</label>
+      <input type="text" id="f-nom" name="nom" required maxlength="40" placeholder="Table" value="Table">
+    </div>
+    <div class="field">
+      <label for="f-couverts">Couverts</label>
+      <input type="number" id="f-couverts" name="couverts" min="1" max="30" value="4" required>
+    </div>
+    <div class="field">
+      <label for="f-nombre">Combien</label>
+      <input type="number" id="f-nombre" name="nombre" min="1" max="40" value="1">
+    </div>
+    <button type="submit" class="btn">Ajouter</button>
+  </form>
+  <p class="aide">Au-delà d'une table, le nom est numéroté automatiquement : « Table 1 », « Table 2 »…</p>
+</div>
+
+<% if (!tables.length) { %>
+  <div class="alerte alerte--info">Aucune table pour l'instant : le service n'accepte donc aucune réservation.</div>
+<% } else { %>
+  <div class="liste-tables">
+    <% tables.forEach(t => { %>
+      <form method="post" action="/salon/tables/<%= t.id %>" class="card carte-table<%= t.actif ? '' : ' est-inactive' %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="ligne-champs ligne-champs--serree">
+          <div class="field">
+            <label>Nom</label>
+            <input type="text" name="nom" value="<%= t.nom %>" required maxlength="40">
+          </div>
+          <div class="field field--court">
+            <label>Couverts</label>
+            <input type="number" name="couverts" value="<%= t.couverts %>" min="1" max="30" required>
+          </div>
+          <label class="case">
+            <input type="checkbox" name="actif" <%- t.actif ? 'checked' : '' %>>
+            <span>En service</span>
+          </label>
+        </div>
+        <div class="btn-row btn-row--serree">
+          <button type="submit" class="btn btn--sm">Enregistrer</button>
+          <button type="submit" class="btn btn--danger btn--sm"
+                  formaction="/salon/tables/<%= t.id %>/supprimer"
+                  onclick="return confirm('Supprimer <%= t.nom %> ? Les réservations déjà placées dessus resteront valides mais sans table.')">Supprimer</button>
+        </div>
+      </form>
+    <% }) %>
+  </div>
+<% } %>
+<%- salonPied %>

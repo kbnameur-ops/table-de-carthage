@@ -157,3 +157,87 @@ CREATE TABLE IF NOT EXISTS reglages (
   cle    TEXT PRIMARY KEY,
   valeur TEXT NOT NULL
 );
+
+-- ═══════════════════════════════════════════════════════════
+-- v2 — Capacité par tables réelles, et gestion d'équipe
+-- Ces blocs sont idempotents (IF NOT EXISTS) : le même fichier
+-- s'applique à une base neuve comme à une base déjà en service.
+-- ═══════════════════════════════════════════════════════════
+
+-- ── Les tables de la salle ─────────────────────────────────
+-- Rattachées à un service : la salle peut être découpée autrement
+-- le midi et le soir (terrasse fermée, tables rapprochées...).
+CREATE TABLE IF NOT EXISTS tables_resto (
+  id         INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  service_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  nom        TEXT    NOT NULL,                    -- 'T1', 'Terrasse 3'
+  couverts   INTEGER NOT NULL CHECK (couverts > 0),
+  position   INTEGER NOT NULL DEFAULT 0,
+  actif      BOOLEAN NOT NULL DEFAULT true
+);
+CREATE INDEX IF NOT EXISTS idx_tables_service ON tables_resto(service_id, position);
+
+-- Une réservation occupe une table précise, assignée à la confirmation.
+ALTER TABLE reservations ADD COLUMN IF NOT EXISTS table_id INTEGER REFERENCES tables_resto(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_resa_table ON reservations(table_id, date, heure);
+
+-- L'autre façon d'occuper une table : le salon la coche occupée
+-- (client sans réservation, table réservée au personnel, service en cours).
+CREATE TABLE IF NOT EXISTS occupations (
+  id        INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  table_id  INTEGER NOT NULL REFERENCES tables_resto(id) ON DELETE CASCADE,
+  date      TEXT    NOT NULL,                     -- 'YYYY-MM-DD'
+  heure     TEXT    NOT NULL,                     -- 'HH:MM'
+  couverts  INTEGER NOT NULL DEFAULT 0 CHECK (couverts >= 0),
+  note      TEXT    NOT NULL DEFAULT '',
+  cree_le   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (table_id, date, heure)
+);
+CREATE INDEX IF NOT EXISTS idx_occupations_jour ON occupations(date, heure);
+
+-- La capacité vient désormais de la somme des tables : ces deux colonnes
+-- ne sont plus lues nulle part, mais restent en base pour ne pas perdre
+-- la configuration d'origine d'un service déjà créé.
+ALTER TABLE services ALTER COLUMN tables_total   SET DEFAULT 0;
+ALTER TABLE services ALTER COLUMN couverts_total SET DEFAULT 0;
+
+-- ── Équipe : planning prévisionnel et présence réelle ──────
+CREATE TABLE IF NOT EXISTS employes (
+  id        INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  prenom    TEXT    NOT NULL,
+  nom       TEXT    NOT NULL,
+  poste     TEXT    NOT NULL DEFAULT '',          -- 'Salle', 'Cuisine', 'Plonge'
+  telephone TEXT    NOT NULL DEFAULT '',
+  email     TEXT    NOT NULL DEFAULT '',
+  actif     BOOLEAN NOT NULL DEFAULT true,
+  cree_le   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Un shift prévu. Une même personne peut en avoir deux le même jour
+-- (coupure midi/soir), d'où l'absence de contrainte d'unicité par date.
+CREATE TABLE IF NOT EXISTS plannings (
+  id         INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  employe_id INTEGER NOT NULL REFERENCES employes(id) ON DELETE CASCADE,
+  date       TEXT    NOT NULL,                    -- 'YYYY-MM-DD'
+  debut      TEXT    NOT NULL,                    -- 'HH:MM'
+  fin        TEXT    NOT NULL,                    -- 'HH:MM'
+  note       TEXT    NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_plannings_jour ON plannings(date, debut);
+CREATE INDEX IF NOT EXISTS idx_plannings_employe ON plannings(employe_id, date);
+
+-- La présence constatée, saisie en un clic depuis le planning du jour.
+-- Séparée du planning : on veut pouvoir comparer prévu et réalisé, et
+-- pointer quelqu'un qui n'était pas prévu.
+CREATE TABLE IF NOT EXISTS pointages (
+  id         INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  employe_id INTEGER NOT NULL REFERENCES employes(id) ON DELETE CASCADE,
+  date       TEXT    NOT NULL,
+  arrivee    TEXT,                                -- 'HH:MM', NULL tant qu'absent
+  depart     TEXT,
+  statut     TEXT    NOT NULL DEFAULT 'present'
+             CHECK (statut IN ('present','absent','conge','maladie')),
+  note       TEXT    NOT NULL DEFAULT '',
+  UNIQUE (employe_id, date)
+);
+CREATE INDEX IF NOT EXISTS idx_pointages_jour ON pointages(date);
