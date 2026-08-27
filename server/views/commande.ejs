@@ -31,9 +31,12 @@
                 <p><%= plat.description %></p>
               </div>
               <div class="menu-plat__prix"><%= euros(plat.prix_cents) %></div>
-              <div class="menu-plat__qte">
+              <div class="compteur" data-plat="<%= plat.id %>">
+                <button type="button" class="compteur__btn js-moins" aria-label="Retirer un <%= plat.nom %>">−</button>
                 <input type="number" min="0" max="20" value="<%= (valeurs.quantites || {})[plat.id] || 0 %>"
-                       name="qte_<%= plat.id %>" data-prix="<%= plat.prix_cents %>" class="js-qte">
+                       name="qte_<%= plat.id %>" data-prix="<%= plat.prix_cents %>" class="js-qte"
+                       inputmode="numeric" aria-label="Quantité de <%= plat.nom %>">
+                <button type="button" class="compteur__btn js-plus" aria-label="Ajouter un <%= plat.nom %>">+</button>
               </div>
             </div>
           <% }) %>
@@ -42,7 +45,7 @@
     <% }) %>
 
     <div class="panier-total">
-      <span>Total</span>
+      <span>Total <em id="nbArticles">Panier vide</em></span>
       <strong id="totalPanier">0,00 €</strong>
     </div>
     <% if (erreurs.panier) { %><div class="alerte alerte--erreur"><%= erreurs.panier %></div><% } %>
@@ -113,10 +116,41 @@
 (function () {
   const qteInputs = Array.from(document.querySelectorAll('.js-qte'));
   const totalEl = document.getElementById('totalPanier');
+
   function recalc() {
-    const total = qteInputs.reduce((s, i) => s + (parseInt(i.value, 10) || 0) * parseInt(i.dataset.prix, 10), 0);
+    let total = 0, articles = 0;
+    for (const i of qteInputs) {
+      const q = parseInt(i.value, 10) || 0;
+      total += q * parseInt(i.dataset.prix, 10);
+      articles += q;
+      // La ligne se met en avant dès qu'elle est au panier : sur une carte
+      // longue, on doit retrouver d'un coup d'œil ce qu'on a déjà choisi.
+      i.closest('.menu-plat')?.classList.toggle('est-choisi', q > 0);
+      i.closest('.compteur')?.classList.toggle('est-actif', q > 0);
+    }
     totalEl.textContent = (total / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+    const compteArticles = document.getElementById('nbArticles');
+    if (compteArticles) {
+      compteArticles.textContent = articles ? articles + (articles > 1 ? ' articles' : ' article') : 'Panier vide';
+    }
   }
+
+  // Les deux boutons bornent la valeur aux mêmes limites que le champ, que
+  // le serveur revérifie de toute façon : ici c'est du confort, pas un
+  // contrôle de sécurité.
+  function ajuster(input, delta) {
+    const min = parseInt(input.min, 10) || 0;
+    const max = parseInt(input.max, 10) || 20;
+    const actuel = parseInt(input.value, 10) || 0;
+    input.value = Math.min(max, Math.max(min, actuel + delta));
+    recalc();
+  }
+
+  document.querySelectorAll('.compteur').forEach(c => {
+    const input = c.querySelector('.js-qte');
+    c.querySelector('.js-moins').addEventListener('click', () => ajuster(input, -1));
+    c.querySelector('.js-plus').addEventListener('click', () => ajuster(input, +1));
+  });
   qteInputs.forEach(i => i.addEventListener('input', recalc));
   recalc();
 

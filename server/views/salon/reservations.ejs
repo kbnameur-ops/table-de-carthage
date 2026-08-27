@@ -1,44 +1,70 @@
 <%- salonEntete %>
-<h1>Réservations</h1>
+<div class="page-titre">
+  <h1>Réservations</h1>
+</div>
 
-<form method="get" action="/salon/reservations" class="filtre-bar">
+<div class="nav-jour">
+  <% if (!aVenir) { %>
+    <a class="nav-jour__fleche" href="/salon/reservations?date=<%= veille %><%= statut ? '&statut=' + statut : '' %>" aria-label="Jour précédent">‹</a>
+  <% } %>
+  <div class="nav-jour__centre">
+    <strong><%= libelle %></strong>
+    <% if (!aVenir) { %><small><%= new Date(date + 'T00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) %></small><% } %>
+  </div>
+  <% if (!aVenir) { %>
+    <a class="nav-jour__fleche" href="/salon/reservations?date=<%= lendemain %><%= statut ? '&statut=' + statut : '' %>" aria-label="Jour suivant">›</a>
+  <% } %>
+</div>
+
+<form method="get" action="/salon/reservations" class="barre-filtres">
   <div class="field">
-    <label for="f-date">Date</label>
-    <input type="date" id="f-date" name="date" value="<%= date %>" onchange="this.form.submit()">
+    <label for="f-date">Aller au jour</label>
+    <input type="date" id="f-date" name="date" value="<%= date || aujourdHui %>" onchange="this.form.submit()">
   </div>
   <div class="field">
     <label for="f-statut">Statut</label>
     <select id="f-statut" name="statut" onchange="this.form.submit()">
       <option value="">Tous</option>
       <% statuts.forEach(s => { %>
-        <option value="<%= s %>" <%= s === statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+        <option value="<%= s %>" <%- s === statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
       <% }) %>
     </select>
   </div>
-  <div class="stat-tuile" style="padding:.8rem 1.2rem"><b style="font-size:1.4rem"><%= total %></b><span>Couverts ce jour</span></div>
+  <div class="raccourcis-jour">
+    <a class="btn btn--ghost btn--sm<%= date === aujourdHui ? ' est-actif' : '' %>" href="/salon/reservations<%= statut ? '?statut=' + statut : '' %>">Aujourd'hui</a>
+    <a class="btn btn--ghost btn--sm<%= aVenir ? ' est-actif' : '' %>" href="/salon/reservations?date=a-venir<%= statut ? '&statut=' + statut : '' %>">Tout ce qui vient</a>
+  </div>
+  <div class="tuile tuile--compacte"><b><%= total %></b><span>Couverts</span></div>
+  <noscript><button type="submit" class="btn btn--sm">Afficher</button></noscript>
 </form>
 
 <% if (!reservations.length) { %>
-  <p class="vide">Aucune réservation pour cette date.</p>
+  <p class="vide">Aucune réservation<%= statut ? ' avec ce statut' : '' %> <%= aVenir ? 'à venir' : 'pour ce jour' %>.</p>
 <% } else { %>
 <div class="table-scroll">
 <table>
-  <thead><tr><th>Heure</th><th>Client</th><th>Contact</th><th>Couverts</th><th>Motif</th><th>Message</th><th>Statut</th></tr></thead>
+  <thead><tr>
+    <% if (aVenir) { %><th>Jour</th><% } %>
+    <th>Heure</th><th>Client</th><th>Contact</th><th>Couverts</th><th>Table</th><th>Message</th><th>Statut</th>
+  </tr></thead>
   <tbody>
     <% reservations.forEach(r => { %>
       <tr>
-        <td><%= r.heure %></td>
+        <% if (aVenir) { %>
+          <td><small><%= new Date(r.date + 'T00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }) %></small></td>
+        <% } %>
+        <td><strong><%= r.heure %></strong></td>
         <td><%= r.prenom %> <%= r.nom %><br><small style="color:var(--muted)"><%= r.reference %></small></td>
         <td><a href="tel:<%= r.telephone_saisi %>"><%= r.telephone_saisi %></a><br><small><%= r.email %></small></td>
         <td><%= r.couverts %></td>
-        <td><%= r.motif %></td>
+        <td><%= r.table_nom || '—' %></td>
         <td style="max-width:220px"><%= r.message || '—' %></td>
         <td>
           <form method="post" action="/salon/reservations/<%= r.id %>/statut">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <select name="statut" onchange="this.form.submit()" class="badge badge--<%= r.statut.replace('_','') %>" style="border:0;padding:.3rem .5rem">
               <% statuts.forEach(s => { %>
-                <option value="<%= s %>" <%= s === r.statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+                <option value="<%= s %>" <%- s === r.statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
               <% }) %>
             </select>
           </form>

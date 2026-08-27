@@ -241,3 +241,22 @@ CREATE TABLE IF NOT EXISTS pointages (
   UNIQUE (employe_id, date)
 );
 CREATE INDEX IF NOT EXISTS idx_pointages_jour ON pointages(date);
+
+-- ── Notifications du salon ─────────────────────────────────
+-- Un événement à signaler à l'équipe : nouvelle réservation, nouvelle
+-- commande, annulation par un client. Écrites au moment où l'événement se
+-- produit, marquées lues depuis le salon. `lien` évite de reconstruire
+-- l'URL de destination à l'affichage.
+CREATE TABLE IF NOT EXISTS notifications (
+  id      INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  type    TEXT    NOT NULL
+          CHECK (type IN ('reservation','commande','annulation_reservation','annulation_commande')),
+  titre   TEXT    NOT NULL,
+  detail  TEXT    NOT NULL DEFAULT '',
+  lien    TEXT    NOT NULL DEFAULT '/salon',
+  lue     BOOLEAN NOT NULL DEFAULT false,
+  cree_le TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+-- Le badge compte les non-lues à chaque page du salon : l'index porte sur
+-- `lue` en premier pour que ce COUNT reste immédiat quand l'historique grossit.
+CREATE INDEX IF NOT EXISTS idx_notifications_lue ON notifications(lue, cree_le DESC);

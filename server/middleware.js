@@ -103,7 +103,10 @@ export function injecterMiseEnPage(req, res, next) {
     }
     if (donnees.entete === undefined) {
       if (vue.startsWith('salon/')) {
-        donnees.salonEntete = salonEntete({ titre: donnees.titre, actif: donnees.actif });
+        donnees.salonEntete = salonEntete({
+          titre: donnees.titre, actif: donnees.actif,
+          notifs: donnees.notifs ?? res.locals.notifs ?? 0,
+        });
         donnees.salonPied = salonPied({ csrfToken: donnees.csrfToken ?? res.locals.csrfToken });
       } else {
         // req.session peut être absent si sessionMiddleware a échoué avant
@@ -130,4 +133,25 @@ export function redirigerRetour(req, res, parDefaut) {
     } catch { /* Referer absent ou invalide */ }
   }
   res.redirect(parDefaut);
+}
+
+/** Compte les notifications non lues pour la barre du salon. Placé en
+ *  middleware plutôt que dans chaque route : le badge est présent sur
+ *  toutes les pages du salon, et une route qui l'oublierait l'afficherait
+ *  à zéro sans qu'on s'en aperçoive. Silencieux en cas d'erreur — un badge
+ *  manquant ne doit pas empêcher d'accéder au salon.
+ *
+ *  L'import est dynamique pour éviter un cycle : lib/notifications.js
+ *  n'importe rien d'ici, mais les routes qui l'utilisent importent ce
+ *  module, et le charger au sommet créerait une dépendance croisée. */
+export async function chargerNotifications(req, res, next) {
+  res.locals.notifs = 0;
+  if (req.session?.role !== 'admin') return next();
+  try {
+    const { compterNonLues } = await import('./lib/notifications.js');
+    res.locals.notifs = await compterNonLues();
+  } catch (err) {
+    console.error('Compteur de notifications indisponible :', err.message);
+  }
+  next();
 }
