@@ -8,7 +8,19 @@ export const salonServicesRouter = Router();
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 async function chargerServicesAvecJours() {
-  const services = await query(`SELECT * FROM services ORDER BY position`);
+  // La capacité affichée est calculée depuis les tables réellement
+  // configurées, pas depuis un total saisi à la main.
+  const services = await query(
+    `SELECT s.*,
+            COALESCE(t.nb, 0)::int       AS nb_tables,
+            COALESCE(t.couverts, 0)::int AS nb_couverts
+       FROM services s
+       LEFT JOIN (
+         SELECT service_id, COUNT(*) AS nb, SUM(couverts) AS couverts
+           FROM tables_resto WHERE actif = true GROUP BY service_id
+       ) t ON t.service_id = s.id
+      ORDER BY s.position`
+  );
   return services.map(s => ({
     ...s,
     joursLabel: JOURS.filter((_, i) => s.jours.includes(String(i + 1))).join(', '),
@@ -47,9 +59,7 @@ function validerService(body) {
   if (!texteNonVide(body.nom, 60)) erreurs.push('Nom requis.');
   if (!joursDepuisCases(body)) erreurs.push('Cochez au moins un jour.');
   if (!heureValide(body.debut) || !heureValide(body.fin) || body.debut >= body.fin) erreurs.push('Horaires invalides.');
-  const tables = parseInt(body.tablesTotal, 10), couverts = parseInt(body.couvertsTotal, 10), pas = parseInt(body.pasMinutes, 10);
-  if (!Number.isInteger(tables) || tables < 0) erreurs.push('Nombre de tables invalide.');
-  if (!Number.isInteger(couverts) || couverts < 0) erreurs.push('Nombre de couverts invalide.');
+  const pas = parseInt(body.pasMinutes, 10);
   if (!Number.isInteger(pas) || pas < 5 || pas > 240) erreurs.push('Le pas entre créneaux doit être entre 5 et 240 minutes.');
   return erreurs;
 }
@@ -60,11 +70,11 @@ salonServicesRouter.post('/salon/services', exigerAdmin, verifierCsrf, async (re
     if (erreurs.length) return res.redirect('/salon/services/nouveau?erreur=' + encodeURIComponent(erreurs.join(' ')));
     const { p: position } = await une(`SELECT COALESCE(MAX(position), -1) + 1 AS p FROM services`);
     await executer(
-      `INSERT INTO services (nom, jours, debut, fin, tables_total, couverts_total, pas_minutes, position)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      `INSERT INTO services (nom, jours, debut, fin, pas_minutes, position)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         req.body.nom.trim(), joursDepuisCases(req.body), req.body.debut, req.body.fin,
-        parseInt(req.body.tablesTotal, 10), parseInt(req.body.couvertsTotal, 10), parseInt(req.body.pasMinutes, 10), position,
+        parseInt(req.body.pasMinutes, 10), position,
       ]
     );
     res.redirect('/salon/services');
@@ -76,12 +86,10 @@ salonServicesRouter.post('/salon/services/:id', exigerAdmin, verifierCsrf, async
     const erreurs = validerService(req.body);
     if (erreurs.length) return res.redirect(`/salon/services/${req.params.id}/modifier?erreur=` + encodeURIComponent(erreurs.join(' ')));
     await executer(
-      `UPDATE services SET nom = $1, jours = $2, debut = $3, fin = $4, tables_total = $5, couverts_total = $6,
-       pas_minutes = $7, actif = $8 WHERE id = $9`,
+      `UPDATE services SET nom = $1, jours = $2, debut = $3, fin = $4, pas_minutes = $5, actif = $6 WHERE id = $7`,
       [
         req.body.nom.trim(), joursDepuisCases(req.body), req.body.debut, req.body.fin,
-        parseInt(req.body.tablesTotal, 10), parseInt(req.body.couvertsTotal, 10), parseInt(req.body.pasMinutes, 10),
-        !!req.body.actif, req.params.id,
+        parseInt(req.body.pasMinutes, 10), !!req.body.actif, req.params.id,
       ]
     );
     res.redirect('/salon/services');
@@ -111,5 +119,82 @@ salonServicesRouter.post('/salon/fermetures/:id/supprimer', exigerAdmin, verifie
   try {
     await executer(`DELETE FROM fermetures WHERE id = $1`, [req.params.id]);
     res.redirect('/salon/services');
+  } catch (err) { next(err); }
+});
+
+// ── Les tables d'un service ────────────────────────────────
+salonServicesRouter.get('/salon/services/:id/tables', exigerAdmin, async (req, res, next) => {
+  try {
+    const service = await une(`SELECT * FROM services WHERE id = $1`, [req.params.id]);
+    if (!service) return res.redirect('/salon/services');
+    const tables = await query(
+      `SELECT * FROM tables_resto WHERE service_id = $1 ORDER BY position, id`, [service.id]
+    );
+    const total = tables.filter(t => t.actif).reduce((s, t) => s + t.couverts, 0);
+    res.render('salon/tables', {
+      titre: `Tables — ${service.nom}`, actif: 'services', service, tables, total,
+      erreur: req.query.erreur || null, csrfToken: res.locals.csrfToken,
+    });
+  } catch (err) { next(err); }
+});
+
+function validerTable(body) {
+  const erreurs = [];
+  if (!texteNonVide(body.nom, 40)) erreurs.push('Nom de table requis.');
+  const couverts = parseInt(body.couverts, 10);
+  if (!Number.isInteger(couverts) || couverts < 1 || couverts > 30) erreurs.push('Nombre de couverts invalide (1 à 30).');
+  return erreurs;
+}
+
+salonServicesRouter.post('/salon/services/:id/tables', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const retour = `/salon/services/${req.params.id}/tables`;
+    const erreurs = validerTable(req.body);
+    if (erreurs.length) return res.redirect(`${retour}?erreur=` + encodeURIComponent(erreurs.join(' ')));
+
+    const service = await une(`SELECT id FROM services WHERE id = $1`, [req.params.id]);
+    if (!service) return res.redirect('/salon/services');
+
+    // Créer plusieurs tables identiques d'un coup : une salle se configure
+    // le plus souvent par lots (« six tables de 4 »), pas une par une.
+    const nombre = Math.min(Math.max(parseInt(req.body.nombre, 10) || 1, 1), 40);
+    const { p: depart } = await une(
+      `SELECT COALESCE(MAX(position), -1) + 1 AS p FROM tables_resto WHERE service_id = $1`, [service.id]
+    );
+    for (let i = 0; i < nombre; i++) {
+      const nom = nombre === 1 ? req.body.nom.trim() : `${req.body.nom.trim()} ${i + 1}`;
+      await executer(
+        `INSERT INTO tables_resto (service_id, nom, couverts, position) VALUES ($1, $2, $3, $4)`,
+        [service.id, nom, parseInt(req.body.couverts, 10), depart + i]
+      );
+    }
+    res.redirect(retour);
+  } catch (err) { next(err); }
+});
+
+salonServicesRouter.post('/salon/tables/:id', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const table = await une(`SELECT service_id FROM tables_resto WHERE id = $1`, [req.params.id]);
+    if (!table) return res.redirect('/salon/services');
+    const retour = `/salon/services/${table.service_id}/tables`;
+    const erreurs = validerTable(req.body);
+    if (erreurs.length) return res.redirect(`${retour}?erreur=` + encodeURIComponent(erreurs.join(' ')));
+    await executer(
+      `UPDATE tables_resto SET nom = $1, couverts = $2, actif = $3 WHERE id = $4`,
+      [req.body.nom.trim(), parseInt(req.body.couverts, 10), !!req.body.actif, req.params.id]
+    );
+    res.redirect(retour);
+  } catch (err) { next(err); }
+});
+
+salonServicesRouter.post('/salon/tables/:id/supprimer', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const table = await une(`SELECT service_id FROM tables_resto WHERE id = $1`, [req.params.id]);
+    if (!table) return res.redirect('/salon/services');
+    // Une réservation déjà placée sur cette table perd son placement
+    // (ON DELETE SET NULL) mais reste honorée : on ne supprime jamais
+    // une réservation client en réorganisant la salle.
+    await executer(`DELETE FROM tables_resto WHERE id = $1`, [req.params.id]);
+    res.redirect(`/salon/services/${table.service_id}/tables`);
   } catch (err) { next(err); }
 });

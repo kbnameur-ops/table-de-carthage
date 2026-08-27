@@ -68,20 +68,41 @@ async function semerCarte(t) {
   console.log(`✓ ${menu.length} catégories, ${totalPlats} plats importés`);
 }
 
+/** Une salle de départ : 4 tables de 2, 6 de 4 et 2 de 6, soit 12 tables
+ *  et 44 places. C'est la capacité du service — sans tables, aucune
+ *  réservation ne serait acceptée. À ajuster dans le salon. */
+const SALLE_TYPE = [['Duo', 2, 4], ['Table', 4, 6], ['Grande', 6, 2]];
+
+async function semerTables(t, serviceId) {
+  let position = 0;
+  for (const [base, couverts, nombre] of SALLE_TYPE) {
+    for (let i = 0; i < nombre; i++) {
+      await t.executer(
+        `INSERT INTO tables_resto (service_id, nom, couverts, position) VALUES ($1, $2, $3, $4)`,
+        [serviceId, nombre === 1 ? base : `${base} ${i + 1}`, couverts, position++]
+      );
+    }
+  }
+  return position;
+}
+
 async function semerServices(t) {
-  // Horaires réels du restaurant ; la capacité (tables/couverts) est un
-  // point de départ à ajuster dans le salon — /salon/services.
-  await t.executer(
-    `INSERT INTO services (nom, jours, debut, fin, tables_total, couverts_total, pas_minutes, position)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    ['Semaine (lundi–samedi)', '123456', '12:00', '23:00', 12, 48, 30, 0]
-  );
-  await t.executer(
-    `INSERT INTO services (nom, jours, debut, fin, tables_total, couverts_total, pas_minutes, position)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-    ['Dimanche', '7', '12:00', '22:00', 12, 48, 30, 1]
-  );
-  console.log('✓ 2 services créés avec une capacité de départ (12 tables, 48 couverts) — à ajuster dans le salon');
+  // Horaires réels du restaurant. La capacité découle des tables créées
+  // juste après, service par service — à ajuster dans /salon/services.
+  const services = [
+    ['Semaine (lundi–samedi)', '123456', '12:00', '23:00', 30, 0],
+    ['Dimanche', '7', '12:00', '22:00', 30, 1],
+  ];
+  let totalTables = 0;
+  for (const [nom, jours, debut, fin, pas, position] of services) {
+    const { id } = await t.une(
+      `INSERT INTO services (nom, jours, debut, fin, pas_minutes, position)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+      [nom, jours, debut, fin, pas, position]
+    );
+    totalTables += await semerTables(t, id);
+  }
+  console.log(`✓ 2 services créés, ${totalTables} tables au total — à ajuster dans le salon`);
 }
 
 async function semerReglages(t) {
@@ -110,7 +131,7 @@ async function main() {
   if (force) {
     await executer(`DELETE FROM plats`);
     await executer(`DELETE FROM categories`);
-    await executer(`DELETE FROM services`);
+    await executer(`DELETE FROM services`);   // cascade sur tables_resto
     await executer(`DELETE FROM reglages`);
   }
 

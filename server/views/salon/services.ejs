@@ -1,7 +1,7 @@
 <%- salonEntete %>
 <h1>Services &amp; capacité</h1>
 <% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
-<p class="lead">Un service définit des jours, une plage horaire et deux limites indépendantes par créneau : le nombre de tables (réservations simultanées) et le nombre de couverts (personnes) au total.</p>
+<p class="lead">Un service définit des jours, une plage horaire et un pas entre créneaux. Sa capacité vient des <strong>tables</strong> que vous y configurez : une réservation n'est acceptée que s'il reste une table libre assez grande.</p>
 
 <div class="btn-row" style="margin-top:0;margin-bottom:1.5rem">
   <a class="btn" href="/salon/services/nouveau">+ Nouveau service</a>
@@ -9,18 +9,22 @@
 
 <div class="table-scroll">
 <table>
-  <thead><tr><th>Service</th><th>Jours</th><th>Horaires</th><th>Tables</th><th>Couverts</th><th>Pas</th><th>Statut</th><th></th></tr></thead>
+  <thead><tr><th>Service</th><th>Jours</th><th>Horaires</th><th>Salle</th><th>Pas</th><th>Statut</th><th></th></tr></thead>
   <tbody>
     <% services.forEach(s => { %>
       <tr>
         <td><%= s.nom %></td>
         <td><%= s.joursLabel %></td>
         <td><%= s.debut %> – <%= s.fin %></td>
-        <td><%= s.tables_total %></td>
-        <td><%= s.couverts_total %></td>
+        <td>
+          <a href="/salon/services/<%= s.id %>/tables">
+            <%= s.nb_tables %> table<%= s.nb_tables > 1 ? 's' : '' %> · <%= s.nb_couverts %> places
+          </a>
+        </td>
         <td><%= s.pas_minutes %> min</td>
         <td><span class="badge badge--<%= s.actif ? 'confirmee' : 'annulee' %>"><%= s.actif ? 'Actif' : 'Inactif' %></span></td>
         <td>
+          <a class="btn btn--sm" href="/salon/services/<%= s.id %>/tables">Tables</a>
           <a class="btn btn--ghost btn--sm" href="/salon/services/<%= s.id %>/modifier">Modifier</a>
           <form method="post" action="/salon/services/<%= s.id %>/supprimer" style="display:inline" onsubmit="return confirm('Supprimer ce service ?')">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">

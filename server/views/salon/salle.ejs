@@ -1,0 +1,93 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Salle</h1>
+  <p class="lead">Cliquez sur une table libre pour l'occuper (client sans réservation), ou sur une table occupée à la main pour la libérer.</p>
+</div>
+
+<form method="get" action="/salon/salle" class="barre-filtres">
+  <div class="field">
+    <label for="f-date">Jour</label>
+    <input type="date" id="f-date" name="date" value="<%= date %>" onchange="this.form.submit()">
+  </div>
+  <div class="field">
+    <label for="f-heure">Créneau</label>
+    <select id="f-heure" name="heure" onchange="this.form.submit()" <%= creneaux.length ? '' : 'disabled' %>>
+      <% creneaux.forEach(c => { %>
+        <option value="<%= c %>"<%- c === heure ? ' selected' : '' %>><%= c %></option>
+      <% }) %>
+    </select>
+  </div>
+  <noscript><button type="submit" class="btn btn--sm">Afficher</button></noscript>
+</form>
+
+<% if (!service) { %>
+  <div class="alerte alerte--info">Le restaurant est fermé ce jour-là (aucun service actif, ou fermeture exceptionnelle).</div>
+<% } else if (!tables.length) { %>
+  <div class="alerte alerte--info">
+    Aucune table configurée pour le service « <%= service.nom %> ».
+    <a href="/salon/services/<%= service.id %>/tables">Configurer les tables →</a>
+  </div>
+<% } else { %>
+
+  <div class="tuiles">
+    <div class="tuile"><b><%= resume.libres %></b><span>Tables libres</span></div>
+    <div class="tuile tuile--accent"><b><%= resume.occupees %></b><span>Tables occupées</span></div>
+    <div class="tuile"><b><%= resume.couverts %></b><span>Couverts assis</span></div>
+    <div class="tuile"><b><%= resume.places %></b><span>Places au total</span></div>
+  </div>
+
+  <div class="plan-salle">
+    <% tables.forEach(t => { %>
+      <% const occ = t.reservation || t.occupation; %>
+      <% const etat = !t.actif ? 'hs' : t.reservation ? 'resa' : t.occupation ? 'manuel' : 'libre'; %>
+      <div class="table-carte table-carte--<%= etat %>">
+        <div class="table-carte__tete">
+          <b><%= t.nom %></b>
+          <span class="table-carte__cap"><%= t.couverts %> pl.</span>
+        </div>
+
+        <% if (!t.actif) { %>
+          <p class="table-carte__info">Hors service</p>
+        <% } else if (t.reservation) { %>
+          <p class="table-carte__info">
+            <strong><%= t.reservation.prenom %> <%= t.reservation.nom %></strong><br>
+            <%= t.reservation.couverts %> couverts · <%= t.reservation.reference %><br>
+            <a href="tel:<%= t.reservation.telephone_saisi %>"><%= t.reservation.telephone_saisi %></a>
+          </p>
+          <p class="table-carte__note">Réservation — se gère depuis l'onglet Réservations.</p>
+        <% } else if (t.occupation) { %>
+          <p class="table-carte__info">
+            <strong>Sur place</strong><br>
+            <%= t.occupation.couverts %> couverts
+            <% if (t.occupation.note) { %><br><em><%= t.occupation.note %></em><% } %>
+          </p>
+          <form method="post" action="/salon/salle/<%= t.id %>/liberer">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="date" value="<%= date %>">
+            <input type="hidden" name="heure" value="<%= heure %>">
+            <button type="submit" class="btn btn--ghost btn--sm btn--bloc">Libérer</button>
+          </form>
+        <% } else { %>
+          <form method="post" action="/salon/salle/<%= t.id %>/occuper" class="table-carte__form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="date" value="<%= date %>">
+            <input type="hidden" name="heure" value="<%= heure %>">
+            <label class="table-carte__champ">
+              <span>Couverts</span>
+              <input type="number" name="couverts" min="0" max="<%= t.couverts %>" value="<%= t.couverts %>">
+            </label>
+            <button type="submit" class="btn btn--sm btn--bloc">Occuper</button>
+          </form>
+        <% } %>
+      </div>
+    <% }) %>
+  </div>
+
+  <p class="legende">
+    <span class="pastille pastille--libre"></span> Libre
+    <span class="pastille pastille--resa"></span> Réservation
+    <span class="pastille pastille--manuel"></span> Occupée sur place
+    <span class="pastille pastille--hs"></span> Hors service
+  </p>
+<% } %>
+<%- salonPied %>

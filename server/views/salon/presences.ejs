@@ -1,0 +1,101 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Présences</h1>
+  <p class="lead">Pointage du jour, en un geste. Ce qui est constaté ici est indépendant du planning prévu : on peut pointer quelqu'un qui n'était pas prévu.</p>
+</div>
+
+<div class="sous-onglets">
+  <a href="/salon/equipe">Équipe</a>
+  <a href="/salon/planning">Planning</a>
+  <a href="/salon/presences" class="is-active">Présences</a>
+</div>
+
+<form method="get" action="/salon/presences" class="barre-filtres">
+  <div class="field">
+    <label for="f-date">Jour</label>
+    <input type="date" id="f-date" name="date" value="<%= date %>" onchange="this.form.submit()">
+  </div>
+  <noscript><button type="submit" class="btn btn--sm">Afficher</button></noscript>
+</form>
+
+<% if (!lignes.length) { %>
+  <div class="alerte alerte--info">
+    Aucune personne active dans l'équipe. <a href="/salon/equipe">Ajouter quelqu'un →</a>
+  </div>
+<% } else { %>
+  <div class="liste-tables">
+    <% lignes.forEach(l => { %>
+      <% const p = l.pointage; %>
+      <div class="card carte-presence carte-presence--<%= p ? p.statut : 'attente' %>">
+        <div class="carte-presence__tete">
+          <div>
+            <strong><%= l.prenom %> <%= l.nom %></strong>
+            <% if (l.poste) { %><small><%= l.poste %></small><% } %>
+          </div>
+          <span class="badge badge--<%= p ? (p.statut === 'present' ? 'confirmee' : 'annulee') : 'attente' %>">
+            <%= p ? libelles[p.statut] : 'Non pointé' %>
+          </span>
+        </div>
+
+        <p class="carte-presence__prevu">
+          <% if (l.shifts.length) { %>
+            Prévu : <% l.shifts.forEach((s, i) => { %><%= i ? ' · ' : '' %><%= s.debut %>–<%= s.fin %><% }) %>
+          <% } else { %>
+            <em>Aucun shift prévu ce jour</em>
+          <% } %>
+        </p>
+
+        <% if (p && p.statut === 'present') { %>
+          <p class="carte-presence__reel">
+            Arrivée <strong><%= p.arrivee || '—' %></strong>
+            · Départ <strong><%= p.depart || '—' %></strong>
+          </p>
+        <% } else if (p && p.note) { %>
+          <p class="carte-presence__reel"><em><%= p.note %></em></p>
+        <% } %>
+
+        <div class="carte-presence__actions">
+          <% if (!p || !p.arrivee) { %>
+            <form method="post" action="/salon/presences/<%= l.id %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="date" value="<%= date %>">
+              <input type="hidden" name="action" value="arrivee">
+              <input type="time" name="heure" value="<%= maintenant %>" aria-label="Heure d'arrivée">
+              <button type="submit" class="btn btn--sm">Arrivée</button>
+            </form>
+          <% } else if (!p.depart) { %>
+            <form method="post" action="/salon/presences/<%= l.id %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="date" value="<%= date %>">
+              <input type="hidden" name="action" value="depart">
+              <input type="time" name="heure" value="<%= maintenant %>" aria-label="Heure de départ">
+              <button type="submit" class="btn btn--sm">Départ</button>
+            </form>
+          <% } %>
+
+          <form method="post" action="/salon/presences/<%= l.id %>" class="form-statut">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input type="hidden" name="date" value="<%= date %>">
+            <input type="hidden" name="action" value="statut">
+            <select name="statut" aria-label="Statut">
+              <% statuts.forEach(s => { %>
+                <option value="<%= s %>"<%- p && p.statut === s ? ' selected' : '' %>><%= libelles[s] %></option>
+              <% }) %>
+            </select>
+            <button type="submit" class="btn btn--ghost btn--sm">Noter</button>
+          </form>
+
+          <% if (p) { %>
+            <form method="post" action="/salon/presences/<%= l.id %>">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="date" value="<%= date %>">
+              <input type="hidden" name="action" value="effacer">
+              <button type="submit" class="btn btn--ghost btn--sm">Effacer</button>
+            </form>
+          <% } %>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+<%- salonPied %>
