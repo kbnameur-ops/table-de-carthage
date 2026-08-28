@@ -137,7 +137,7 @@ button{font:inherit;color:inherit}
   font-family:var(--ff-title);color:var(--cream);font-size:1.02rem;
   letter-spacing:.12em;white-space:nowrap;
 }
-.nav__links{display:flex;align-items:center;gap:clamp(1rem,2.2vw,2.2rem)}
+.nav__links{display:flex;align-items:center;gap:clamp(.7rem,1.6vw,1.7rem)}
 .nav__links a{
   position:relative;color:var(--cream);font-size:.82rem;
   letter-spacing:.2em;text-transform:uppercase;font-weight:300;padding:.35rem 0;
@@ -149,9 +149,12 @@ button{font:inherit;color:inherit}
 }
 .nav__links a:hover::after{transform:scaleX(1);transform-origin:left}
 .nav__cta{
-  border:1px solid rgba(201,169,97,.6);padding:.55rem 1.25rem !important;
+  border:1px solid rgba(201,169,97,.6);padding:.5rem 1rem !important;
   color:var(--gold-300) !important;transition:background .4s,color .4s;
+  white-space:nowrap;
 }
+/* Réserver reste l'action principale : elle porte le fond doré. */
+.nav__cta--fort{background:rgba(201,169,97,.16)}
 .nav__cta::after{display:none}
 .nav__cta:hover{background:var(--gold-500);color:var(--navy-900) !important}
 
@@ -160,6 +163,10 @@ button{font:inherit;color:inherit}
 .burger.is-open i:nth-child(1){transform:translateY(6.5px) rotate(45deg)}
 .burger.is-open i:nth-child(2){opacity:0}
 .burger.is-open i:nth-child(3){transform:translateY(-6.5px) rotate(-45deg)}
+
+@media (max-width:1180px) and (min-width:981px){
+  .nav__links a:not(.nav__cta){font-size:.74rem;letter-spacing:.12em}
+}
 
 @media (max-width:980px){
   .burger{display:block;z-index:2}
@@ -180,11 +187,45 @@ button{font:inherit;color:inherit}
   background:radial-gradient(120% 90% at 50% 0%,#15406F 0%,var(--navy-800) 45%,var(--navy-900) 100%);
   overflow:hidden;isolation:isolate;text-align:center;padding:8rem 1.5rem 10rem;
 }
-.hero__canvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.75}
+
+/* La salle en fond du hero. La photo passe sous un voile marine soutenu :
+   sans lui, le titre en crème deviendrait illisible sur les zones claires
+   (baies vitrées, nappes) et l'ensemble perdrait l'identité de la marque.
+   `scale(1.04)` évite qu'un liseré blanc apparaisse au bord pendant la
+   lente respiration de l'image. */
+.hero__photo{
+  position:absolute;inset:0;z-index:0;overflow:hidden;
+  background-image:url('../img/salle-hero.jpg');
+  background-size:cover;background-position:center 62%;
+  transform:scale(1.04);
+  animation:heroRespire 26s ease-in-out infinite alternate;
+}
+.hero__photo::after{
+  content:'';position:absolute;inset:0;
+  background:
+    linear-gradient(180deg, rgba(7,26,49,.62) 0%, rgba(7,26,49,.72) 45%, rgba(7,26,49,.92) 100%),
+    radial-gradient(90% 70% at 50% 40%, rgba(7,26,49,.15) 0%, rgba(7,26,49,.75) 100%);
+}
+@keyframes heroRespire{
+  from{transform:scale(1.04) translateY(0)}
+  to{transform:scale(1.10) translateY(-1.2%)}
+}
+/* Une animation de fond n'a rien d'essentiel : on la coupe pour qui a
+   demandé à réduire les mouvements. */
+@media (prefers-reduced-motion:reduce){
+  .hero__photo{animation:none}
+}
+@media (max-width:760px){
+  .hero__photo{background-image:url('../img/salle-hero-mobile.jpg');background-position:center 55%}
+}
+
+/* Le canevas animé reste, en surimpression légère : il apportait le grain
+   punique du hero, mais ne doit plus concurrencer la photo. */
+.hero__canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:.32;mix-blend-mode:screen}
 
 /* frise punique répétée */
 .hero__frieze{
-  position:absolute;top:0;left:0;right:0;height:86px;z-index:1;opacity:.16;
+  position:absolute;top:0;left:0;right:0;height:86px;z-index:2;opacity:.16;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60' viewBox='0 0 120 60'%3E%3Cg fill='none' stroke='%23C9A961' stroke-width='2'%3E%3Cpath d='M0 30h20l10-14 10 14 10-14 10 14 10-14 10 14 10-14 10 14h20'/%3E%3Cpath d='M10 46h100'/%3E%3C/g%3E%3C/svg%3E");
   background-size:120px 60px;
   animation:friezeSlide 24s linear infinite;

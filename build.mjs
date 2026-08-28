@@ -21,7 +21,13 @@ const dataUri = f => 'data:image/jpeg;base64,' +
 const logo = dataUri('./assets/img/logo.jpg');
 
 // Chaque photo référencée dans le HTML ou construite par le JS depuis menu-data
-const photos = new Map([['assets/img/salle.jpg', dataUri('./assets/img/salle.jpg')]]);
+// Les deux fonds du hero sont référencés depuis la feuille de style, donc
+// par un chemin relatif à celle-ci : c'est ce chemin-là qu'il faut remplacer.
+const photos = new Map([
+  ['assets/img/salle.jpg', dataUri('./assets/img/salle.jpg')],
+  ['../img/salle-hero.jpg', dataUri('./assets/img/salle-hero.jpg')],
+  ['../img/salle-hero-mobile.jpg', dataUri('./assets/img/salle-hero-mobile.jpg')],
+]);
 for (const [, nom] of data.matchAll(/photo: '([\w-]+)'/g)) {
   photos.set(`assets/img/plats/${nom}.jpg`, dataUri(`./assets/img/plats/${nom}.jpg`));
 }
@@ -47,6 +53,10 @@ out = out
   .replace("if (i.photo) item.image = base + 'assets/img/plats/' + i.photo + '.jpg';", '')
   .replace("image: base + 'assets/img/logo.jpg',", '')
   .replace('<script>', () => `<script>\nconst PHOTOS = ${JSON.stringify(table)};`);
+
+// Le préchargement n'a plus de sens une fois les images incorporées, et
+// dupliquerait un data-URI de plusieurs centaines de kilo-octets.
+out = out.replace(/^\s*<link rel="preload" as="image"[^>]*>\n/gm, '');
 
 for (const [chemin, uri] of photos) out = out.replaceAll(chemin, () => uri);
 

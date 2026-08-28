@@ -11,13 +11,17 @@
 <meta property="og:locale" content="fr_FR">
 <meta name="geo.placename" content="Puteaux">
 <meta name="geo.position" content="48.878831;2.242182">
-<meta property="og:image" content="assets/img/logo.jpg">
+<meta property="og:image" content="assets/img/salle-hero.jpg">
 <meta property="og:type" content="restaurant.restaurant">
 <link rel="icon" href="assets/img/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Jost:wght@200;300;400;500;600&family=Marcellus&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
+<!-- Le fond du hero est le premier visuel perçu : le précharger évite qu'il
+     apparaisse après coup, une fois la feuille de style analysée. -->
+<link rel="preload" as="image" href="assets/img/salle-hero.jpg" media="(min-width:761px)">
+<link rel="preload" as="image" href="assets/img/salle-hero-mobile.jpg" media="(max-width:760px)">
 </head>
 <body>
 
@@ -58,8 +62,8 @@
     <a href="#signature" data-cursor="link">Signatures</a>
     <a href="#experience" data-cursor="link">La Salle</a>
     <a href="#formules" data-cursor="link">Privatiser</a>
-    <a href="/commander" class="nav__cta" data-cursor="link">Commander à emporter</a>
-    <a href="/reserver" class="nav__cta" data-cursor="link">Réserver une table</a>
+    <a href="/commander" class="nav__cta" data-cursor="link">Commander</a>
+    <a href="/reserver" class="nav__cta nav__cta--fort" data-cursor="link">Réserver</a>
   </nav>
   <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false"><i></i><i></i><i></i></button>
 </header>
@@ -68,6 +72,7 @@
 
 <!-- ══════════════ HERO ══════════════ -->
 <section class="hero" id="accueil">
+  <div class="hero__photo" role="img" aria-label="La salle de La Table de Carthage, dressée sous un plafond de roses"></div>
   <canvas class="hero__canvas" id="heroCanvas" aria-hidden="true"></canvas>
 
   <div class="hero__frieze" aria-hidden="true"></div>
