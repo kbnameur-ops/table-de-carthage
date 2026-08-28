@@ -200,11 +200,18 @@ button{font:inherit;color:inherit}
   transform:scale(1.04);
   animation:heroRespire 26s ease-in-out infinite alternate;
 }
+/* Le voile s'ouvre au milieu, là où la salle se voit, et se referme en
+   haut pour la barre de navigation et en bas pour rejoindre la vague. Un
+   voile uniforme assez sombre pour le titre éteindrait le bois et les
+   nappes, c'est-à-dire tout ce qui rend cette photo utile. */
 .hero__photo::after{
   content:'';position:absolute;inset:0;
-  background:
-    linear-gradient(180deg, rgba(7,26,49,.62) 0%, rgba(7,26,49,.72) 45%, rgba(7,26,49,.92) 100%),
-    radial-gradient(90% 70% at 50% 40%, rgba(7,26,49,.15) 0%, rgba(7,26,49,.75) 100%);
+  background:linear-gradient(180deg,
+    rgba(7,26,49,.82) 0%,
+    rgba(7,26,49,.44) 20%,
+    rgba(7,26,49,.42) 58%,
+    rgba(7,26,49,.74) 82%,
+    rgba(7,26,49,.94) 100%);
 }
 @keyframes heroRespire{
   from{transform:scale(1.04) translateY(0)}
@@ -216,12 +223,12 @@ button{font:inherit;color:inherit}
   .hero__photo{animation:none}
 }
 @media (max-width:760px){
-  .hero__photo{background-image:url('../img/salle-hero-mobile.jpg');background-position:center 55%}
+  .hero__photo{background-image:url('../img/salle-hero-mobile.jpg');background-position:center 42%}
 }
 
 /* Le canevas animé reste, en surimpression légère : il apportait le grain
    punique du hero, mais ne doit plus concurrencer la photo. */
-.hero__canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:.32;mix-blend-mode:screen}
+.hero__canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1;opacity:.2;mix-blend-mode:screen}
 
 /* frise punique répétée */
 .hero__frieze{
@@ -237,11 +244,15 @@ button{font:inherit;color:inherit}
 .hero__kicker{
   color:var(--gold-400);letter-spacing:.4em;text-transform:uppercase;
   font-size:clamp(.6rem,1.4vw,.75rem);margin:0 0 1.4rem;
+  text-shadow:0 1px 14px rgba(7,26,49,.85);
 }
 .hero__title{
   font-family:var(--ff-display);color:var(--cream);
   font-size:clamp(3rem,11vw,8.5rem);line-height:.92;font-weight:300;
   margin:0;letter-spacing:-.02em;
+  /* drop-shadow et non text-shadow : « Carthage » est un dégradé découpé
+     par background-clip, qu'une ombre de texte contournerait en tache. */
+  filter:drop-shadow(0 .04em .35em rgba(7,26,49,.65));
 }
 .hero__title .line{display:block;overflow:hidden}
 .hero__title .line > *,
@@ -263,7 +274,7 @@ button{font:inherit;color:inherit}
 @keyframes riseLine{from{opacity:0}to{opacity:1}}
 @keyframes shimmer{to{background-position:220% 0}}
 
-.hero__sub{color:rgba(250,246,236,.72);margin:1.8rem auto 2.6rem;max-width:44ch;font-size:1.02rem}
+.hero__sub{color:rgba(250,246,236,.86);margin:1.8rem auto 2.6rem;max-width:44ch;font-size:1.02rem;text-shadow:0 1px 14px rgba(7,26,49,.9)}
 .hero__actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
 
 /* boutons */
