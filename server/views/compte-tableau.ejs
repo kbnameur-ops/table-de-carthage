@@ -5,6 +5,38 @@
 
   <% if (message) { %><div class="alerte alerte--ok"><%= message %></div><% } %>
 
+  <% if (tablee) { %>
+    <h2>Votre table en ce moment</h2>
+    <div class="card carte-identifie">
+      <p style="margin:0 0 .6rem">
+        Vous êtes installé <strong><%= nomTable(tablee.table_nom).toLowerCase() %></strong>.
+        Tout ce que vous commandez depuis cette page rejoint cette addition.
+      </p>
+      <% if (addition.commandes.length) { %>
+        <div class="addition">
+          <% addition.commandes.forEach(cmd => { %>
+            <div class="addition__cmd<%= cmd.statut === 'annulee' ? ' est-annulee' : '' %>">
+              <div class="addition__entete">
+                <span><%= cmd.heure %></span>
+                <span class="badge badge--<%= cmd.statut.replace('_','') %>"><%= cmd.statut.replace('_',' ') %></span>
+              </div>
+              <% cmd.lignes.forEach(l => { %>
+                <div class="addition__ligne">
+                  <span><%= l.quantite %> × <%= l.nom %></span>
+                  <span><%= euros(l.prix_cents * l.quantite) %></span>
+                </div>
+              <% }) %>
+            </div>
+          <% }) %>
+        </div>
+        <div class="panier-total" style="margin-bottom:1rem">
+          <span>Total de la table</span><strong><%= euros(addition.total) %></strong>
+        </div>
+      <% } %>
+      <a class="btn" href="/table/<%= tablee.code_qr %>">Commander à ma table</a>
+    </div>
+  <% } %>
+
   <h2>Réservations</h2>
   <% if (!reservations.length) { %>
     <p class="vide">Aucune réservation pour l'instant.</p>
@@ -34,6 +66,7 @@
   <% } %>
 
   <h2>Commandes à emporter</h2>
+  <p class="lead" style="margin-bottom:1rem">Les commandes servies à table figurent dans l'addition de la table, pas ici.</p>
   <% if (!commandes.length) { %>
     <p class="vide">Aucune commande pour l'instant.</p>
   <% } else { %>

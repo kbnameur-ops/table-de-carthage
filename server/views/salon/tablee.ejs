@@ -1,0 +1,94 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <p class="fil"><a href="/salon/tables-clients">Tables clients</a> · <%= nomTable(tablee.table_nom) %></p>
+  <h1><%= nomTable(tablee.table_nom) %></h1>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
+<div class="grid grid--2" style="margin-bottom:1.8rem">
+  <div class="card">
+    <h2 style="margin-top:0">Le client</h2>
+    <p style="margin:0 0 .4rem">
+      <a href="/salon/clients/<%= tablee.cid %>"><strong><%= tablee.prenom %> <%= tablee.client_nom %></strong></a>
+    </p>
+    <p style="margin:0;color:var(--muted);font-size:.9rem">
+      <a href="tel:<%= tablee.telephone_saisi %>"><%= tablee.telephone_saisi %></a><br>
+      <%= tablee.email %>
+    </p>
+    <% if (tablee.reservation_reference) { %>
+      <p class="aide">Venu sur la réservation <%= tablee.reservation_reference %>.</p>
+    <% } %>
+    <p class="aide">
+      Ouverte à <%= tablee.ouverte_le.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %>
+      <% if (tablee.fermee_le) { %> · fermée à <%= tablee.fermee_le.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %><% } %>
+    </p>
+    <% if (tablee.statut === 'ouverte') { %>
+      <form method="post" action="/salon/tables-clients/<%= tablee.id %>/fermer" class="btn-row"
+            onsubmit="return confirm('Fermer la table ? L\'addition ne pourra plus recevoir de commande.')">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <button type="submit" class="btn">Encaisser et fermer</button>
+      </form>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2 style="margin-top:0">L'addition</h2>
+    <% if (!addition.commandes.length) { %>
+      <p class="vide" style="padding:1.5rem 0">Rien de commandé pour l'instant.</p>
+    <% } else { %>
+      <div class="addition">
+        <% addition.commandes.forEach(cmd => { %>
+          <div class="addition__cmd<%= cmd.statut === 'annulee' ? ' est-annulee' : '' %>">
+            <div class="addition__entete">
+              <span><%= cmd.heure %> · <%= cmd.reference %></span>
+              <span class="badge badge--<%= cmd.statut.replace('_','') %>"><%= cmd.statut.replace('_',' ') %></span>
+            </div>
+            <% cmd.lignes.forEach(l => { %>
+              <div class="addition__ligne">
+                <span><%= l.quantite %> × <%= l.nom %></span>
+                <span><%= euros(l.prix_cents * l.quantite) %></span>
+              </div>
+            <% }) %>
+            <% if (cmd.message) { %><p class="addition__mot"><%= cmd.message %></p><% } %>
+          </div>
+        <% }) %>
+      </div>
+      <div class="panier-total" style="margin-bottom:0">
+        <span>Total</span><strong><%= euros(addition.total) %></strong>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<% if (tablee.statut === 'ouverte') { %>
+  <h2>Ajouter une commande</h2>
+  <p class="lead">Pour une commande prise au carnet ou passée au comptoir. Elle rejoint l'addition de cette table.</p>
+  <form method="post" action="/salon/tables-clients/<%= tablee.id %>/commande">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% carte.forEach(cat => { %>
+      <div class="card">
+        <h3 style="margin:0 0 1rem;font-family:var(--ff-title);font-weight:400;color:var(--gold-500)"><%= cat.nom %></h3>
+        <div class="grille-saisie">
+          <% cat.plats.forEach(p => { %>
+            <label class="saisie-plat">
+              <span class="saisie-plat__nom"><%= p.nom %></span>
+              <span class="saisie-plat__prix"><%= euros(p.prix_cents) %></span>
+              <input type="number" name="qte_<%= p.id %>" min="0" max="50" value="0" inputmode="numeric">
+            </label>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
+    <div class="card">
+      <div class="field">
+        <label for="f-message">Note</label>
+        <input type="text" id="f-message" name="message" maxlength="200" placeholder="Facultatif">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button type="submit" class="btn">Ajouter à l'addition</button>
+    </div>
+  </form>
+<% } %>
+<%- salonPied %>

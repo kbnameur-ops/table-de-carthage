@@ -1,0 +1,49 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Tables clients</h1>
+  <p class="lead">Qui est attablé, ce qu'ils ont consommé, et l'addition en cours. Une tablée s'ouvre quand un client scanne le QR de sa table — ou depuis la Salle.</p>
+</div>
+
+<div class="nav-jour">
+  <a class="nav-jour__fleche" href="/salon/tables-clients?date=<%= veille %>" aria-label="Jour précédent">‹</a>
+  <div class="nav-jour__centre">
+    <strong><%= libelle %></strong>
+    <small><%= new Date(date + 'T00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) %></small>
+  </div>
+  <a class="nav-jour__fleche" href="/salon/tables-clients?date=<%= lendemain %>" aria-label="Jour suivant">›</a>
+</div>
+
+<div class="tuiles">
+  <div class="tuile"><b><%= resume.ouvertes %></b><span>Tables ouvertes</span></div>
+  <div class="tuile tuile--accent"><b><%= euros(resume.enCours) %></b><span>En cours</span></div>
+  <div class="tuile"><b><%= euros(resume.journee) %></b><span>Total du jour</span></div>
+</div>
+
+<% if (!tablees.length) { %>
+  <p class="vide">Aucune table ouverte ce jour.</p>
+<% } else { %>
+  <div class="liste-tables">
+    <% tablees.forEach(t => { %>
+      <a class="card carte-tablee carte-tablee--<%= t.statut %>" href="/salon/tables-clients/<%= t.id %>">
+        <div class="carte-tablee__tete">
+          <b><%= nomTable(t.table_nom) %></b>
+          <span class="badge badge--<%= t.statut === 'ouverte' ? 'confirmee' : 'honoree' %>">
+            <%= t.statut === 'ouverte' ? 'Ouverte' : 'Fermée' %>
+          </span>
+        </div>
+        <p class="carte-tablee__client">
+          <strong><%= t.prenom %> <%= t.client_nom %></strong><br>
+          <small><%= t.telephone_saisi %></small>
+        </p>
+        <% if (t.reservation_reference) { %>
+          <p class="carte-tablee__resa">Sur réservation <%= t.reservation_reference %></p>
+        <% } %>
+        <div class="carte-tablee__pied">
+          <span><%= t.nbCommandes %> commande<%= t.nbCommandes > 1 ? 's' : '' %></span>
+          <strong><%= euros(t.total) %></strong>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+<% } %>
+<%- salonPied %>

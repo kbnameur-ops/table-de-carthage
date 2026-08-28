@@ -260,3 +260,52 @@ CREATE TABLE IF NOT EXISTS notifications (
 -- Le badge compte les non-lues à chaque page du salon : l'index porte sur
 -- `lue` en premier pour que ce COUNT reste immédiat quand l'historique grossit.
 CREATE INDEX IF NOT EXISTS idx_notifications_lue ON notifications(lue, cree_le DESC);
+
+-- ═══════════════════════════════════════════════════════════
+-- v3 — Service à table : QR code, tablées, commandes sur place
+-- ═══════════════════════════════════════════════════════════
+
+-- Le code du QR collé sur la table. Aléatoire et non devinable : avec
+-- l'identifiant de la table, n'importe qui pourrait ouvrir une tablée sur
+-- une table qu'il n'occupe pas.
+ALTER TABLE tables_resto ADD COLUMN IF NOT EXISTS code_qr TEXT;
+UPDATE tables_resto SET code_qr = substr(replace(gen_random_uuid()::text, '-', ''), 1, 16) WHERE code_qr IS NULL;
+ALTER TABLE tables_resto ALTER COLUMN code_qr SET NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tables_code_qr ON tables_resto(code_qr);
+
+-- Une tablée : des clients installés à une table, du moment où ils s'y
+-- posent jusqu'à l'encaissement. C'est à elle que se rattachent les
+-- commandes sur place, y compris celles ajoutées en cours de repas.
+CREATE TABLE IF NOT EXISTS tablees (
+  id             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  table_id       INTEGER NOT NULL REFERENCES tables_resto(id) ON DELETE CASCADE,
+  client_id      INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  reservation_id INTEGER REFERENCES reservations(id) ON DELETE SET NULL,
+  date           TEXT    NOT NULL,            -- 'YYYY-MM-DD', pour les vues par jour
+  statut         TEXT    NOT NULL DEFAULT 'ouverte' CHECK (statut IN ('ouverte','fermee')),
+  ouverte_le     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  fermee_le      TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_tablees_jour ON tablees(date, statut);
+CREATE INDEX IF NOT EXISTS idx_tablees_client ON tablees(client_id, statut);
+
+-- Une table ne peut porter qu'une tablée ouverte à la fois : sans cette
+-- garantie, deux clients scannant le même QR ouvriraient deux additions
+-- concurrentes sur la même table.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_tablee_ouverte_unique
+  ON tablees(table_id) WHERE statut = 'ouverte';
+
+-- Une commande est soit à emporter, soit servie à une tablée. Les deux ne
+-- se mélangent jamais : une commande à emporter reste détachée de toute
+-- table, même passée depuis la salle.
+ALTER TABLE commandes ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'emporter';
+ALTER TABLE commandes ADD COLUMN IF NOT EXISTS tablee_id INTEGER REFERENCES tablees(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS idx_commandes_tablee ON commandes(tablee_id);
+
+DO $$ BEGIN
+  ALTER TABLE commandes ADD CONSTRAINT commandes_type_coherent CHECK (
+    (type = 'emporter'  AND tablee_id IS NULL) OR
+    (type = 'sur_place' AND tablee_id IS NOT NULL)
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
