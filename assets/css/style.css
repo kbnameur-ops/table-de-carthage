@@ -310,6 +310,15 @@ button{font:inherit;color:inherit}
 .col__base{animation-delay:1.9s}
 @media (max-width:760px){.hero__column{display:none}}
 
+/* Empilés sur téléphone, les trois appels à l'action prenaient chacun la
+   largeur de leur libellé : un escalier peu engageant. Ils s'alignent, et
+   le hero gagne la hauteur du bouton supplémentaire pour que « Descendre »
+   ne vienne pas se poser dessus. */
+@media (max-width:560px){
+  .hero{padding-bottom:13rem}
+  .hero__actions{flex-direction:column;align-items:stretch;max-width:21rem;margin-inline:auto}
+}
+
 /* vagues */
 .hero__waves{position:absolute;left:0;right:0;bottom:-1px;z-index:2;pointer-events:none}
 .hero__waves svg{width:200%;height:clamp(90px,14vh,170px);display:block}
@@ -320,7 +329,10 @@ button{font:inherit;color:inherit}
 @keyframes waveMove{from{transform:translateX(0)}to{transform:translateX(-25%)}}
 
 .hero__scroll{
-  position:absolute;bottom:clamp(105px,16vh,195px);left:50%;transform:translateX(-50%);
+  /* Le décalage doit rester sous la marge basse du hero (10rem), sinon la
+     mention remonte dans le bloc de contenu : à 768 et 800 px de haut, elle
+     venait se poser sur les boutons. */
+  position:absolute;bottom:clamp(80px,11vh,140px);left:50%;transform:translateX(-50%);
   z-index:4;color:rgba(250,246,236,.6);display:grid;place-items:center;gap:.55rem;
   font-size:.6rem;letter-spacing:.32em;text-transform:uppercase;
 }
