@@ -1,0 +1,30 @@
+<%- salonEntete %>
+<div class="page-titre no-print">
+  <p class="fil"><a href="/salon/services">Services</a> · <%= service.nom %></p>
+  <h1>QR codes des tables</h1>
+  <p class="lead">Un QR par table, à imprimer et coller. Le client le scanne, s'identifie, et commande depuis son téléphone — la commande arrive sur l'addition de cette table.</p>
+  <div class="btn-row" style="margin-top:1rem">
+    <button type="button" class="btn" onclick="window.print()">Imprimer</button>
+    <a class="btn btn--ghost" href="/salon/services/<%= service.id %>/tables">Gérer les tables</a>
+  </div>
+</div>
+
+<% if (!codes.length) { %>
+  <div class="alerte alerte--info no-print">
+    Aucune table active pour ce service.
+    <a href="/salon/services/<%= service.id %>/tables">En ajouter →</a>
+  </div>
+<% } else { %>
+  <div class="planche-qr">
+    <% codes.forEach(c => { %>
+      <div class="fiche-qr">
+        <div class="fiche-qr__marque">La Table de Carthage</div>
+        <div class="fiche-qr__table"><%= nomTable(c.nom) %></div>
+        <div class="fiche-qr__code"><%- c.svg %></div>
+        <p class="fiche-qr__mode">Scannez pour commander depuis votre téléphone</p>
+        <p class="fiche-qr__url no-print"><%= c.url %></p>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+<%- salonPied %>

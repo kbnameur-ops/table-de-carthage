@@ -22,3 +22,11 @@ export function libelleJour(date) {
     weekday: 'long', day: 'numeric', month: 'long',
   });
 }
+
+/** Préfixe « Table » seulement si le nom ne le porte pas déjà : le salon
+ *  nomme ses tables comme il veut (« Duo 1 », « Table 3 », « Terrasse A »),
+ *  et « Table Table 3 » ferait négligé sur un QR collé en salle. */
+export function nomTable(nom) {
+  if (!nom) return 'Table';
+  return /^table\b/i.test(nom.trim()) ? nom : `Table ${nom}`;
+}

@@ -9,6 +9,7 @@ import {
 } from '../lib/auth.js';
 import { exigerClient, verifierCsrf } from '../middleware.js';
 import { notifier, quand } from '../lib/notifications.js';
+import { tableeOuverteDuClient, additionDeTablee } from '../lib/tablees.js';
 
 export const compteRouter = Router();
 
@@ -71,13 +72,23 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
     const commandesBrutes = await query(
       `SELECT * FROM commandes WHERE client_id = $1 ORDER BY date DESC, heure DESC`, [client.id]
     );
-    const commandes = commandesBrutes.map(c => ({
-      ...c,
-      annulable: c.statut !== 'annulee' && c.statut !== 'retiree' && c.date >= aujourdHui,
-    }));
+    // Les deux circuits ne se mélangent pas dans l'affichage : une commande
+    // à emporter s'annule et se retire, une commande servie à table fait
+    // partie d'une addition en cours.
+    const commandes = commandesBrutes
+      .filter(c => c.type !== 'sur_place')
+      .map(c => ({
+        ...c,
+        annulable: c.statut !== 'annulee' && c.statut !== 'retiree' && c.date >= aujourdHui,
+      }));
+
+    // Si le client est attablé, son addition en cours passe devant tout le
+    // reste : c'est ce qu'il vient consulter pendant le repas.
+    const tablee = await tableeOuverteDuClient(client.id);
+    const addition = tablee ? await additionDeTablee(tablee.id) : null;
 
     res.render('compte-tableau', {
-      client, reservations, commandes, euros,
+      client, reservations, commandes, tablee, addition, euros,
       libellesStatutResa: LIBELLES_RESA, libellesStatutCmd: LIBELLES_CMD,
       message: req.query.msg || null,
       session: req.session, csrfToken: res.locals.csrfToken,

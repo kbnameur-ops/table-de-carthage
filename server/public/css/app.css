@@ -546,3 +546,113 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
   .identifie{gap:.7rem}
   .identifie .btn{flex:1 1 100%}
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Service à table (QR, tablées, additions)
+   ═══════════════════════════════════════════════════════════ */
+
+/* Le client commande debout ou assis, téléphone en main : la barre
+   d'envoi reste sous le pouce quelle que soit la longueur de la carte. */
+.barre-envoi{
+  position:fixed;left:0;right:0;bottom:0;z-index:60;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+  padding:.85rem clamp(1rem,4vw,2rem);
+  padding-bottom:calc(.85rem + env(safe-area-inset-bottom));
+  background:linear-gradient(120deg,var(--navy-900),var(--navy-800));color:#fff;
+  box-shadow:0 -6px 24px -10px rgba(7,26,49,.55);
+}
+.barre-envoi__total{display:flex;flex-direction:column;line-height:1.2;min-width:0}
+.barre-envoi__total span{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-300)}
+.barre-envoi__total strong{font-family:var(--ff-display);font-weight:600;font-size:1.45rem}
+.barre-envoi .btn{border-color:var(--gold-500);background:var(--gold-500);color:var(--navy-900);flex-shrink:0}
+.barre-envoi .btn:hover{background:var(--gold-400);border-color:var(--gold-400)}
+/* De quoi ne pas masquer la fin de la carte derrière la barre. */
+body:has(.barre-envoi:not([hidden])) main{padding-bottom:7rem}
+
+.page-head--table h1{font-size:clamp(2rem,4.5vw,2.9rem)}
+
+/* ── L'addition ───────────────────────────────────────────── */
+.addition{display:flex;flex-direction:column;gap:.9rem;margin-bottom:1.2rem}
+.addition__cmd{border-left:3px solid rgba(201,169,97,.5);padding-left:.9rem}
+.addition__cmd.est-annulee{opacity:.45;text-decoration:line-through;border-left-color:var(--muted)}
+.addition__entete{
+  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+  font-size:.75rem;letter-spacing:.06em;color:var(--muted);margin-bottom:.35rem;
+}
+.addition__ligne{display:flex;justify-content:space-between;gap:1rem;font-size:.92rem;padding:.15rem 0}
+.addition__mot{margin:.4rem 0 0;font-size:.82rem;font-style:italic;color:var(--muted)}
+
+/* ── Tablées côté salon ───────────────────────────────────── */
+.carte-tablee{display:block;border-left:4px solid #4C9A5E;transition:transform .25s var(--ease),box-shadow .25s var(--ease)}
+.carte-tablee:hover{transform:translateY(-2px);box-shadow:0 14px 30px -18px rgba(14,42,78,.35)}
+.carte-tablee--fermee{border-left-color:var(--muted);opacity:.7}
+.carte-tablee__tete{display:flex;align-items:center;justify-content:space-between;gap:.6rem;margin-bottom:.7rem}
+.carte-tablee__tete b{font-family:var(--ff-title);font-weight:400;font-size:1.15rem;color:var(--navy-800)}
+.carte-tablee__client{margin:0 0 .5rem;font-size:.9rem}
+.carte-tablee__client small{color:var(--muted)}
+.carte-tablee__resa{margin:0 0 .5rem;font-size:.78rem;color:var(--gold-500)}
+.carte-tablee__pied{
+  display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;
+  margin-top:.8rem;padding-top:.7rem;border-top:1px solid rgba(14,42,78,.08);
+}
+.carte-tablee__pied span{font-size:.78rem;color:var(--muted)}
+.carte-tablee__pied strong{font-family:var(--ff-display);font-weight:600;font-size:1.25rem;color:var(--navy-800)}
+
+/* Saisie rapide d'une commande au comptoir : dense, tabulable. */
+.grille-saisie{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:.6rem}
+.saisie-plat{
+  display:grid;grid-template-columns:1fr auto auto;gap:.6rem;align-items:center;
+  padding:.5rem .7rem;border:1px solid rgba(14,42,78,.1);border-radius:6px;background:#fff;
+}
+.saisie-plat__nom{font-size:.9rem;min-width:0}
+.saisie-plat__prix{font-size:.82rem;color:var(--gold-500);white-space:nowrap}
+.saisie-plat input{width:62px;padding:.4rem;border:1px solid rgba(14,42,78,.2);border-radius:4px;font:inherit;text-align:center}
+
+/* ── Planche de QR à imprimer ─────────────────────────────── */
+.planche-qr{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:1.2rem}
+.fiche-qr{
+  background:#fff;border:1px solid rgba(14,42,78,.15);border-radius:10px;
+  padding:1.4rem 1rem;text-align:center;break-inside:avoid;
+}
+.fiche-qr__marque{
+  font-family:var(--ff-title);font-size:.82rem;letter-spacing:.12em;
+  color:var(--gold-500);margin-bottom:.3rem;
+}
+.fiche-qr__table{font-family:var(--ff-display);font-weight:600;font-size:1.6rem;color:var(--navy-800);margin-bottom:.8rem}
+.fiche-qr__code svg{width:100%;height:auto;max-width:190px;display:block;margin:0 auto}
+.fiche-qr__mode{margin:.8rem 0 0;font-size:.76rem;color:var(--muted);line-height:1.4}
+.fiche-qr__url{margin:.4rem 0 0;font-size:.62rem;color:var(--muted);word-break:break-all}
+
+@media print{
+  .salonbar,.app-foot,.no-print{display:none !important}
+  body.salon{background:#fff}
+  body.salon main{padding:0}
+  .planche-qr{grid-template-columns:repeat(2,1fr);gap:1rem}
+  .fiche-qr{border-color:#999}
+}
+
+@media (max-width:640px){
+  .grille-saisie{grid-template-columns:1fr}
+  .barre-envoi{gap:.7rem}
+  .barre-envoi .btn{padding:.85rem 1.2rem;font-size:.72rem}
+}
+
+/* Sur un téléphone, photo + description + prix + compteur ne tiennent pas
+   sur une seule ligne : la carte débordait horizontalement. On repasse en
+   grille, prix et compteur sur une deuxième ligne sous le texte. */
+@media (max-width:560px){
+  .menu-plat{
+    display:grid;
+    grid-template-columns:auto 1fr;
+    grid-template-areas:'photo infos' 'prix compteur';
+    gap:.7rem .9rem;align-items:center;
+  }
+  .menu-plat > img.plat-photo,
+  .menu-plat > .plat-photo--placeholder{grid-area:photo;width:60px;height:60px}
+  .menu-plat__infos{grid-area:infos}
+  .menu-plat__infos h4{font-size:1rem}
+  .menu-plat__infos p{font-size:.8rem}
+  .menu-plat__prix{grid-area:prix;font-size:1.1rem}
+  .menu-plat .compteur{grid-area:compteur;justify-self:end}
+  .menu-plat__qte{grid-area:compteur;justify-self:end}
+}

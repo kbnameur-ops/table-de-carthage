@@ -1,0 +1,89 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <p class="fil"><a href="/salon/clients">Clients</a></p>
+  <h1><%= client.prenom %> <%= client.nom %></h1>
+  <p class="lead">
+    <a href="tel:<%= client.telephone_saisi %>"><%= client.telephone_saisi %></a> ·
+    <%= client.email %> ·
+    client depuis le <%= client.cree_le.toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' }) %>
+  </p>
+</div>
+
+<div class="card" style="margin-bottom:1.8rem">
+  <h2 style="margin-top:0">Notes internes</h2>
+  <p class="aide" style="margin-top:0">Allergies, habitudes, table préférée. Visible du salon seulement.</p>
+  <form method="post" action="/salon/clients/<%= client.id %>/notes">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="f-notes">Notes</label>
+      <textarea id="f-notes" name="notes" rows="3" maxlength="1000"><%= client.notes %></textarea>
+    </div>
+    <button type="submit" class="btn btn--sm">Enregistrer</button>
+  </form>
+</div>
+
+<h2>Tables</h2>
+<% if (!tablees.length) { %>
+  <p class="vide">Jamais venu à table via le QR.</p>
+<% } else { %>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Date</th><th>Table</th><th>Statut</th><th>Total</th><th></th></tr></thead>
+    <tbody>
+      <% tablees.forEach(t => { %>
+        <tr>
+          <td><%= new Date(t.date + 'T00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) %></td>
+          <td><%= t.table_nom %></td>
+          <td><span class="badge badge--<%= t.statut === 'ouverte' ? 'confirmee' : 'honoree' %>"><%= t.statut %></span></td>
+          <td><%= euros(t.total) %></td>
+          <td><a class="btn btn--ghost btn--sm" href="/salon/tables-clients/<%= t.id %>">Voir</a></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table></div>
+<% } %>
+
+<h2>Réservations</h2>
+<% if (!reservations.length) { %>
+  <p class="vide">Aucune réservation.</p>
+<% } else { %>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Référence</th><th>Date</th><th>Heure</th><th>Couverts</th><th>Table</th><th>Statut</th></tr></thead>
+    <tbody>
+      <% reservations.forEach(r => { %>
+        <tr>
+          <td><%= r.reference %></td>
+          <td><%= new Date(r.date + 'T00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) %></td>
+          <td><%= r.heure %></td>
+          <td><%= r.couverts %></td>
+          <td><%= r.table_nom || '—' %></td>
+          <td><span class="badge badge--<%= r.statut.replace('_','') %>"><%= r.statut.replace('_',' ') %></span></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table></div>
+<% } %>
+
+<h2>Commandes</h2>
+<% if (!commandes.length) { %>
+  <p class="vide">Aucune commande.</p>
+<% } else { %>
+  <div class="table-scroll"><table>
+    <thead><tr><th>Référence</th><th>Date</th><th>Type</th><th>Total</th><th>Statut</th></tr></thead>
+    <tbody>
+      <% commandes.forEach(c => { %>
+        <tr>
+          <td><%= c.reference %></td>
+          <td><%= new Date(c.date + 'T00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'short' }) %> <%= c.heure %></td>
+          <td>
+            <% if (c.type === 'sur_place') { %>
+              Sur place<% if (c.table_nom) { %> · table <%= c.table_nom %><% } %>
+            <% } else { %>À emporter<% } %>
+          </td>
+          <td><%= euros(c.total_cents) %></td>
+          <td><span class="badge badge--<%= c.statut.replace('_','') %>"><%= c.statut.replace('_',' ') %></span></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table></div>
+<% } %>
+<%- salonPied %>

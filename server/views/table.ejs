@@ -1,0 +1,200 @@
+<%- entete %>
+<div class="page-head page-head--table">
+  <div class="wrap">
+    <p class="page-head__kicker">La Table de Carthage</p>
+    <h1><%= nomTable(table.nom) %></h1>
+    <p class="lead">Commandez depuis votre téléphone. Le service vous apporte tout à table.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <% if (envoye) { %>
+    <div class="alerte alerte--ok">
+      Commande envoyée en cuisine. Vous pouvez en ajouter d'autres pendant le repas depuis cette page.
+    </div>
+  <% } %>
+  <% if (erreurGenerale) { %>
+    <div class="alerte alerte--erreur"><%= erreurGenerale %></div>
+  <% } %>
+
+  <% if (tablee && client && tablee.client_id === client.id && addition.commandes.length) { %>
+    <h2>Votre table</h2>
+    <div class="card">
+      <div class="addition">
+        <% addition.commandes.forEach(cmd => { %>
+          <div class="addition__cmd<%= cmd.statut === 'annulee' ? ' est-annulee' : '' %>">
+            <div class="addition__entete">
+              <span><%= cmd.heure %></span>
+              <span class="badge badge--<%= cmd.statut.replace('_','') %>"><%= cmd.statut.replace('_',' ') %></span>
+            </div>
+            <% cmd.lignes.forEach(l => { %>
+              <div class="addition__ligne">
+                <span><%= l.quantite %> × <%= l.nom %></span>
+                <span><%= euros(l.prix_cents * l.quantite) %></span>
+              </div>
+            <% }) %>
+          </div>
+        <% }) %>
+      </div>
+      <div class="panier-total" style="margin-bottom:0">
+        <span>Total de la table</span>
+        <strong><%= euros(addition.total) %></strong>
+      </div>
+    </div>
+  <% } %>
+
+  <form method="post" action="/table/<%= table.code_qr %>" id="formTable" novalidate>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <h2>Qui êtes-vous&nbsp;?</h2>
+    <% if (client) { %>
+      <div class="card carte-identifie">
+        <div class="identifie">
+          <span class="identifie__pastille" aria-hidden="true"><%= client.prenom.charAt(0) %><%= client.nom.charAt(0) %></span>
+          <div class="identifie__qui">
+            <strong><%= client.prenom %> <%= client.nom %></strong>
+            <small><%= client.telephone_saisi %></small>
+          </div>
+          <button type="submit" name="action" value="changer" class="btn btn--ghost btn--sm">Ce n'est pas moi</button>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="card bloc-identite">
+        <div class="identite-choix">
+          <section class="identite-choix__col">
+            <h3>Déjà venu chez nous&nbsp;?</h3>
+            <p class="aide">Retrouvez votre compte avec votre téléphone et votre date de naissance.</p>
+            <% if (erreurConnexion) { %>
+              <div class="alerte alerte--erreur" style="margin-bottom:1rem"><%= erreurConnexion %></div>
+            <% } %>
+            <div class="field">
+              <label for="c-tel">Téléphone</label>
+              <input type="tel" id="c-tel" name="telephone" value="<%= valeurs.telephone || '' %>" autocomplete="tel">
+            </div>
+            <div class="field">
+              <label for="c-naissance">Date de naissance</label>
+              <input type="date" id="c-naissance" name="dateNaissance" value="<%= valeurs.dateNaissance || '' %>">
+            </div>
+            <button type="submit" name="action" value="connexion" class="btn btn--bloc">Me reconnaître</button>
+          </section>
+
+          <div class="identite-choix__ou" aria-hidden="true"><span>ou</span></div>
+
+          <section class="identite-choix__col">
+            <h3>Première fois&nbsp;?</h3>
+            <p class="aide">Vos coordonnées créent votre espace client, où vous retrouverez votre table.</p>
+            <div class="field--row">
+              <div class="field <%= erreurs.prenom ? 'champ-invalide' : '' %>">
+                <label for="f-prenom">Prénom</label>
+                <input type="text" id="f-prenom" name="prenom" value="<%= valeurs.prenom || '' %>" autocomplete="given-name">
+                <% if (erreurs.prenom) { %><span class="erreur"><%= erreurs.prenom %></span><% } %>
+              </div>
+              <div class="field <%= erreurs.nom ? 'champ-invalide' : '' %>">
+                <label for="f-nom">Nom</label>
+                <input type="text" id="f-nom" name="nom" value="<%= valeurs.nom || '' %>" autocomplete="family-name">
+                <% if (erreurs.nom) { %><span class="erreur"><%= erreurs.nom %></span><% } %>
+              </div>
+            </div>
+            <div class="field <%= erreurs.email ? 'champ-invalide' : '' %>">
+              <label for="f-email">E-mail</label>
+              <input type="email" id="f-email" name="email" value="<%= valeurs.email || '' %>" autocomplete="email">
+              <% if (erreurs.email) { %><span class="erreur"><%= erreurs.email %></span><% } %>
+            </div>
+            <% if (erreurs.telephone) { %><p class="field"><span class="erreur"><%= erreurs.telephone %></span></p><% } %>
+            <% if (erreurs.dateNaissance) { %><p class="field"><span class="erreur"><%= erreurs.dateNaissance %></span></p><% } %>
+            <p class="aide">Le téléphone et la date de naissance demandés pour vous reconnaître servent aussi à créer votre compte.</p>
+          </section>
+        </div>
+      </div>
+    <% } %>
+
+    <h2><%= addition.commandes.length ? 'Ajouter à la table' : 'La carte' %></h2>
+    <% if (erreurs.panier) { %><div class="alerte alerte--erreur"><%= erreurs.panier %></div><% } %>
+
+    <% categories.forEach(cat => { %>
+      <div class="card">
+        <h3 style="margin:0 0 1rem;font-family:var(--ff-title);font-weight:400;color:var(--gold-500)"><%= cat.nom %></h3>
+        <div class="menu-carte">
+          <% cat.plats.forEach(plat => { %>
+            <div class="menu-plat">
+              <% if (plat.photo) { %>
+                <img class="plat-photo" src="<%= plat.photo %>" alt="" loading="lazy">
+              <% } else { %>
+                <div class="plat-photo plat-photo--placeholder" aria-hidden="true"><%= plat.nom.charAt(0) %></div>
+              <% } %>
+              <div class="menu-plat__infos">
+                <h4><%= plat.nom %><% if (plat.vegetarien) { %> <span class="badge badge--veg">Végé</span><% } %></h4>
+                <p><%= plat.description %></p>
+              </div>
+              <div class="menu-plat__prix"><%= euros(plat.prix_cents) %></div>
+              <div class="compteur">
+                <button type="button" class="compteur__btn js-moins" aria-label="Retirer un <%= plat.nom %>">−</button>
+                <input type="number" min="0" max="20" value="0" name="qte_<%= plat.id %>"
+                       data-prix="<%= plat.prix_cents %>" class="js-qte" inputmode="numeric"
+                       aria-label="Quantité de <%= plat.nom %>">
+                <button type="button" class="compteur__btn js-plus" aria-label="Ajouter un <%= plat.nom %>">+</button>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
+
+    <div class="card">
+      <div class="field">
+        <label for="f-message">Un mot pour la cuisine (facultatif)</label>
+        <textarea id="f-message" name="message" rows="2" placeholder="Sans piment, cuisson à point…"><%= valeurs.message || '' %></textarea>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Barre d'envoi collée en bas : sur un téléphone, la carte est longue et
+     le bouton de validation ne doit jamais être hors de portée du pouce. -->
+<div class="barre-envoi" id="barreEnvoi" hidden>
+  <div class="barre-envoi__total">
+    <span id="nbArticles">0 article</span>
+    <strong id="totalPanier">0,00 €</strong>
+  </div>
+  <button type="submit" form="formTable" name="action" value="commander" class="btn">Envoyer en cuisine</button>
+</div>
+
+<script>
+(function () {
+  const inputs = Array.from(document.querySelectorAll('.js-qte'));
+  const barre = document.getElementById('barreEnvoi');
+  const totalEl = document.getElementById('totalPanier');
+  const nbEl = document.getElementById('nbArticles');
+
+  function recalc() {
+    let total = 0, articles = 0;
+    for (const i of inputs) {
+      const q = parseInt(i.value, 10) || 0;
+      total += q * parseInt(i.dataset.prix, 10);
+      articles += q;
+      i.closest('.menu-plat')?.classList.toggle('est-choisi', q > 0);
+      i.closest('.compteur')?.classList.toggle('est-actif', q > 0);
+    }
+    totalEl.textContent = (total / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+    nbEl.textContent = articles + (articles > 1 ? ' articles' : ' article');
+    // La barre n'apparaît qu'une fois quelque chose au panier : sinon elle
+    // mange de la hauteur d'écran pour rien pendant qu'on lit la carte.
+    barre.hidden = articles === 0;
+  }
+
+  function ajuster(input, delta) {
+    const max = parseInt(input.max, 10) || 20;
+    input.value = Math.min(max, Math.max(0, (parseInt(input.value, 10) || 0) + delta));
+    recalc();
+  }
+
+  document.querySelectorAll('.compteur').forEach(c => {
+    const input = c.querySelector('.js-qte');
+    c.querySelector('.js-moins').addEventListener('click', () => ajuster(input, -1));
+    c.querySelector('.js-plus').addEventListener('click', () => ajuster(input, +1));
+  });
+  inputs.forEach(i => i.addEventListener('input', recalc));
+  recalc();
+})();
+</script>
+<%- pied %>

@@ -1,0 +1,40 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Clients</h1>
+  <p class="lead">Toutes les personnes ayant réservé ou commandé. Un compte se crée tout seul à la première réservation, commande, ou scan de QR à table.</p>
+</div>
+
+<form method="get" action="/salon/clients" class="barre-filtres">
+  <div class="field" style="flex:1 1 280px">
+    <label for="f-q">Rechercher</label>
+    <input type="search" id="f-q" name="q" value="<%= recherche %>" placeholder="Nom, e-mail ou téléphone">
+  </div>
+  <button type="submit" class="btn btn--sm">Chercher</button>
+  <% if (recherche) { %><a class="btn btn--ghost btn--sm" href="/salon/clients">Tout voir</a><% } %>
+</form>
+
+<% if (!clients.length) { %>
+  <p class="vide"><%= recherche ? 'Aucun client ne correspond.' : 'Aucun client pour l\'instant.' %></p>
+<% } else { %>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Client</th><th>Contact</th><th>Réservations</th><th>Commandes</th><th>Total</th><th>Client depuis</th></tr></thead>
+      <tbody>
+        <% clients.forEach(c => { %>
+          <tr>
+            <td><a href="/salon/clients/<%= c.id %>"><strong><%= c.prenom %> <%= c.nom %></strong></a></td>
+            <td>
+              <a href="tel:<%= c.telephone_saisi %>"><%= c.telephone_saisi %></a><br>
+              <small><%= c.email %></small>
+            </td>
+            <td><%= c.nb_resa %></td>
+            <td><%= c.nb_cmd %></td>
+            <td><%= euros(c.total_depense) %></td>
+            <td><small><%= c.cree_le.toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' }) %></small></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+<% } %>
+<%- salonPied %>

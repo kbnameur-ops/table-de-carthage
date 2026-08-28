@@ -11,6 +11,10 @@
 
 <% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
 
+<div class="btn-row" style="margin-top:0;margin-bottom:1.5rem">
+  <a class="btn btn--ghost" href="/salon/services/<%= service.id %>/qr">QR codes à imprimer</a>
+</div>
+
 <div class="card" style="margin-bottom:1.8rem">
   <h2 style="margin-top:0">Ajouter des tables</h2>
   <form method="post" action="/salon/services/<%= service.id %>/tables" class="ligne-champs">

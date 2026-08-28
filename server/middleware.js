@@ -1,5 +1,6 @@
 import { creerSessionInvite, obtenirSession } from './lib/auth.js';
 import { entete, pied, salonEntete, salonPied } from './lib/layout.js';
+import { nomTable } from './lib/jours.js';
 
 const COOKIE = 'sid';
 const estProd = process.env.NODE_ENV === 'production';
@@ -96,6 +97,7 @@ const PAGES = {
 export function injecterMiseEnPage(req, res, next) {
   const rendreOriginal = res.render.bind(res);
   res.render = (vue, donnees = {}, callback) => {
+    donnees.nomTable ??= nomTable;
     const defauts = PAGES[vue];
     if (defauts) {
       donnees.titre ??= defauts.titre;
