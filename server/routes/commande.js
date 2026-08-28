@@ -8,6 +8,7 @@ import { euros } from '../lib/money.js';
 import { verifierCsrf } from '../middleware.js';
 import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
 import { notifier, quand } from '../lib/notifications.js';
+import { clientDeSession, connecterDepuisTunnel, quitterIdentite } from '../lib/tunnel-identite.js';
 
 const MAX_SOUMISSIONS_15MIN = 20;
 
@@ -40,12 +41,33 @@ async function validerPanier(body) {
   return { lignes, total };
 }
 
+/** Les quantités déjà saisies, extraites du corps de la requête, pour que
+ *  le panier survive à un réaffichage (erreur, connexion, changement de
+ *  compte) sans que le client ait à le recomposer. */
+function quantitesSoumises(body) {
+  return Object.fromEntries(
+    Object.entries(body)
+      .filter(([k]) => k.startsWith('qte_'))
+      .map(([k, v]) => [k.slice(4), v])
+  );
+}
+
+async function pageCommande(req, res, extra = {}) {
+  const valeurs = extra.valeurs ? { ...extra.valeurs, quantites: quantitesSoumises(extra.valeurs) } : {};
+  return {
+    categories: await chargerCarte(), euros,
+    erreurGenerale: null, erreurs: {}, erreurConnexion: null,
+    aujourdHui: aujourdHui(),
+    client: await clientDeSession(req.session),
+    session: req.session, csrfToken: res.locals.csrfToken,
+    ...extra,
+    valeurs,
+  };
+}
+
 commandeRouter.get('/commander', async (req, res, next) => {
   try {
-    res.render('commande', {
-      categories: await chargerCarte(), euros, erreurGenerale: null, erreurs: {}, valeurs: {},
-      aujourdHui: aujourdHui(), session: req.session, csrfToken: res.locals.csrfToken,
-    });
+    res.render('commande', await pageCommande(req, res));
   } catch (err) { next(err); }
 });
 
@@ -54,14 +76,24 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
     const b = req.body;
     const erreurs = {};
 
+    // Se reconnaître ou changer de compte ne valide pas la commande : on
+    // réaffiche la page, panier et heure de retrait conservés.
+    if (b.action === 'connexion') {
+      const { erreur } = await connecterDepuisTunnel(b, req.session, req.ip);
+      return res.render('commande', await pageCommande(req, res, { valeurs: b, erreurConnexion: erreur || null }));
+    }
+    if (b.action === 'changer') {
+      await quitterIdentite(req.session);
+      return res.render('commande', await pageCommande(req, res, { valeurs: b }));
+    }
+
     // Même limite de débit que /reserver, et pour les mêmes raisons.
     const cleDebit = `commander:${req.ip}`;
     if (await tropDeTentatives(cleDebit, MAX_SOUMISSIONS_15MIN)) {
-      return res.render('commande', {
-        categories: await chargerCarte(), euros,
+      return res.render('commande', await pageCommande(req, res, {
+        valeurs: b,
         erreurGenerale: 'Trop de demandes depuis cette connexion. Merci de réessayer dans quelques minutes, ou de nous appeler directement.',
-        erreurs: {}, valeurs: b, aujourdHui: aujourdHui(), session: req.session, csrfToken: res.locals.csrfToken,
-      });
+      }));
     }
     await enregistrerTentative(cleDebit);
 
@@ -83,30 +115,28 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
       }
     }
 
-    Object.assign(erreurs, validerIdentite(b));
+    // Comme sur /reserver : un client connecté est déjà identifié, ses
+    // champs d'identité ne sont ni demandés ni relus.
+    const clientConnecte = await clientDeSession(req.session);
+    if (!clientConnecte) Object.assign(erreurs, validerIdentite(b));
 
     const panier = await validerPanier(b);
     if (panier.erreur) erreurs.panier = panier.erreur;
 
     if (Object.keys(erreurs).length) {
-      return res.render('commande', {
-        categories: await chargerCarte(), euros, erreurGenerale: null, erreurs, valeurs: {
-          ...b,
-          quantites: Object.fromEntries(
-            Object.entries(b).filter(([k]) => k.startsWith('qte_')).map(([k, v]) => [k.slice(4), v])
-          ),
-        },
-        aujourdHui: aujourdHui(), session: req.session, csrfToken: res.locals.csrfToken,
-      });
+      return res.render('commande', await pageCommande(req, res, { erreurs, valeurs: b }));
     }
 
-    const { client, erreur } = await trouverOuCreerClient(b);
-    if (erreur === 'telephone_associe') {
-      return res.render('commande', {
-        categories: await chargerCarte(), euros,
-        erreurGenerale: "Ce numéro de téléphone est déjà associé à un compte, mais la date de naissance ne correspond pas. Vérifiez-la, ou contactez-nous.",
-        erreurs: {}, valeurs: b, aujourdHui: aujourdHui(), session: req.session, csrfToken: res.locals.csrfToken,
-      });
+    let client = clientConnecte;
+    if (!client) {
+      const trouve = await trouverOuCreerClient(b);
+      if (trouve.erreur === 'telephone_associe') {
+        return res.render('commande', await pageCommande(req, res, {
+          valeurs: b,
+          erreurGenerale: "Ce numéro de téléphone est déjà associé à un compte. Connectez-vous ci-dessus avec votre date de naissance, ou contactez-nous.",
+        }));
+      }
+      client = trouve.client;
     }
 
     const reference = genererReference('CMD');

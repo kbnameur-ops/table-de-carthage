@@ -37,37 +37,73 @@
     </div>
 
     <h2>Vos coordonnées</h2>
+
+    <% if (client) { %>
+      <div class="card carte-identifie">
+        <div class="identifie">
+          <span class="identifie__pastille" aria-hidden="true"><%= client.prenom.charAt(0) %><%= client.nom.charAt(0) %></span>
+          <div class="identifie__qui">
+            <strong><%= client.prenom %> <%= client.nom %></strong>
+            <small><%= client.telephone_saisi %> · <%= client.email %></small>
+          </div>
+          <button type="submit" name="action" value="changer" class="btn btn--ghost btn--sm">Ce n'est pas moi</button>
+        </div>
+      </div>
+    <% } else { %>
+      <div class="card bloc-identite">
+        <div class="identite-choix">
+          <section class="identite-choix__col">
+            <h3>Déjà venu chez nous&nbsp;?</h3>
+            <p class="aide">Retrouvez vos informations avec votre téléphone et votre date de naissance.</p>
+            <% if (erreurConnexion) { %>
+              <div class="alerte alerte--erreur" style="margin-bottom:1rem"><%= erreurConnexion %></div>
+            <% } %>
+            <div class="field">
+              <label for="c-tel">Téléphone</label>
+              <input type="tel" id="c-tel" name="telephone" value="<%= valeurs.telephone || '' %>" autocomplete="tel">
+            </div>
+            <div class="field">
+              <label for="c-naissance">Date de naissance</label>
+              <input type="date" id="c-naissance" name="dateNaissance" value="<%= valeurs.dateNaissance || '' %>">
+            </div>
+            <button type="submit" name="action" value="connexion" class="btn btn--bloc">Me reconnaître</button>
+          </section>
+
+          <div class="identite-choix__ou" aria-hidden="true"><span>ou</span></div>
+
+          <section class="identite-choix__col">
+            <h3>Première fois&nbsp;?</h3>
+            <p class="aide">Renseignez vos coordonnées : votre espace client sera créé automatiquement.</p>
+            <div class="field--row">
+              <div class="field <%= erreurs.prenom ? 'champ-invalide' : '' %>">
+                <label for="f-prenom">Prénom</label>
+                <input type="text" id="f-prenom" name="prenom" value="<%= valeurs.prenom || '' %>" autocomplete="given-name">
+                <% if (erreurs.prenom) { %><span class="erreur"><%= erreurs.prenom %></span><% } %>
+              </div>
+              <div class="field <%= erreurs.nom ? 'champ-invalide' : '' %>">
+                <label for="f-nom">Nom</label>
+                <input type="text" id="f-nom" name="nom" value="<%= valeurs.nom || '' %>" autocomplete="family-name">
+                <% if (erreurs.nom) { %><span class="erreur"><%= erreurs.nom %></span><% } %>
+              </div>
+            </div>
+            <div class="field <%= erreurs.email ? 'champ-invalide' : '' %>">
+              <label for="f-email">E-mail</label>
+              <input type="email" id="f-email" name="email" value="<%= valeurs.email || '' %>" autocomplete="email">
+              <% if (erreurs.email) { %><span class="erreur"><%= erreurs.email %></span><% } %>
+            </div>
+            <% if (erreurs.telephone) { %>
+              <p class="field"><span class="erreur"><%= erreurs.telephone %></span></p>
+            <% } %>
+            <% if (erreurs.dateNaissance) { %>
+              <p class="field"><span class="erreur"><%= erreurs.dateNaissance %></span></p>
+            <% } %>
+            <p class="aide">Le téléphone et la date de naissance demandés pour vous reconnaître servent aussi à créer votre compte&nbsp;: ce sont eux qui vous permettront d'y accéder ensuite.</p>
+          </section>
+        </div>
+      </div>
+    <% } %>
+
     <div class="card">
-      <div class="field--row">
-        <div class="field <%= erreurs.prenom ? 'champ-invalide' : '' %>">
-          <label for="f-prenom">Prénom</label>
-          <input type="text" id="f-prenom" name="prenom" value="<%= valeurs.prenom || '' %>" required>
-          <% if (erreurs.prenom) { %><span class="erreur"><%= erreurs.prenom %></span><% } %>
-        </div>
-        <div class="field <%= erreurs.nom ? 'champ-invalide' : '' %>">
-          <label for="f-nom">Nom</label>
-          <input type="text" id="f-nom" name="nom" value="<%= valeurs.nom || '' %>" required>
-          <% if (erreurs.nom) { %><span class="erreur"><%= erreurs.nom %></span><% } %>
-        </div>
-      </div>
-      <div class="field--row">
-        <div class="field <%= erreurs.telephone ? 'champ-invalide' : '' %>">
-          <label for="f-telephone">Téléphone</label>
-          <input type="tel" id="f-telephone" name="telephone" value="<%= valeurs.telephone || '' %>" required>
-          <% if (erreurs.telephone) { %><span class="erreur"><%= erreurs.telephone %></span><% } %>
-        </div>
-        <div class="field <%= erreurs.email ? 'champ-invalide' : '' %>">
-          <label for="f-email">E-mail</label>
-          <input type="email" id="f-email" name="email" value="<%= valeurs.email || '' %>" required>
-          <% if (erreurs.email) { %><span class="erreur"><%= erreurs.email %></span><% } %>
-        </div>
-      </div>
-      <div class="field <%= erreurs.dateNaissance ? 'champ-invalide' : '' %>" style="max-width:220px">
-        <label for="f-naissance">Date de naissance</label>
-        <input type="date" id="f-naissance" name="dateNaissance" value="<%= valeurs.dateNaissance || '' %>" required>
-        <small>Sert uniquement à sécuriser l'accès à votre espace client.</small>
-        <% if (erreurs.dateNaissance) { %><span class="erreur"><%= erreurs.dateNaissance %></span><% } %>
-      </div>
       <div class="field">
         <label for="f-message">Message (facultatif)</label>
         <textarea id="f-message" name="message" rows="3"><%= valeurs.message || '' %></textarea>
@@ -88,6 +124,9 @@
   const heureEl = document.getElementById('f-heure');
   const serviceIdEl = document.getElementById('f-serviceId');
   const btn = document.getElementById('btnValider');
+  // Se reconnaître réaffiche la page : le créneau déjà choisi doit se
+  // resélectionner tout seul, sinon la connexion coûterait un clic de plus.
+  let heureVoulue = <%- JSON.stringify(valeurs.heure || '') %>;
 
   // La date et le nombre de couverts déclenchent chacun leur propre appel
   // réseau. Si l'utilisateur enchaîne les deux vite, rien ne garantit que
@@ -134,9 +173,19 @@
           zone.querySelectorAll('.creneau').forEach(x => x.classList.remove('is-choisi'));
           b.classList.add('is-choisi');
           heureEl.value = b.dataset.heure;
+          heureVoulue = b.dataset.heure;
           btn.disabled = false;
         });
       });
+
+      if (heureVoulue) {
+        const dejaChoisi = zone.querySelector(`.creneau[data-heure="${heureVoulue}"]:not([disabled])`);
+        if (dejaChoisi) {
+          dejaChoisi.classList.add('is-choisi');
+          heureEl.value = heureVoulue;
+          btn.disabled = false;
+        }
+      }
     } catch {
       if (jeton !== sequence) return;
       zone.innerHTML = '<div class="alerte alerte--erreur" style="margin:1rem 0 0">Impossible de charger les disponibilités.</div>';
