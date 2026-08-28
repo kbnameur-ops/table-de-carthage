@@ -25,6 +25,7 @@ const logo = dataUri('./assets/img/logo.jpg');
 // par un chemin relatif à celle-ci : c'est ce chemin-là qu'il faut remplacer.
 const photos = new Map([
   ['assets/img/salle.jpg', dataUri('./assets/img/salle.jpg')],
+  ['assets/img/facade.jpg', dataUri('./assets/img/facade.jpg')],
   ['../img/salle-hero.jpg', dataUri('./assets/img/salle-hero.jpg')],
   ['../img/salle-hero-mobile.jpg', dataUri('./assets/img/salle-hero-mobile.jpg')],
 ]);

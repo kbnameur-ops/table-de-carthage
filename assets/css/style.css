@@ -520,6 +520,21 @@ button{font:inherit;color:inherit}
 .book{padding:clamp(5rem,11vw,9rem) 0;background:var(--cream)}
 .book__grid{display:grid;gap:clamp(2.5rem,6vw,5rem);grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);align-items:start}
 @media (max-width:900px){.book__grid{grid-template-columns:1fr}}
+/* La devanture ferme la colonne des tunnels : les deux cartes laissaient
+   un vide sous elles alors que la colonne d'en face descend bien plus bas.
+   Elle sert d'ailleurs à reconnaître l'endroit en arrivant, ce qui la met
+   à sa place dans le bloc « réserver / nous trouver ». */
+.book__facade{grid-column:1/-1;margin:2rem 0 0}
+.book__facade img{
+  width:100%;height:auto;display:block;
+  border:1px solid rgba(201,169,97,.5);
+  box-shadow:0 40px 70px -50px rgba(14,42,78,.85);
+}
+.book__facade figcaption{
+  margin-top:.9rem;font-size:.74rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);
+}
+
 .infos{margin:2.4rem 0 0;display:grid;gap:1.4rem}
 .infos > div{border-top:1px solid rgba(14,42,78,.12);padding-top:1rem}
 .infos dt{font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;color:var(--gold-500);margin-bottom:.35rem}
