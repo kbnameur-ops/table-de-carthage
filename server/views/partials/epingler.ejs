@@ -1,0 +1,108 @@
+<!-- Appel à épingler l'application sur l'écran d'accueil.
+     Ne s'affiche jamais si l'application est déjà lancée depuis l'écran
+     d'accueil, ni si la personne a refusé : c'est un rappel, pas une
+     réclame. -->
+<div class="epingler" id="epingler" hidden data-espace="<%= espace %>">
+  <img class="epingler__icone" src="/assets/img/icones/icone-180.png" alt="" width="44" height="44">
+  <div class="epingler__mots">
+    <b>Épingler «&nbsp;<%= court %>&nbsp;»</b>
+    <span id="epinglerComment">Gardez cet accès à portée de main, comme une application.</span>
+  </div>
+  <div class="epingler__actions">
+    <button type="button" class="btn btn--sm" id="epinglerFaire" hidden>Épingler</button>
+    <button type="button" class="epingler__fermer" id="epinglerPlusTard" aria-label="Ne plus proposer">×</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  var bandeau = document.getElementById('epingler');
+  if (!bandeau) return;
+  var cle = 'epingler-refuse:' + bandeau.dataset.espace;
+
+  // Déjà lancée depuis l'écran d'accueil : il n'y a plus rien à proposer.
+  var installee = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if (installee) return;
+
+  // Un refus se retient. localStorage peut lever (navigation privée,
+  // réglages restrictifs) : dans ce cas on propose, quitte à insister.
+  try { if (localStorage.getItem(cle)) return; } catch (e) {}
+
+  var bouton = document.getElementById('epinglerFaire');
+  var comment = document.getElementById('epinglerComment');
+  var invite = null;
+
+  // Les deux plateformes s'excluent. iOS n'émet jamais beforeinstallprompt,
+  // mais un navigateur qui se fait passer pour lui le ferait : sans cette
+  // exclusion, on afficherait un bouton d'installation sous une consigne
+  // qui dit de passer par le menu Partager.
+  var ua = window.navigator.userAgent;
+  var iOS = /iPad|iPhone|iPod/.test(ua)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var safari = /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  var pommeSansInstallation = iOS && safari;
+
+  function montrer() { bandeau.hidden = false; }
+
+  function refuser() {
+    bandeau.hidden = true;
+    try { localStorage.setItem(cle, '1'); } catch (e) {}
+  }
+  document.getElementById('epinglerPlusTard').addEventListener('click', refuser);
+
+  // Android et Chrome de bureau : le navigateur nous laisse déclencher
+  // l'installation nous-mêmes. On retient l'événement et on l'utilise au
+  // moment où la personne le demande.
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    if (pommeSansInstallation) return;
+    invite = e;
+    bouton.hidden = false;
+    comment.textContent = 'Un appui, et l’accès rejoint votre écran d’accueil.';
+    montrer();
+  });
+
+  bouton.addEventListener('click', function () {
+    if (!invite) return;
+    invite.prompt();
+    invite.userChoice.then(function (choix) {
+      if (choix.outcome === 'accepted') refuser(); // installée : on ne repropose plus
+      invite = null;
+    });
+  });
+
+  window.addEventListener('appinstalled', refuser);
+
+  // Sur les pages de commande, une barre d'envoi apparaît en bas dès qu'un
+  // plat est choisi. Les deux sont fixées au même bord : on empile le
+  // bandeau au-dessus plutôt que de le laisser la recouvrir.
+  var barre = document.getElementById('barreEnvoi');
+  if (barre) {
+    var caler = function () {
+      var h = barre.hidden ? 0 : barre.offsetHeight;
+      bandeau.style.setProperty('--epingler-bas', h + 'px');
+    };
+    new MutationObserver(caler).observe(barre, { attributes: true, attributeFilter: ['hidden'] });
+    window.addEventListener('resize', caler);
+    caler();
+  }
+
+  // iOS ne fournit aucun événement d'installation : il faut décrire le
+  // geste. On ne le fait que dans Safari — dans Chrome ou Firefox sur iOS,
+  // « Sur l'écran d'accueil » n'existe pas au même endroit, et une consigne
+  // fausse est pire que pas de consigne.
+  if (pommeSansInstallation) {
+    comment.innerHTML =
+      'Touchez <span class="epingler__geste" aria-hidden="true">'
+      + '<svg viewBox="0 0 24 24" width="15" height="15"><path d="M12 3v12M12 3 8.5 6.5M12 3l3.5 3.5" '
+      + 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>'
+      + '<path d="M5 12v7h14v-7" fill="none" stroke="currentColor" stroke-width="1.8" '
+      + 'stroke-linecap="round"/></svg></span> Partager, puis '
+      + '<b class="epingler__insecable">Sur l’écran d’accueil</b>.';
+    // Un délai laisse la page s'installer avant de solliciter : un bandeau
+    // qui apparaît pendant qu'on lit déjà quelque chose se ferme sans être lu.
+    setTimeout(montrer, 2500);
+  }
+})();
+</script>

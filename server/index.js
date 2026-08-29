@@ -6,6 +6,7 @@ import { nettoyerSessionsExpirees, nettoyerTentativesAnciennes } from './db.js';
 
 import { api } from './routes/api.js';
 import { apiCarteRouter } from './routes/api_carte.js';
+import { manifesteRouter } from './routes/manifeste.js';
 import { reservationRouter } from './routes/reservation.js';
 import { commandeRouter } from './routes/commande.js';
 import { compteRouter } from './routes/compte.js';
@@ -67,6 +68,7 @@ app.use(chargerNotifications);
 // ── Routes ──────────────────────────────────────────────────
 app.use('/api', api);
 app.use(apiCarteRouter);
+app.use(manifesteRouter);
 app.use(reservationRouter);
 app.use(commandeRouter);
 app.use(compteRouter);
