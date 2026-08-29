@@ -196,7 +196,7 @@ tbody tr:last-child td{border-bottom:0}
           <tbody>
             <tr><td><code>/salon</code></td><td>Le back-office complet</td><td>La direction, avec son e-mail</td></tr>
             <tr><td><code>/service</code></td><td>Prise de commande et caisse</td><td>La salle, avec un identifiant court</td></tr>
-            <tr><td><code>/cuisine</code></td><td>Le passe, écran autonome</td><td>La cuisine, même identifiant</td></tr>
+            <tr><td><code>/cuisine</code></td><td>Le passe, écran autonome</td><td>La cuisine, avec son propre identifiant</td></tr>
           </tbody>
         </table>
       </div>
@@ -336,7 +336,13 @@ tbody tr:last-child td{border-bottom:0}
         <li>Enregistrez, et communiquez l'identifiant et le mot de passe à l'intéressé.</li>
       </ol>
       <p>Une personne qui n'a que la cuisine arrive directement sur le passe en se
-         connectant, et ne voit pas les écrans de salle.</p>
+         connectant, et ne voit pas les écrans de salle. Chaque écran a sa propre
+         page de connexion&nbsp;: la cuisine se connecte sur <code>/cuisine</code>,
+         la salle sur <code>/service</code>. Le mot de passe est le même&nbsp;;
+         c'est simplement la porte qui change, pour que l'application épinglée en
+         cuisine reste une application et ne s'ouvre pas dans un navigateur.
+         Quelqu'un qui se trompe de porte est reconduit vers son écran, pas
+         refusé.</p>
 
       <h3>Retirer un accès</h3>
       <p>Décochez la case, ou utilisez <strong>Retirer l'accès</strong> pour supprimer

@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { verifierCsrf, exigerCuisine } from '../middleware.js';
+import { detruireSession } from '../lib/auth.js';
+import { connecterPersonnel, apresConnexion, dejaConnecte } from '../lib/personnel.js';
 import { aujourdHui, nomTable } from '../lib/jours.js';
 import { ETATS, LIBELLES, avancer, ramenerEnPreparation, tableauDuJour } from '../lib/cuisine.js';
 import { cuisineTableau } from '../lib/layout.js';
@@ -25,6 +27,47 @@ function donnees(req, res, tableau) {
     csrfToken: res.locals.csrfToken,
   };
 }
+
+/** La cuisine a sa propre porte d'entrée, et non celle de la salle.
+ *
+ *  Épinglé sur l'écran d'accueil, le passe est une application dont la
+ *  portée s'arrête à /cuisine : l'envoyer se connecter sur /service/connexion
+ *  la ferait sortir de cette portée et s'ouvrir dans un onglet de
+ *  navigateur, avec la barre d'adresse et les onglets par-dessus le passe.
+ *  Le mot de passe vérifié est le même — seule la porte change. */
+cuisineRouter.get('/cuisine/connexion', async (req, res, next) => {
+  try {
+    const ou = await dejaConnecte(req, 'cuisine');
+    if (ou) return res.redirect(ou);
+    res.render('service-connexion', {
+      titre: 'Cuisine', action: '/cuisine/connexion', bouton: 'Entrer en cuisine',
+      erreurGenerale: null, valeurs: {},
+      session: req.session, actif: '', csrfToken: res.locals.csrfToken,
+    });
+  } catch (err) { next(err); }
+});
+
+cuisineRouter.post('/cuisine/connexion', verifierCsrf, async (req, res, next) => {
+  try {
+    const r = await connecterPersonnel(req, req.body);
+    if (r.erreur) {
+      return res.render('service-connexion', {
+        titre: 'Cuisine', action: '/cuisine/connexion', bouton: 'Entrer en cuisine',
+        erreurGenerale: r.erreur, valeurs: { identifiant: r.identifiant },
+        session: req.session, actif: '', csrfToken: res.locals.csrfToken,
+      });
+    }
+    res.redirect(apresConnexion(r.employe, 'cuisine'));
+  } catch (err) { next(err); }
+});
+
+cuisineRouter.post('/cuisine/deconnexion', verifierCsrf, async (req, res, next) => {
+  try {
+    await detruireSession(req.session.id);
+    res.clearCookie('sid');
+    res.redirect('/cuisine/connexion');
+  } catch (err) { next(err); }
+});
 
 cuisineRouter.get('/cuisine', exigerCuisine, async (req, res, next) => {
   try {

@@ -1,10 +1,8 @@
 import { Router } from 'express';
 import { query, une, transaction } from '../db.js';
 import { verifierCsrf, exigerService } from '../middleware.js';
-import {
-  verifierMotDePasse, elargirSession, detruireSession,
-  enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
-} from '../lib/auth.js';
+import { detruireSession } from '../lib/auth.js';
+import { connecterPersonnel, apresConnexion, dejaConnecte } from '../lib/personnel.js';
 import { clientParTelephone, creerClientAuComptoir } from '../lib/clients.js';
 import { euros, versCents } from '../lib/money.js';
 import { genererReference } from '../lib/reference.js';
@@ -29,45 +27,31 @@ export const serviceRouter = Router();
 const maintenant = () => new Date().toTimeString().slice(0, 5);
 
 // ── Connexion ──────────────────────────────────────────────
-serviceRouter.get('/service/connexion', (req, res) => {
-  if (req.session.role === 'serveur' || req.session.role === 'admin') return res.redirect('/service');
-  res.render('service-connexion', {
-    titre: 'Prise de commande', erreurGenerale: null, valeurs: {},
-    session: req.session, actif: '', csrfToken: res.locals.csrfToken,
-  });
+serviceRouter.get('/service/connexion', async (req, res, next) => {
+  try {
+    const ou = await dejaConnecte(req, 'service');
+    if (ou) return res.redirect(ou);
+    res.render('service-connexion', {
+      titre: 'Prise de commande', action: '/service/connexion', bouton: 'Entrer en service',
+      erreurGenerale: null, valeurs: {},
+      session: req.session, actif: '', csrfToken: res.locals.csrfToken,
+    });
+  } catch (err) { next(err); }
 });
 
 serviceRouter.post('/service/connexion', verifierCsrf, async (req, res, next) => {
   try {
-    const identifiant = (req.body.identifiant || '').trim().toLowerCase();
-    const motDePasse = req.body.motDePasse || '';
-    const rendreErreur = (msg) => res.render('service-connexion', {
-      titre: 'Prise de commande', erreurGenerale: msg, valeurs: { identifiant },
-      session: req.session, actif: '', csrfToken: res.locals.csrfToken,
-    });
-    if (!identifiant || !motDePasse) return rendreErreur('Identifiant et mot de passe requis.');
-
-    const cle = `serveur:${identifiant}:${req.ip}`;
-    if (await tropDeTentatives(cle)) {
-      return rendreErreur(`Trop de tentatives. Réessayez dans ${MINUTES_BLOCAGE} minutes.`);
+    const r = await connecterPersonnel(req, req.body);
+    if (r.erreur) {
+      return res.render('service-connexion', {
+        titre: 'Prise de commande', action: '/service/connexion', bouton: 'Entrer en service',
+        erreurGenerale: r.erreur, valeurs: { identifiant: r.identifiant },
+        session: req.session, actif: '', csrfToken: res.locals.csrfToken,
+      });
     }
-
-    const employe = await une(
-      `SELECT * FROM employes
-        WHERE identifiant = $1 AND actif = true
-          AND (acces_service = true OR acces_cuisine = true)`,
-      [identifiant]
-    );
-    if (!employe || !employe.mot_de_passe || !verifierMotDePasse(motDePasse, employe.mot_de_passe)) {
-      await enregistrerTentative(cle);
-      return rendreErreur('Identifiant ou mot de passe incorrect.');
-    }
-
-    await reinitialiserTentatives(cle);
-    await elargirSession(req.session.id, 'serveur', employe.id);
-    // Un commis qui n'a que la cuisine atterrit en cuisine, pas sur un plan
-    // de salle où il n'a rien à faire.
-    res.redirect(employe.acces_service ? '/service' : '/cuisine');
+    // Un commis qui n'a que la cuisine atterrit au passe, pas sur un plan de
+    // salle où il n'a rien à faire.
+    res.redirect(apresConnexion(r.employe, 'service'));
   } catch (err) { next(err); }
 });
 
