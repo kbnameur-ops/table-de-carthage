@@ -22,6 +22,7 @@ import { salonTablesClientsRouter } from './routes/salon_tables_clients.js';
 import { salonClientsRouter } from './routes/salon_clients.js';
 import { salonReservationsRouter } from './routes/salon_reservations.js';
 import { salonCommandesRouter } from './routes/salon_commandes.js';
+import { salonAnalyseRouter } from './routes/salon_analyse.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const racine = join(__dirname, '..');
@@ -84,6 +85,7 @@ app.use(salonTablesClientsRouter);
 app.use(salonClientsRouter);
 app.use(salonReservationsRouter);
 app.use(salonCommandesRouter);
+app.use(salonAnalyseRouter);
 
 // ── 404 ──────────────────────────────────────────────────────
 app.use((req, res) => {

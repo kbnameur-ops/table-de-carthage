@@ -426,3 +426,17 @@ ALTER TABLE commandes ADD COLUMN IF NOT EXISTS prete_le         TIMESTAMPTZ;
 -- fiche employé. Les deux sont indépendants : un chef de rang peut avoir
 -- les deux, un commis seulement la cuisine.
 ALTER TABLE employes ADD COLUMN IF NOT EXISTS acces_cuisine BOOLEAN NOT NULL DEFAULT false;
+
+-- ═══════════════════════════════════════════════════════════
+-- v6 — Analyse : qui a pris la commande, pour le chiffre d'affaires par
+--      serveur
+-- ═══════════════════════════════════════════════════════════
+
+-- Nul quand personne du personnel n'est en cause : une commande passée par
+-- le client lui-même (tunnel à emporter, QR de table) n'a pas de serveur à
+-- créditer. Le nom est recopié, comme les lignes recopient celui du plat :
+-- une fiche employé supprimée plus tard ne doit pas effacer de qui vient un
+-- chiffre d'affaires déjà réalisé.
+ALTER TABLE commandes ADD COLUMN IF NOT EXISTS pris_par_id  INTEGER REFERENCES employes(id) ON DELETE SET NULL;
+ALTER TABLE commandes ADD COLUMN IF NOT EXISTS pris_par_nom TEXT;
+CREATE INDEX IF NOT EXISTS idx_commandes_pris_par ON commandes(pris_par_id);

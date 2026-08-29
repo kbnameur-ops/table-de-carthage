@@ -182,6 +182,7 @@ tbody tr:last-child td{border-bottom:0}
       <li><a href="#caisse"><b>Encaisser</b> <i>salle, caisse</i></a></li>
       <li><a href="#cuisine"><b>L'écran de cuisine</b> <i>cuisine</i></a></li>
       <li><a href="#fidelite"><b>La cagnotte</b> <i>tout le monde</i></a></li>
+      <li><a href="#analyse"><b>L'analyse</b> <i>direction</i></a></li>
       <li><a href="#client"><b>Ce que voit le client</b> <i>pour information</i></a></li>
       <li><a href="#questions"><b>Que faire si…</b></a></li>
     </ul>
@@ -564,6 +565,62 @@ tbody tr:last-child td{border-bottom:0}
       <h3>Changer le taux</h3>
       <p>Les 10&nbsp;% sont un réglage, pas une valeur figée dans le programme. Demandez la
          modification&nbsp;: elle se fait en base, sans nouvelle mise en ligne.</p>
+    </section>
+
+    <section id="analyse">
+      <h2>L'analyse</h2>
+      <span class="pour-qui">Direction</span>
+      <p><strong>Analyse</strong> dans la barre du salon. Ce qui s'est vendu, à qui le
+         créditer, et une première matière pour prévoir les prochains services.</p>
+
+      <h3>Deux nombres qui ne se lisent pas pareil</h3>
+      <ul class="simple">
+        <li>Le <strong>chiffre d'affaires</strong> ne compte que ce qui est
+            <strong>encaissé</strong>&nbsp;: c'est de l'argent réellement en caisse, net de
+            ce que la cagnotte a couvert.</li>
+        <li>Les compteurs de <strong>commandes</strong> et de <strong>plats vendus</strong>
+            comptent tout ce qui a été passé, encaissé ou non&nbsp;: c'est la demande
+            réelle, utile même avant l'encaissement du soir.</li>
+      </ul>
+      <p>Une addition en cours de repas gonfle donc les compteurs de commandes avant de
+         gonfler le chiffre d'affaires&nbsp;: ce n'est pas un décalage à corriger, c'est
+         voulu.</p>
+
+      <h3>Choisir la période</h3>
+      <p>Quatre périodes toutes prêtes (7&nbsp;jours, 30&nbsp;jours, 90&nbsp;jours,
+         12&nbsp;mois), ou deux dates au choix. Tout l'écran — tuiles, graphique, plats,
+         serveurs, exports — se recalcule sur la période affichée.</p>
+
+      <h3>Le chiffre d'affaires par jour</h3>
+      <p>Le graphique donne le rythme en un coup d'œil&nbsp;; le détail exact se déplie
+         juste en dessous, jour par jour, sans qu'aucune date ne manque&nbsp;— un jour
+         fermé apparaît à zéro plutôt que de disparaître du tableau.</p>
+
+      <h3>Qui a pris la commande</h3>
+      <p>Chaque commande saisie en salle ou au comptoir est créditée à la personne
+         connectée qui l'a enregistrée. Une commande passée par le client lui-même — QR de
+         table ou tunnel à emporter, sans passer par un serveur — rejoint un repère
+         «&nbsp;Sans serveur (client)&nbsp;», pour que la somme retombe exactement sur le
+         total du jour. Le détail jour par jour et par serveur se déplie en dessous, tant
+         que la période ne dépasse pas 31&nbsp;jours&nbsp;— au-delà, l'export CSV
+         «&nbsp;Par serveur et par jour&nbsp;» prend le relais.</p>
+
+      <h3>Pour préparer l'avenir</h3>
+      <p>Trois premiers repères de saisonnalité&nbsp;: la moyenne par jour de la semaine
+         («&nbsp;le vendredi, on vend en général plus qu'un mardi&nbsp;»), par mois, et par
+         saison calendaire. Ce sont des débuts, pas des prévisions abouties&nbsp;: plus il
+         y aura de services enregistrés, plus ces moyennes voudront dire quelque chose.</p>
+      <p>Le climat n'est pas une donnée que ce site tient&nbsp;— pour rapprocher les ventes
+         de la météo, exportez le détail ci-dessous et croisez-le avec une source externe
+         par la date.</p>
+
+      <h3>Extraire les données</h3>
+      <p>Quatre fichiers CSV en bas de l'écran, sur la période affichée&nbsp;: par jour, par
+         plat, par serveur, et le détail le plus fin — une ligne par plat commandé. Ils
+         s'ouvrent directement dans Excel (double-clic&nbsp;: accents et nombres à la
+         française sont déjà au bon format) et ne contiennent aucune coordonnée de
+         client&nbsp;— juste de quoi recombiner les chiffres à volonté, y compris dans un
+         tableur ou un notebook maison.</p>
     </section>
 
     <section id="client">

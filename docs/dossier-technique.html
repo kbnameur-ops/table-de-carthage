@@ -179,9 +179,9 @@ td code{font-size:.8rem;white-space:nowrap}
     <div class="chapeau__meta">
       <span>Version <b>2.0</b></span>
       <span>Node <b>≥ 20</b></span>
-      <span>Environ <b>4 500</b> lignes de JavaScript</span>
+      <span>Environ <b>5 400</b> lignes de JavaScript</span>
       <span><b>20</b> tables Postgres</span>
-      <span><b>38</b> tests</span>
+      <span><b>55</b> tests</span>
     </div>
   </header>
 
@@ -215,7 +215,7 @@ td code{font-size:.8rem;white-space:nowrap}
             <tr><td><strong>Vitrine</strong></td><td><code>/</code></td><td>Le public. Page statique, carte, accès aux tunnels.</td></tr>
             <tr><td><strong>Tunnels</strong></td><td><code>/reserver</code>, <code>/commander</code>, <code>/table/:code</code></td><td>Le client, depuis son téléphone.</td></tr>
             <tr><td><strong>Espace client</strong></td><td><code>/compte</code></td><td>Le client identifié : historique, table en cours, cagnotte.</td></tr>
-            <tr><td><strong>Salon</strong></td><td><code>/salon</code></td><td>La direction. Carte, salle, réservations, clients, équipe.</td></tr>
+            <tr><td><strong>Salon</strong></td><td><code>/salon</code></td><td>La direction. Carte, salle, réservations, clients, équipe, analyse.</td></tr>
             <tr><td><strong>Service</strong></td><td><code>/service</code></td><td>La salle. Plan, prise de commande, caisse.</td></tr>
             <tr><td><strong>Cuisine</strong></td><td><code>/cuisine</code></td><td>Le passe. File des commandes par état, connexion et déconnexion comprises.</td></tr>
           </tbody>
@@ -253,6 +253,8 @@ server/views/*.ejs    gabarits</code></pre>
         <div class="fichier"><b>lib/cuisine.js</b><span>File du passe et transitions d'état d'une commande.</span></div>
         <div class="fichier"><b>lib/tables.js</b><span>Tables de la salle : création avec code QR, et la règle qui autorise ou refuse une suppression selon les additions portées.</span></div>
         <div class="fichier"><b>lib/personnel.js</b><span>Connexion du personnel, partagée par la salle et le passe, et choix de l'écran d'arrivée selon les droits.</span></div>
+        <div class="fichier"><b>lib/analyse.js</b><span>Chiffre d'affaires, volume et plats vendus par jour, serveur, jour de semaine, mois et saison.</span></div>
+        <div class="fichier"><b>lib/csv.js</b><span>Fabrique un CSV au format Excel français (point-virgule, virgule décimale, BOM).</span></div>
         <div class="fichier"><b>lib/tablees.js</b><span>Ouverture, addition et fermeture d'une tablée.</span></div>
         <div class="fichier"><b>lib/availability.js</b><span>Créneaux disponibles, attribution d'une table, état de la salle.</span></div>
         <div class="fichier"><b>lib/clients.js</b><span>Identification, création au comptoir, reprise d'un compte.</span></div>
@@ -289,7 +291,7 @@ server/views/*.ejs    gabarits</code></pre>
     <section id="donnees">
       <h2><em>04</em>Modèle de données</h2>
       <p>Vingt tables. Le schéma vit dans un seul fichier, <code>server/schema.sql</code>,
-         organisé en blocs versionnés (v2 à v5) tous idempotents&nbsp;: le même fichier
+         organisé en blocs versionnés (v2 à v6) tous idempotents&nbsp;: le même fichier
          s'applique à une base neuve comme à une base en service.</p>
 
       <h3>Carte et salle</h3>
@@ -315,7 +317,7 @@ server/views/*.ejs    gabarits</code></pre>
             <tr><td><code>clients</code></td><td>Téléphone normalisé (clé d'identité), date de naissance, notes internes, <code>cagnotte_cents</code>.</td></tr>
             <tr><td><code>reservations</code></td><td>Référence, créneau, couverts, table attribuée, statut.</td></tr>
             <tr><td><code>tablees</code></td><td>Des clients installés à une table, de l'arrivée à l'encaissement.</td></tr>
-            <tr><td><code>commandes</code></td><td>À emporter ou sur place. Porte le statut de cuisine et les horodatages.</td></tr>
+            <tr><td><code>commandes</code></td><td>À emporter ou sur place. Porte le statut de cuisine, les horodatages, et qui l'a prise (<code>pris_par_id</code>/<code>pris_par_nom</code>, nul si le client se sert lui-même).</td></tr>
             <tr><td><code>commande_lignes</code></td><td>Nom et prix <em>recopiés</em>&nbsp;: une commande passée reste lisible si le plat change.</td></tr>
             <tr><td><code>fidelite_mouvements</code></td><td>Journal signé de la cagnotte.</td></tr>
           </tbody>
@@ -518,6 +520,45 @@ server/views/*.ejs    gabarits</code></pre>
          Le calcul se fait à l'heure de Paris via <code>Intl</code>, le serveur tournant
          en UTC.</p>
 
+      <h3>L'analyse&nbsp;: deux nombres qui ne veulent pas dire la même chose</h3>
+      <p><code>lib/analyse.js</code> distingue systématiquement deux grandeurs, et les
+         confondre fausserait toute décision prise dessus&nbsp;:</p>
+      <ul>
+        <li>Le <strong>chiffre d'affaires</strong> ne compte que les commandes
+            <code>encaissee</code>, net de ce que la cagnotte a couvert
+            (<code>total_cents&nbsp;-&nbsp;remise_cagnotte_cents</code>)&nbsp;: c'est de
+            l'argent réellement en caisse.</li>
+        <li>Le <strong>volume</strong> (commandes, plats vendus) compte tout sauf
+            <code>annulee</code>&nbsp;: une commande pas encore encaissée reflète quand
+            même une vraie demande, et c'est la demande qu'une prévision cherche à
+            anticiper, pas la caisse du soir.</li>
+      </ul>
+      <p>Chaque commande porte désormais <code>pris_par_id</code> et
+         <code>pris_par_nom</code> (v6 du schéma), posés à l'enregistrement par
+         <code>server/routes/service.js</code>&nbsp;: le nom est recopié comme celui d'un
+         plat sur une ligne de commande, pour qu'un employé supprimé plus tard n'efface
+         pas de qui vient un chiffre d'affaires déjà réalisé. Une commande passée par le
+         client lui-même (QR de table, tunnel à emporter) n'a personne à créditer&nbsp;;
+         elle rejoint un repère «&nbsp;Sans serveur (client)&nbsp;» plutôt que de
+         disparaître du calcul, pour que la somme par serveur retombe exactement sur le
+         total de la période.</p>
+      <p>Les regroupements par jour de semaine, par mois et par saison utilisent le
+         calendrier de la période comme dénominateur — pas un <code>COUNT(DISTINCT
+         date)</code> sur les commandes existantes&nbsp;: un jour sans une seule commande
+         (fermeture, jour creux) doit tirer une moyenne vers le bas, pas disparaître du
+         calcul comme s'il n'avait jamais existé. La saison se déduit du seul calendrier
+         (déc-jan-fév&nbsp;= hiver, etc.)&nbsp;: le climat réel n'est pas une donnée que
+         cette base tient, et le rapprocher des ventes suppose une source météo externe,
+         à joindre après coup sur les dates de l'export CSV.</p>
+      <p>Quatre exports CSV (<code>server/lib/csv.js</code>) couvrent la même période
+         que l'écran&nbsp;: point-virgule en séparateur et virgule décimale pour s'ouvrir
+         tel quel dans un Excel français, BOM UTF-8 pour que les accents survivent. Ils
+         ne portent aucune donnée personnelle du client&nbsp;— pas de nom, de téléphone
+         ni d'e-mail&nbsp;— seulement des identifiants numériques et des libellés déjà
+         publics (nom de plat, prénom d'employé)&nbsp;: le fichier le plus fin,
+         <code>commandes.csv</code>, reste consultable par quiconque a accès au salon
+         sans exposer le fichier client.</p>
+
       <h3>Le téléphone comme identité</h3>
       <p>Le numéro est stocké normalisé (chiffres seuls, <code>0</code> initial réécrit en
          <code>33</code>), si bien que <code>06 12 34 56 78</code>,
@@ -614,7 +655,7 @@ server/views/*.ejs    gabarits</code></pre>
             <tr><td><code>npm run migrate</code></td><td>Applique <code>schema.sql</code>. Idempotent, rejouable.</td></tr>
             <tr><td><code>npm run seed</code></td><td>Peuple la carte depuis <code>assets/js/menu-data.js</code> et copie les photos. Sans effet si la carte existe, sauf <code>-- --force</code>.</td></tr>
             <tr><td><code>npm run admin</code></td><td>Crée ou met à jour un compte du salon. Mot de passe de 10 caractères minimum.</td></tr>
-            <tr><td><code>npm test</code></td><td>38 tests. Ceux qui touchent la base se sautent d'eux-mêmes si elle est injoignable.</td></tr>
+            <tr><td><code>npm test</code></td><td>55 tests. Ceux qui touchent la base se sautent d'eux-mêmes si elle est injoignable.</td></tr>
             <tr><td><code>npm run dev</code></td><td>Serveur local avec rechargement.</td></tr>
           </tbody>
         </table>
