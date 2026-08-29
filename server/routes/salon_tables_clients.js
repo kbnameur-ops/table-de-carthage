@@ -174,6 +174,33 @@ salonTablesClientsRouter.post('/salon/tables-clients/ouvrir', exigerAdmin, verif
 });
 
 // ── Les QR à imprimer et coller sur les tables ─────────────
+/** Point d'entrée depuis la navigation du salon.
+ *
+ *  Les QR appartiennent aux tables, donc à un service. Mais un restaurant
+ *  qui n'en a qu'un — le cas courant — n'a rien à choisir : on l'envoie
+ *  directement à sa planche plutôt que de lui faire traverser une page
+ *  d'index à une seule ligne. */
+salonTablesClientsRouter.get('/salon/qr', exigerAdmin, async (req, res, next) => {
+  try {
+    const services = await query(
+      `SELECT s.id, s.nom, s.actif,
+              COUNT(t.id) FILTER (WHERE t.actif)::int AS nb_tables
+         FROM services s
+         LEFT JOIN tables_resto t ON t.service_id = s.id
+        WHERE s.actif = true
+        GROUP BY s.id ORDER BY s.position, s.id`
+    );
+    const avecTables = services.filter(s => s.nb_tables > 0);
+    if (avecTables.length === 1) return res.redirect(`/salon/services/${avecTables[0].id}/qr`);
+
+    res.render('salon/qr-index', {
+      titre: 'QR des tables', actif: 'qr', services,
+      csrfToken: res.locals.csrfToken,
+    });
+  } catch (err) { next(err); }
+});
+
+
 salonTablesClientsRouter.get('/salon/services/:id/qr', exigerAdmin, async (req, res, next) => {
   try {
     const service = await une(`SELECT * FROM services WHERE id = $1`, [req.params.id]);
@@ -196,7 +223,13 @@ salonTablesClientsRouter.get('/salon/services/:id/qr', exigerAdmin, async (req, 
     })));
 
     res.render('salon/qr-tables', {
-      titre: `QR — ${service.nom}`, actif: 'services', service, codes,
+      titre: `QR — ${service.nom}`, actif: 'qr', service, codes,
+      services: await query(
+        `SELECT s.id, s.nom FROM services s
+           WHERE s.actif = true
+             AND EXISTS (SELECT 1 FROM tables_resto t WHERE t.service_id = s.id AND t.actif)
+           ORDER BY s.position, s.id`
+      ),
       csrfToken: res.locals.csrfToken,
     });
   } catch (err) { next(err); }

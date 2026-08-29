@@ -25,6 +25,7 @@
         <td><span class="badge badge--<%= s.actif ? 'confirmee' : 'annulee' %>"><%= s.actif ? 'Actif' : 'Inactif' %></span></td>
         <td>
           <a class="btn btn--sm" href="/salon/services/<%= s.id %>/tables">Tables</a>
+          <a class="btn btn--ghost btn--sm" href="/salon/services/<%= s.id %>/qr">QR</a>
           <a class="btn btn--ghost btn--sm" href="/salon/services/<%= s.id %>/modifier">Modifier</a>
           <form method="post" action="/salon/services/<%= s.id %>/supprimer" style="display:inline" onsubmit="return confirm('Supprimer ce service ?')">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">

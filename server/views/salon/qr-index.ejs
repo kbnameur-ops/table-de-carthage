@@ -1,0 +1,36 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>QR des tables</h1>
+  <p class="lead">
+    Un QR par table, à imprimer et coller. Le client le scanne, s'identifie, et
+    commande depuis son téléphone — sa commande arrive sur l'addition de cette table.
+  </p>
+</div>
+
+<% if (!services.length) { %>
+  <div class="alerte alerte--info">
+    Aucun service actif. <a href="/salon/services">Créez-en un →</a>
+  </div>
+<% } else { %>
+  <p class="aide">
+    Les tables appartiennent à un service&nbsp;: la salle peut être découpée
+    autrement le midi et le soir. Chaque service a donc sa propre planche.
+  </p>
+  <div class="liste-tables">
+    <% services.forEach(s => { %>
+      <div class="card carte-table">
+        <h2 style="margin:0 0 .4rem;font-size:1.25rem"><%= s.nom %></h2>
+        <p style="margin:0 0 1rem;color:var(--muted)">
+          <%= s.nb_tables %> table<%= s.nb_tables > 1 ? 's' : '' %> active<%= s.nb_tables > 1 ? 's' : '' %>
+        </p>
+        <div class="btn-row btn-row--serree">
+          <% if (s.nb_tables) { %>
+            <a class="btn btn--sm" href="/salon/services/<%= s.id %>/qr">Voir la planche</a>
+          <% } %>
+          <a class="btn btn--ghost btn--sm" href="/salon/services/<%= s.id %>/tables">Gérer les tables</a>
+        </div>
+      </div>
+    <% }) %>
+  </div>
+<% } %>
+<%- salonPied %>

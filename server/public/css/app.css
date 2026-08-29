@@ -221,6 +221,13 @@ body.salon{background:#F4F6F9}
   display:flex;gap:.2rem;padding:0 clamp(1rem,3vw,2rem);
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;
 }
+/* Sur un écran large, la barre passe à la ligne plutôt que de défiler : à
+   onze entrées, la dernière se retrouvait coupée au bord sans que rien
+   n'indique qu'il fallait faire défiler. Sous 900 px, le défilement
+   horizontal reste le bon geste — c'est celui qu'on fait au doigt. */
+@media (min-width:900px){
+  .salonbar__nav{flex-wrap:wrap;overflow-x:visible}
+}
 .salonbar__nav::-webkit-scrollbar{display:none}
 .salonbar__nav a{
   padding:.7rem .95rem;font-size:.76rem;letter-spacing:.1em;text-transform:uppercase;
