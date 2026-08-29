@@ -3,7 +3,9 @@ import QRCode from 'qrcode';
 import { query, une, transaction } from '../db.js';
 import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
 import { dateValide } from '../lib/validate.js';
-import { euros } from '../lib/money.js';
+import { euros, versCents } from '../lib/money.js';
+import { encaisserTablee } from '../lib/encaissement.js';
+import { clientParTelephone, creerClientAuComptoir } from '../lib/clients.js';
 import { genererReference } from '../lib/reference.js';
 import { aujourdHui, jourVoisin, libelleJour, nomTable as nomTableLisible } from '../lib/jours.js';
 import {
@@ -34,6 +36,13 @@ salonTablesClientsRouter.get('/salon/tables-clients', exigerAdmin, async (req, r
         enCours: ouvertes.reduce((s, t) => s + t.total, 0),
         journee: tablees.reduce((s, t) => s + t.total, 0),
       },
+      tablesLibres: await query(
+        `SELECT t.id, t.nom, t.couverts, s.nom AS service_nom
+           FROM tables_resto t JOIN services s ON s.id = t.service_id
+          WHERE t.actif = true
+            AND NOT EXISTS (SELECT 1 FROM tablees tb WHERE tb.table_id = t.id AND tb.statut = 'ouverte')
+          ORDER BY s.position, t.position, t.id`
+      ),
       veille: jourVoisin(date, -1), lendemain: jourVoisin(date, 1),
       aujourdHui: aujourdHui(), libelle: libelleJour(date),
       csrfToken: res.locals.csrfToken,
@@ -47,6 +56,7 @@ salonTablesClientsRouter.get('/salon/tables-clients/:id', exigerAdmin, async (re
     const tablee = await une(
       `SELECT tb.*, t.nom AS table_nom, t.couverts AS table_couverts,
               c.id AS cid, c.prenom, c.nom AS client_nom, c.telephone_saisi, c.email,
+              c.cagnotte_cents,
               r.reference AS reservation_reference
          FROM tablees tb
          JOIN tables_resto t ON t.id = tb.table_id
@@ -114,6 +124,21 @@ salonTablesClientsRouter.post('/salon/tables-clients/:id/commande', exigerAdmin,
   } catch (err) { next(err); }
 });
 
+/** Encaisser une tablée, c'est-à-dire la seule opération qui la termine :
+ *  elle déduit la cagnotte si le client s'en sert, marque les commandes
+ *  payées, crédite la fidélité et libère la table. */
+salonTablesClientsRouter.post('/salon/tables-clients/:id/encaisser', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const remise = req.body.cagnotte ? (versCents(req.body.cagnotte) ?? 0) : 0;
+    const r = await encaisserTablee(req.params.id, { remiseCents: remise });
+    const retour = `/salon/tables-clients/${req.params.id}`;
+    if (r.erreur) return res.redirect(retour + '?erreur=' + encodeURIComponent(r.erreur));
+    res.redirect('/salon/tables-clients');
+  } catch (err) { next(err); }
+});
+
+/** Fermer sans encaisser : une table ouverte par erreur, un client parti
+ *  sans consommer. Ne crédite rien, puisque rien n'a été payé. */
 salonTablesClientsRouter.post('/salon/tables-clients/:id/fermer', exigerAdmin, verifierCsrf, async (req, res, next) => {
   try {
     await fermerTablee(req.params.id);
@@ -125,10 +150,22 @@ salonTablesClientsRouter.post('/salon/tables-clients/:id/fermer', exigerAdmin, v
  *  du serveur qui installe quelqu'un qui n'a pas scanné le QR. */
 salonTablesClientsRouter.post('/salon/tables-clients/ouvrir', exigerAdmin, verifierCsrf, async (req, res, next) => {
   try {
-    const { tableId, clientId } = req.body;
+    const { tableId, clientId, telephone } = req.body;
     const table = await une(`SELECT id FROM tables_resto WHERE id = $1`, [tableId]);
-    const client = await une(`SELECT id FROM clients WHERE id = $1`, [clientId]);
-    if (!table || !client) return redirigerRetour(req, res, '/salon/tables-clients');
+    if (!table) return redirigerRetour(req, res, '/salon/tables-clients');
+
+    // Le numéro de téléphone prime : c'est l'identifiant que le personnel a
+    // sous la main. L'identifiant interne reste accepté pour les liens
+    // ouverts depuis une fiche client.
+    let client = telephone ? await clientParTelephone(telephone) : null;
+    if (!client && telephone && (req.body.prenom || '').trim()) {
+      const cree = await creerClientAuComptoir({
+        telephone, prenom: req.body.prenom, nom: req.body.nom, email: req.body.email,
+      });
+      client = cree.client || null;
+    }
+    if (!client && clientId) client = await une(`SELECT id FROM clients WHERE id = $1`, [clientId]);
+    if (!client) return redirigerRetour(req, res, '/salon/tables-clients');
 
     const { tablee, erreur } = await ouvrirOuRejoindreTablee(table.id, client.id);
     if (erreur) return redirigerRetour(req, res, '/salon/tables-clients');

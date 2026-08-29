@@ -9,6 +9,54 @@
   </p>
 </div>
 
+<% if (info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
+<div class="card cagnotte" style="margin-bottom:1.8rem">
+  <div>
+    <span class="cagnotte__quoi">Cagnotte de fidélité</span>
+    <div class="cagnotte__somme"><%= euros(client.cagnotte_cents) %></div>
+  </div>
+  <form method="post" action="/salon/clients/<%= client.id %>/cagnotte" class="ligne-champs ligne-champs--serree">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="f-sens">Sens</label>
+      <select id="f-sens" name="sens">
+        <option value="ajouter">Ajouter</option>
+        <option value="retirer">Retirer</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="f-montant">Montant</label>
+      <input type="text" id="f-montant" name="montant" inputmode="decimal" placeholder="5,00" required>
+    </div>
+    <div class="field">
+      <label for="f-motif">Motif</label>
+      <input type="text" id="f-motif" name="motif" maxlength="120" placeholder="Geste commercial">
+    </div>
+    <button type="submit" class="btn btn--sm">Appliquer</button>
+  </form>
+</div>
+
+<% if (mouvements.length) { %>
+  <div class="card" style="margin-bottom:1.8rem">
+    <h2 style="margin-top:0">Mouvements de cagnotte</h2>
+    <div class="mouvements">
+      <% mouvements.forEach(m => { %>
+        <div class="mouvement">
+          <span class="mouvement__quoi">
+            <span><%= m.libelle %></span>
+            <small><%= new Date(m.cree_le).toLocaleDateString('fr-FR', { day:'2-digit', month:'short', year:'numeric' }) %> · <%= m.type.replace('_',' ') %></small>
+          </span>
+          <span class="mouvement__delta <%= m.delta_cents > 0 ? 'est-positif' : 'est-negatif' %>">
+            <%= m.delta_cents > 0 ? '+' : '−' %><%= euros(Math.abs(m.delta_cents)) %>
+          </span>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+<% } %>
+
 <div class="card" style="margin-bottom:1.8rem">
   <h2 style="margin-top:0">Notes internes</h2>
   <p class="aide" style="margin-top:0">Allergies, habitudes, table préférée. Visible du salon seulement.</p>

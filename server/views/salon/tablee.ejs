@@ -23,11 +23,18 @@
       Ouverte à <%= tablee.ouverte_le.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %>
       <% if (tablee.fermee_le) { %> · fermée à <%= tablee.fermee_le.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) %><% } %>
     </p>
+    <p class="aide">Cagnotte : <strong><%= euros(tablee.cagnotte_cents) %></strong></p>
     <% if (tablee.statut === 'ouverte') { %>
-      <form method="post" action="/salon/tables-clients/<%= tablee.id %>/fermer" class="btn-row"
-            onsubmit="return confirm('Fermer la table ? L\'addition ne pourra plus recevoir de commande.')">
+      <form method="post" action="/salon/tables-clients/<%= tablee.id %>/encaisser"
+            onsubmit="return confirm('Encaisser cette table ? L\'addition ne pourra plus recevoir de commande.')">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button type="submit" class="btn">Encaisser et fermer</button>
+        <% if (tablee.cagnotte_cents > 0 && addition.total > 0) { %>
+          <div class="field">
+            <label for="f-cagnotte">Régler avec la cagnotte (max <%= euros(Math.min(tablee.cagnotte_cents, addition.total)) %>)</label>
+            <input type="text" id="f-cagnotte" name="cagnotte" inputmode="decimal" placeholder="0" autocomplete="off">
+          </div>
+        <% } %>
+        <button type="submit" class="btn">Encaisser <%= euros(addition.total) %> et fermer</button>
       </form>
     <% } %>
   </div>

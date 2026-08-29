@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query, une, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
 import { dateValide, heureValide, texteNonVide } from '../lib/validate.js';
+import { hacherMotDePasse } from '../lib/auth.js';
 
 export const salonEquipeRouter = Router();
 
@@ -56,6 +57,66 @@ salonEquipeRouter.post('/salon/equipe/:id', exigerAdmin, verifierCsrf, async (re
         (req.body.telephone || '').trim(), (req.body.email || '').trim(), !!req.body.actif, req.params.id,
       ]
     );
+    res.redirect('/salon/equipe');
+  } catch (err) { next(err); }
+});
+
+// ── Accès à l'interface de prise de commande ───────────────
+/** L'identifiant est volontairement court et sans arobase : il se tape au
+ *  clavier tactile d'une tablette, debout, entre deux tables. */
+const IDENTIFIANT = /^[a-z0-9][a-z0-9._-]{2,29}$/;
+
+salonEquipeRouter.post('/salon/equipe/:id/acces', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const employe = await une(`SELECT * FROM employes WHERE id = $1`, [req.params.id]);
+    if (!employe) return res.redirect('/salon/equipe');
+    const echec = (msg) => res.redirect('/salon/equipe?erreur=' + encodeURIComponent(msg));
+
+    const identifiant = (req.body.identifiant || '').trim().toLowerCase();
+    const motDePasse = req.body.motDePasse || '';
+    const actif = !!req.body.accesService;
+
+    if (!identifiant) return echec("Un identifiant est nécessaire pour donner l'accès.");
+    if (!IDENTIFIANT.test(identifiant)) {
+      return echec('Identifiant : 3 à 30 caractères, en minuscules, sans espace ni accent.');
+    }
+    // Un accès sans mot de passe n'en est pas un : on l'exige à la première
+    // activation, et on le laisse facultatif ensuite pour pouvoir corriger
+    // un identifiant sans avoir à réattribuer un mot de passe.
+    if (!employe.mot_de_passe && !motDePasse) {
+      return echec('Choisissez un mot de passe pour ce premier accès.');
+    }
+    if (motDePasse && motDePasse.length < 8) {
+      return echec('Le mot de passe doit faire au moins 8 caractères.');
+    }
+
+    const pris = await une(
+      `SELECT id FROM employes WHERE identifiant = $1 AND id <> $2`, [identifiant, employe.id]
+    );
+    if (pris) return echec('Cet identifiant est déjà utilisé par quelqu\'un d\'autre.');
+
+    await executer(
+      `UPDATE employes SET identifiant = $1, acces_service = $2,
+              mot_de_passe = COALESCE($3, mot_de_passe)
+        WHERE id = $4`,
+      [identifiant, actif, motDePasse ? hacherMotDePasse(motDePasse) : null, employe.id]
+    );
+    // Couper l'accès doit couper les sessions en cours, pas seulement les
+    // suivantes : une tablette déjà connectée resterait sinon ouverte.
+    if (!actif) {
+      await executer(`DELETE FROM sessions WHERE role = 'serveur' AND sujet_id = $1`, [employe.id]);
+    }
+    res.redirect('/salon/equipe');
+  } catch (err) { next(err); }
+});
+
+salonEquipeRouter.post('/salon/equipe/:id/acces/retirer', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    await executer(
+      `UPDATE employes SET identifiant = NULL, mot_de_passe = NULL, acces_service = false WHERE id = $1`,
+      [req.params.id]
+    );
+    await executer(`DELETE FROM sessions WHERE role = 'serveur' AND sujet_id = $1`, [req.params.id]);
     res.redirect('/salon/equipe');
   } catch (err) { next(err); }
 });

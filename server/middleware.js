@@ -1,5 +1,5 @@
 import { creerSessionInvite, obtenirSession } from './lib/auth.js';
-import { entete, pied, salonEntete, salonPied } from './lib/layout.js';
+import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied } from './lib/layout.js';
 import { nomTable } from './lib/jours.js';
 
 const COOKIE = 'sid';
@@ -75,6 +75,21 @@ export function exigerAdmin(req, res, next) {
   next();
 }
 
+/** L'interface de prise de commande. Ouverte aux serveurs, et aussi aux
+ *  administrateurs : le patron qui prend une commande un soir de coup de feu
+ *  n'a pas à se déconnecter du salon pour le faire. */
+export function exigerService(req, res, next) {
+  if (req.session.role === 'serveur') {
+    req.employeId = req.session.sujetId;
+    return next();
+  }
+  if (req.session.role === 'admin') {
+    req.employeId = null;
+    return next();
+  }
+  res.redirect('/service/connexion');
+}
+
 /** Titre d'onglet et entrée de nav active par vue publique. Défini ici
  *  plutôt que dans chaque res.render : une route qui oublie de passer
  *  `titre` produirait sinon un onglet « — La Table de Carthage ». */
@@ -104,7 +119,13 @@ export function injecterMiseEnPage(req, res, next) {
       donnees.actif ??= defauts.actif ?? '';
     }
     if (donnees.entete === undefined) {
-      if (vue.startsWith('salon/')) {
+      if (vue.startsWith('service/')) {
+        donnees.serviceEntete = serviceEntete({
+          titre: donnees.titre, sousTitre: donnees.sousTitre ?? '',
+          actif: donnees.actif ?? '', qui: donnees.qui ?? '',
+        });
+        donnees.servicePied = servicePied({ csrfToken: donnees.csrfToken ?? res.locals.csrfToken });
+      } else if (vue.startsWith('salon/')) {
         donnees.salonEntete = salonEntete({
           titre: donnees.titre, actif: donnees.actif,
           notifs: donnees.notifs ?? res.locals.notifs ?? 0,

@@ -1,0 +1,125 @@
+<%- serviceEntete %>
+
+<% if (info) { %><div class="alerte alerte--info"><%= info %></div><% } %>
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
+<form method="post" action="/service/emporter" id="formEmporter">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="card">
+    <h2 style="margin-top:0">Le client</h2>
+    <p class="aide">Une commande à emporter n'est jamais rattachée à une table, même prise en salle.</p>
+    <div class="field">
+      <label for="f-tel">Téléphone</label>
+      <input type="tel" id="f-tel" name="telephone" value="<%= valeurs.telephone || (client ? client.telephone_saisi : '') %>"
+             inputmode="tel" autocomplete="off" required autofocus placeholder="06 12 34 56 78">
+    </div>
+    <button type="submit" name="action" value="chercher" class="btn btn--ghost btn--sm">Retrouver ce client</button>
+
+    <% if (client) { %>
+      <div class="carte-client-service" style="margin-top:1rem">
+        <div>
+          <strong><%= client.prenom %> <%= client.nom %></strong>
+          <small><%= client.telephone_saisi %></small>
+        </div>
+        <div class="carte-client-service__cagnotte">
+          <span>Cagnotte</span><b><%= euros(client.cagnotte_cents) %></b>
+        </div>
+      </div>
+    <% } else { %>
+      <details class="repli" <%- valeurs.prenom ? 'open' : '' %>>
+        <summary>Nouveau client</summary>
+        <div class="ligne-champs ligne-champs--serree">
+          <div class="field">
+            <label for="f-prenom">Prénom</label>
+            <input type="text" id="f-prenom" name="prenom" value="<%= valeurs.prenom || '' %>" maxlength="80">
+          </div>
+          <div class="field">
+            <label for="f-nom">Nom (facultatif)</label>
+            <input type="text" id="f-nom" name="nom" value="<%= valeurs.nom || '' %>" maxlength="80">
+          </div>
+        </div>
+      </details>
+    <% } %>
+
+    <div class="field">
+      <label for="f-heure">Heure de retrait</label>
+      <input type="time" id="f-heure" name="heure" value="<%= valeurs.heure || '' %>">
+    </div>
+  </div>
+
+  <h2 class="titre-section">La commande</h2>
+  <% categories.forEach(cat => { %>
+    <div class="card">
+      <h3 class="titre-categorie"><%= cat.nom %></h3>
+      <div class="menu-carte">
+        <% cat.plats.forEach(plat => { %>
+          <div class="menu-plat menu-plat--service">
+            <div class="menu-plat__infos"><h4><%= plat.nom %></h4></div>
+            <div class="menu-plat__prix"><%= euros(plat.prix_cents) %></div>
+            <div class="compteur">
+              <button type="button" class="compteur__btn js-moins" aria-label="Retirer un <%= plat.nom %>">−</button>
+              <input type="number" min="0" max="50" value="<%= valeurs['qte_' + plat.id] || 0 %>"
+                     name="qte_<%= plat.id %>" data-prix="<%= plat.prix_cents %>" class="js-qte"
+                     inputmode="numeric" aria-label="Quantité de <%= plat.nom %>">
+              <button type="button" class="compteur__btn js-plus" aria-label="Ajouter un <%= plat.nom %>">+</button>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  <% }) %>
+
+  <div class="card">
+    <div class="field">
+      <label for="f-message">Mot pour la cuisine</label>
+      <textarea id="f-message" name="message" rows="2"><%= valeurs.message || '' %></textarea>
+    </div>
+  </div>
+</form>
+
+<div class="barre-envoi" id="barreEnvoi" hidden>
+  <div class="barre-envoi__total">
+    <span id="nbArticles">0 article</span>
+    <strong id="totalPanier">0,00 €</strong>
+  </div>
+  <button type="submit" form="formEmporter" name="action" value="enregistrer" class="btn">Enregistrer</button>
+</div>
+
+<script>
+(function () {
+  const inputs = Array.from(document.querySelectorAll('.js-qte'));
+  if (!inputs.length) return;
+  const barre = document.getElementById('barreEnvoi');
+  const totalEl = document.getElementById('totalPanier');
+  const nbEl = document.getElementById('nbArticles');
+
+  function recalc() {
+    let total = 0, articles = 0;
+    for (const i of inputs) {
+      const q = parseInt(i.value, 10) || 0;
+      total += q * parseInt(i.dataset.prix, 10);
+      articles += q;
+      i.closest('.menu-plat')?.classList.toggle('est-choisi', q > 0);
+      i.closest('.compteur')?.classList.toggle('est-actif', q > 0);
+    }
+    totalEl.textContent = (total / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+    nbEl.textContent = articles + (articles > 1 ? ' articles' : ' article');
+    barre.hidden = articles === 0;
+  }
+  function ajuster(input, delta) {
+    const max = parseInt(input.max, 10) || 50;
+    input.value = Math.min(max, Math.max(0, (parseInt(input.value, 10) || 0) + delta));
+    recalc();
+  }
+  document.querySelectorAll('.compteur').forEach(c => {
+    const input = c.querySelector('.js-qte');
+    c.querySelector('.js-moins').addEventListener('click', () => ajuster(input, -1));
+    c.querySelector('.js-plus').addEventListener('click', () => ajuster(input, +1));
+  });
+  inputs.forEach(i => i.addEventListener('input', recalc));
+  recalc();
+})();
+</script>
+
+<%- servicePied %>

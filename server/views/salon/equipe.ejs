@@ -79,6 +79,42 @@
                   onclick="return confirm('Supprimer <%= e.prenom %> <%= e.nom %> ? Son planning et ses pointages seront effacés.')">Supprimer</button>
         </div>
       </form>
+
+      <!-- Formulaire séparé : un formulaire ne peut pas en contenir un autre,
+           et l'accès se règle indépendamment de la fiche. -->
+      <form method="post" action="/salon/equipe/<%= e.id %>/acces" class="card carte-acces<%= e.acces_service ? ' a-acces' : '' %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h3 class="carte-acces__titre">
+          Prise de commande
+          <% if (e.acces_service) { %><span class="badge badge--ok">Accès actif</span><% } %>
+        </h3>
+        <p class="aide">Donne à <%= e.prenom %> l'accès à <code>/service</code> depuis une tablette ou un téléphone, sans ouvrir le salon.</p>
+        <div class="ligne-champs ligne-champs--serree">
+          <div class="field">
+            <label for="id-<%= e.id %>">Identifiant</label>
+            <input type="text" id="id-<%= e.id %>" name="identifiant" value="<%= e.identifiant || '' %>"
+                   maxlength="30" placeholder="<%= (e.prenom || '').toLowerCase() %>" autocomplete="off"
+                   pattern="[a-z0-9][a-z0-9._\-]{2,29}">
+          </div>
+          <div class="field">
+            <label for="mdp-<%= e.id %>"><%= e.mot_de_passe ? 'Nouveau mot de passe' : 'Mot de passe' %></label>
+            <input type="text" id="mdp-<%= e.id %>" name="motDePasse" minlength="8" maxlength="72"
+                   autocomplete="off" placeholder="<%= e.mot_de_passe ? 'inchangé' : '8 caractères minimum' %>">
+          </div>
+          <label class="case">
+            <input type="checkbox" name="accesService" <%- e.acces_service ? 'checked' : '' %>>
+            <span>Accès autorisé</span>
+          </label>
+        </div>
+        <div class="btn-row btn-row--serree">
+          <button type="submit" class="btn btn--sm">Enregistrer l'accès</button>
+          <% if (e.identifiant) { %>
+            <button type="submit" class="btn btn--ghost btn--sm"
+                    formaction="/salon/equipe/<%= e.id %>/acces/retirer"
+                    onclick="return confirm('Retirer l\'accès de <%= e.prenom %> ? Les tablettes connectées seront déconnectées.')">Retirer l'accès</button>
+          <% } %>
+        </div>
+      </form>
     <% }) %>
   </div>
 <% } %>
