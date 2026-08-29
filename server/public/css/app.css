@@ -700,9 +700,15 @@ body:has(.barre-envoi:not([hidden])) main{padding-bottom:7rem}
   background:var(--navy-800);border-bottom:1px solid rgba(201,169,97,.25);
 }
 .serviceonglets a{
-  flex:1;text-align:center;padding:.85rem .4rem;color:rgba(250,246,236,.6);
-  font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;
+  flex:1 1 auto;text-align:center;padding:.85rem .5rem;color:rgba(250,246,236,.6);
+  font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;
   border-bottom:2px solid transparent;
+}
+/* À quatre onglets sur un téléphone, « À emporter » passait à la ligne et
+   décalait toute la barre : on resserre l'interlettrage plutôt que de
+   couper un libellé. */
+@media (max-width:440px){
+  .serviceonglets a{font-size:.72rem;letter-spacing:.06em;padding:.85rem .35rem}
 }
 .serviceonglets a.is-active{color:var(--gold-300);border-bottom-color:var(--gold-500)}
 
@@ -803,3 +809,91 @@ body:has(.barre-envoi:not([hidden])) main{padding-bottom:7rem}
 .mouvement__delta{font-weight:500;white-space:nowrap}
 .mouvement__delta.est-positif{color:var(--ok)}
 .mouvement__delta.est-negatif{color:var(--muted)}
+
+/* ═══════════════════════════════════════════════════════════
+   Écran de cuisine (/cuisine)
+   Il se lit à un mètre, au-dessus du piano : gros caractères,
+   contrastes francs, aucune information décorative.
+   ═══════════════════════════════════════════════════════════ */
+/* Le passe a besoin de ses quatre colonnes côte à côte : la largeur de
+   lecture confortable des autres écrans du service (760 px) les ferait
+   passer à la ligne dès la quatrième. */
+.servicemain--large{width:min(100% - 1.6rem, 1500px)}
+
+.cuisine-vide{
+  text-align:center;color:var(--muted);padding:4rem 1rem;font-size:1.05rem;
+}
+.cuisine-colonnes{
+  display:grid;gap:.9rem;align-items:start;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));
+}
+.cuisine-col{
+  background:#fff;border:1px solid rgba(14,42,78,.12);
+  border-top:3px solid var(--muted);padding:.8rem .8rem 1rem;
+}
+/* Une couleur par état : au passe, on repère la colonne avant de lire son
+   titre. Le vert n'arrive qu'à « prête » — c'est le seul état qui appelle
+   quelqu'un de la salle. */
+.cuisine-col--confirmee{border-top-color:var(--err)}
+.cuisine-col--vue{border-top-color:var(--gold-500)}
+.cuisine-col--enpreparation{border-top-color:var(--navy-700)}
+.cuisine-col--prete{border-top-color:var(--ok)}
+
+.cuisine-col__titre{
+  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+  margin:0 0 .8rem;font-family:var(--ff-title);font-weight:400;font-size:1.05rem;
+  color:var(--navy-800);letter-spacing:.02em;
+}
+/* Le filet doré que portent les h2 du salon n'a rien à faire en tête d'une
+   colonne : la barre de couleur au-dessus dit déjà de quel état il s'agit. */
+.cuisine-col__titre::after{display:none}
+.cuisine-col__compte{
+  min-width:1.8rem;text-align:center;padding:.1rem .45rem;border-radius:999px;
+  background:var(--cream-2);color:var(--navy-800);font-size:.82rem;font-weight:500;
+  font-family:var(--ff-body);
+}
+.cuisine-col__vide{text-align:center;color:rgba(108,122,136,.5);margin:1.2rem 0}
+
+/* ── Le ticket ────────────────────────────────────────────── */
+.ticket{
+  border:1px solid rgba(14,42,78,.14);background:var(--cream);
+  padding:.7rem .75rem;margin-bottom:.7rem;
+}
+.ticket:last-child{margin-bottom:0}
+.ticket__tete{
+  display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;
+  font-family:var(--ff-title);font-size:1.05rem;color:var(--navy-800);
+}
+/* Le compteur passe à l'orange puis au rouge : un plat qui traîne doit se
+   voir de loin, sans qu'on ait à lire le chiffre. */
+.ticket__minutes{
+  font-family:var(--ff-body);font-size:.8rem;font-weight:500;
+  color:var(--muted);white-space:nowrap;
+}
+.ticket.est-long{border-color:rgba(201,169,97,.7)}
+.ticket.est-long .ticket__minutes{color:#9A6B12}
+.ticket.est-tardif{border-color:var(--err);background:#FDF3F0}
+.ticket.est-tardif .ticket__minutes{color:var(--err);font-weight:600}
+
+.ticket__qui{margin:.1rem 0 .5rem;font-size:.85rem;color:var(--muted)}
+.ticket__lignes{list-style:none;margin:0 0 .5rem;padding:0;display:grid;gap:.15rem}
+.ticket__lignes li{font-size:1rem;line-height:1.35}
+.ticket__lignes b{
+  display:inline-block;min-width:1.4rem;font-weight:600;color:var(--navy-800);
+}
+.ticket__mot{
+  margin:.4rem 0 .6rem;padding:.4rem .55rem;background:rgba(201,169,97,.16);
+  border-left:2px solid var(--gold-500);font-size:.88rem;color:var(--navy-800);
+}
+.ticket__actions .btn{padding:.7rem 1rem;font-size:.72rem}
+
+/* ── L'état d'un plat, rappelé côté salle ────────────────── */
+.etat-plat{
+  display:inline-block;padding:.12rem .5rem;border-radius:999px;
+  font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--cream-2);color:var(--muted);
+}
+.etat-plat--confirmee{background:rgba(180,64,42,.14);color:var(--err)}
+.etat-plat--vue{background:rgba(201,169,97,.2);color:#8A6A1E}
+.etat-plat--enpreparation{background:rgba(20,52,95,.12);color:var(--navy-700)}
+.etat-plat--prete{background:rgba(62,122,76,.16);color:var(--ok)}

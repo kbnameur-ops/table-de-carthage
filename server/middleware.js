@@ -1,6 +1,7 @@
 import { creerSessionInvite, obtenirSession } from './lib/auth.js';
 import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied } from './lib/layout.js';
 import { nomTable } from './lib/jours.js';
+import { cssApp } from './lib/version-actifs.js';
 
 const COOKIE = 'sid';
 const estProd = process.env.NODE_ENV === 'production';
@@ -75,20 +76,45 @@ export function exigerAdmin(req, res, next) {
   next();
 }
 
-/** L'interface de prise de commande. Ouverte aux serveurs, et aussi aux
- *  administrateurs : le patron qui prend une commande un soir de coup de feu
- *  n'a pas à se déconnecter du salon pour le faire. */
-export function exigerService(req, res, next) {
-  if (req.session.role === 'serveur') {
-    req.employeId = req.session.sujetId;
-    return next();
-  }
-  if (req.session.role === 'admin') {
-    req.employeId = null;
-    return next();
-  }
-  res.redirect('/service/connexion');
+/** Les écrans du personnel : la prise de commande et la cuisine.
+ *
+ *  Un administrateur passe partout — le patron qui prend une commande un
+ *  soir de coup de feu n'a pas à se déconnecter du salon. Un employé, lui,
+ *  n'entre que là où sa fiche l'autorise, et l'autorisation est relue à
+ *  chaque requête : retirer un accès depuis le salon doit fermer la porte
+ *  immédiatement, pas à la prochaine connexion.
+ *
+ *  L'import est dynamique pour la même raison qu'ailleurs dans ce fichier :
+ *  éviter un cycle avec les modules qui importent ce middleware. */
+function exigerAcces(colonne) {
+  return async function (req, res, next) {
+    try {
+      if (req.session.role === 'admin') {
+        req.employeId = null;
+        res.locals.employe = null;
+        res.locals.droits = { service: true, cuisine: true };
+        return next();
+      }
+      if (req.session.role !== 'serveur') return res.redirect('/service/connexion');
+
+      const { une } = await import('./db.js');
+      const employe = await une(
+        `SELECT id, prenom, acces_service, acces_cuisine FROM employes
+          WHERE id = $1 AND actif = true`,
+        [req.session.sujetId]
+      );
+      if (!employe || !employe[colonne]) return res.redirect('/service/connexion');
+
+      req.employeId = employe.id;
+      res.locals.employe = employe;
+      res.locals.droits = { service: employe.acces_service, cuisine: employe.acces_cuisine };
+      next();
+    } catch (err) { next(err); }
+  };
 }
+
+export const exigerService = exigerAcces('acces_service');
+export const exigerCuisine = exigerAcces('acces_cuisine');
 
 /** Titre d'onglet et entrée de nav active par vue publique. Défini ici
  *  plutôt que dans chaque res.render : une route qui oublie de passer
@@ -113,6 +139,7 @@ export function injecterMiseEnPage(req, res, next) {
   const rendreOriginal = res.render.bind(res);
   res.render = (vue, donnees = {}, callback) => {
     donnees.nomTable ??= nomTable;
+    donnees.cssApp ??= cssApp;
     const defauts = PAGES[vue];
     if (defauts) {
       donnees.titre ??= defauts.titre;
@@ -123,6 +150,7 @@ export function injecterMiseEnPage(req, res, next) {
         donnees.serviceEntete = serviceEntete({
           titre: donnees.titre, sousTitre: donnees.sousTitre ?? '',
           actif: donnees.actif ?? '', qui: donnees.qui ?? '',
+          droits: donnees.droits ?? res.locals.droits ?? { service: true, cuisine: true },
         });
         donnees.servicePied = servicePied({ csrfToken: donnees.csrfToken ?? res.locals.csrfToken });
       } else if (vue.startsWith('salon/')) {

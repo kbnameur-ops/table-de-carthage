@@ -13,6 +13,7 @@ import { serviceDuJour } from '../lib/availability.js';
 import { notifier } from '../lib/notifications.js';
 import { ouvrirOuRejoindreTablee, additionDeTablee, tableeOuverteSurTable } from '../lib/tablees.js';
 import { encaisserCommande, encaisserTablee } from '../lib/encaissement.js';
+import { LIBELLES as libellesCuisine } from '../lib/cuisine.js';
 
 /** L'interface de prise de commande, pour le personnel de salle.
  *
@@ -52,7 +53,9 @@ serviceRouter.post('/service/connexion', verifierCsrf, async (req, res, next) =>
     }
 
     const employe = await une(
-      `SELECT * FROM employes WHERE identifiant = $1 AND acces_service = true AND actif = true`,
+      `SELECT * FROM employes
+        WHERE identifiant = $1 AND actif = true
+          AND (acces_service = true OR acces_cuisine = true)`,
       [identifiant]
     );
     if (!employe || !employe.mot_de_passe || !verifierMotDePasse(motDePasse, employe.mot_de_passe)) {
@@ -62,7 +65,9 @@ serviceRouter.post('/service/connexion', verifierCsrf, async (req, res, next) =>
 
     await reinitialiserTentatives(cle);
     await elargirSession(req.session.id, 'serveur', employe.id);
-    res.redirect('/service');
+    // Un commis qui n'a que la cuisine atterrit en cuisine, pas sur un plan
+    // de salle où il n'a rien à faire.
+    res.redirect(employe.acces_service ? '/service' : '/cuisine');
   } catch (err) { next(err); }
 });
 
@@ -161,7 +166,7 @@ async function pageTable(req, res, table, extra = {}) {
   return {
     titre: nomTable(table.nom), sousTitre: `${table.couverts} couverts`,
     actif: 'salle', qui: await quiSert(req),
-    table, tablee, addition, client, euros,
+    table, tablee, addition, client, euros, libelles: libellesCuisine,
     categories: await carteComplete(),
     erreur: null, info: null, valeurs: {},
     csrfToken: res.locals.csrfToken,

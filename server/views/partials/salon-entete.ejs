@@ -7,7 +7,7 @@
 <link rel="icon" href="/assets/img/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@200;300;400;500;600&family=Marcellus&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="<%= cssApp %>">
 </head>
 <body class="salon">
 <header class="salonbar">
@@ -43,6 +43,7 @@
     <a href="/salon/clients"<%- actif === 'clients' ? ' class="is-active"' : '' %>>Clients</a>
     <a href="/salon/equipe"<%- actif === 'equipe' ? ' class="is-active"' : '' %>>Équipe</a>
     <a href="/service" target="_blank" rel="noopener">Prise de commande ↗</a>
+    <a href="/cuisine" target="_blank" rel="noopener">Cuisine ↗</a>
   </nav>
 </header>
 <script>

@@ -359,12 +359,11 @@ END $$;
 -- Le statut 'encaissee' rejoint la liste : jusqu'ici une commande à
 -- emporter s'arrêtait à 'retiree', et une commande sur place n'avait pas
 -- d'état final du tout. C'est cet état qui déclenche le gain.
-DO $$ BEGIN
-  ALTER TABLE commandes DROP CONSTRAINT IF EXISTS commandes_statut_check;
-  ALTER TABLE commandes ADD CONSTRAINT commandes_statut_check CHECK (statut IN
-    ('en_attente','confirmee','prete','retiree','encaissee','annulee'));
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+--
+-- La contrainte elle-même est déclarée plus bas, dans le bloc v5 : deux
+-- blocs qui la redéfinissent chacun de leur côté se contredisent, et le
+-- premier fait échouer tout le fichier dès qu'une ligne porte un statut
+-- que lui seul ignore. Un seul endroit fait foi, le dernier.
 
 -- ── Comptes serveurs ───────────────────────────────────────
 -- Un employé peut recevoir un accès à l'interface de prise de commande.
@@ -397,3 +396,33 @@ DO $$ BEGIN
     ('reservation','commande','annulation_reservation','annulation_commande','fidelite'));
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- ═══════════════════════════════════════════════════════════
+-- v5 — Cuisine : cycle de vie d'une commande, accès dédié
+-- ═══════════════════════════════════════════════════════════
+
+-- Deux états s'intercalent entre la prise de commande et le plat prêt.
+-- 'confirmee' devient donc « nouvelle, pas encore vue » du point de vue de
+-- la cuisine. 'vue' dit qu'elle a été lue, 'en_preparation' qu'elle est
+-- au feu. Sans ces deux-là, une commande restait « confirmée » de son
+-- enregistrement jusqu'à sa sortie, et personne en salle ne savait où elle
+-- en était.
+DO $$ BEGIN
+  ALTER TABLE commandes DROP CONSTRAINT IF EXISTS commandes_statut_check;
+  ALTER TABLE commandes ADD CONSTRAINT commandes_statut_check CHECK (statut IN (
+    'en_attente','confirmee','vue','en_preparation','prete',
+    'retiree','encaissee','annulee'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- L'horodatage de chaque passage, pour afficher un temps d'attente réel
+-- plutôt que l'ancienneté de la commande : ce qui compte au passe, c'est
+-- depuis combien de temps le plat est au feu, ou prêt et non servi.
+ALTER TABLE commandes ADD COLUMN IF NOT EXISTS vue_le           TIMESTAMPTZ;
+ALTER TABLE commandes ADD COLUMN IF NOT EXISTS preparation_le   TIMESTAMPTZ;
+ALTER TABLE commandes ADD COLUMN IF NOT EXISTS prete_le         TIMESTAMPTZ;
+
+-- L'accès à l'écran de cuisine se donne comme celui de la salle, sur la
+-- fiche employé. Les deux sont indépendants : un chef de rang peut avoir
+-- les deux, un commis seulement la cuisine.
+ALTER TABLE employes ADD COLUMN IF NOT EXISTS acces_cuisine BOOLEAN NOT NULL DEFAULT false;

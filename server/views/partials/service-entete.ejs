@@ -7,7 +7,7 @@
 <link rel="icon" href="/assets/img/logo.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@200;300;400;500;600&family=Marcellus&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="<%= cssApp %>">
 </head>
 <body class="salon service">
 <header class="servicebar">
@@ -23,8 +23,13 @@
   <div class="servicebar__qui"><%= qui || '' %></div>
 </header>
 <nav class="serviceonglets" aria-label="Navigation du service">
-  <a href="/service"<%- actif === 'salle' ? ' class="is-active"' : '' %>>Salle</a>
-  <a href="/service/emporter"<%- actif === 'emporter' ? ' class="is-active"' : '' %>>À emporter</a>
-  <a href="/service/caisse"<%- actif === 'caisse' ? ' class="is-active"' : '' %>>Caisse</a>
+  <% if (droits.service) { %>
+    <a href="/service"<%- actif === 'salle' ? ' class="is-active"' : '' %>>Salle</a>
+    <a href="/service/emporter"<%- actif === 'emporter' ? ' class="is-active"' : '' %>>À emporter</a>
+    <a href="/service/caisse"<%- actif === 'caisse' ? ' class="is-active"' : '' %>>Caisse</a>
+  <% } %>
+  <% if (droits.cuisine) { %>
+    <a href="/cuisine"<%- actif === 'cuisine' ? ' class="is-active"' : '' %>>Cuisine</a>
+  <% } %>
 </nav>
-<main class="servicemain">
+<main class="servicemain<%- actif === 'cuisine' ? ' servicemain--large' : '' %>">

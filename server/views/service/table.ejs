@@ -49,7 +49,10 @@
         <% addition.commandes.forEach(cmd => { %>
           <div class="addition__cmd<%= cmd.statut === 'annulee' ? ' est-annulee' : '' %>">
             <div class="addition__entete">
-              <span><%= cmd.heure %></span>
+              <span>
+                <%= cmd.heure %>
+                <span class="etat-plat etat-plat--<%= cmd.statut.replace('_','') %>"><%= libelles[cmd.statut] || cmd.statut %></span>
+              </span>
               <span><%= euros(cmd.total_cents) %></span>
             </div>
             <% cmd.lignes.forEach(l => { %>

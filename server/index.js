@@ -11,6 +11,7 @@ import { commandeRouter } from './routes/commande.js';
 import { compteRouter } from './routes/compte.js';
 import { tableRouter } from './routes/table.js';
 import { serviceRouter } from './routes/service.js';
+import { cuisineRouter } from './routes/cuisine.js';
 import { salonRouter } from './routes/salon.js';
 import { salonCarteRouter } from './routes/salon_carte.js';
 import { salonServicesRouter } from './routes/salon_services.js';
@@ -32,8 +33,21 @@ app.disable('x-powered-by');
 // ── Fichiers statiques ──────────────────────────────────────
 // Le site vitrine (page d'accueil, feuille de style, animations) reste tel
 // quel : seuls ses liens de réservation pointent désormais vers les tunnels.
-app.use('/assets', express.static(join(racine, 'assets'), { maxAge: '1d' }));
-app.use('/css', express.static(join(__dirname, 'public', 'css'), { maxAge: '1d' }));
+/** Le site vitrine référence sa feuille de style par un chemin fixe, sans
+ *  version : un cache d'un jour y rendrait toute correction invisible
+ *  jusqu'au lendemain. Feuilles de style et scripts sont donc revalidés à
+ *  chaque visite — un 304 coûte quelques centaines d'octets — tandis que
+ *  les images, elles, gardent leur cache long. */
+function cacheSelonLeType(res, chemin) {
+  if (/\.(css|js)$/.test(chemin)) res.setHeader('Cache-Control', 'no-cache');
+}
+app.use('/assets', express.static(join(racine, 'assets'), {
+  maxAge: '1d', setHeaders: cacheSelonLeType,
+}));
+// L'application, elle, référence app.css avec une empreinte de contenu
+// (lib/version-actifs.js) : l'URL change à chaque modification, donc le
+// cache long est ici sans danger et sans revalidation.
+app.use('/css', express.static(join(__dirname, 'public', 'css'), { maxAge: '7d' }));
 app.use('/uploads', express.static(join(__dirname, 'public', 'uploads'), { maxAge: '1d' }));
 app.get('/', (req, res) => res.sendFile(join(racine, 'index.html')));
 
@@ -58,6 +72,7 @@ app.use(commandeRouter);
 app.use(compteRouter);
 app.use(tableRouter);
 app.use(serviceRouter);
+app.use(cuisineRouter);
 app.use(salonRouter);
 app.use(salonCarteRouter);
 app.use(salonServicesRouter);
