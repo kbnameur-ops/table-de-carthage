@@ -74,7 +74,9 @@ salonEquipeRouter.post('/salon/equipe/:id/acces', exigerAdmin, verifierCsrf, asy
 
     const identifiant = (req.body.identifiant || '').trim().toLowerCase();
     const motDePasse = req.body.motDePasse || '';
-    const actif = !!req.body.accesService;
+    const accesService = !!req.body.accesService;
+    const accesCuisine = !!req.body.accesCuisine;
+    const actif = accesService || accesCuisine;
 
     if (!identifiant) return echec("Un identifiant est nécessaire pour donner l'accès.");
     if (!IDENTIFIANT.test(identifiant)) {
@@ -96,13 +98,16 @@ salonEquipeRouter.post('/salon/equipe/:id/acces', exigerAdmin, verifierCsrf, asy
     if (pris) return echec('Cet identifiant est déjà utilisé par quelqu\'un d\'autre.');
 
     await executer(
-      `UPDATE employes SET identifiant = $1, acces_service = $2,
-              mot_de_passe = COALESCE($3, mot_de_passe)
-        WHERE id = $4`,
-      [identifiant, actif, motDePasse ? hacherMotDePasse(motDePasse) : null, employe.id]
+      `UPDATE employes SET identifiant = $1, acces_service = $2, acces_cuisine = $3,
+              mot_de_passe = COALESCE($4, mot_de_passe)
+        WHERE id = $5`,
+      [identifiant, accesService, accesCuisine,
+       motDePasse ? hacherMotDePasse(motDePasse) : null, employe.id]
     );
-    // Couper l'accès doit couper les sessions en cours, pas seulement les
-    // suivantes : une tablette déjà connectée resterait sinon ouverte.
+    // Couper les deux accès doit couper les sessions en cours, pas seulement
+    // les suivantes : une tablette déjà connectée resterait sinon ouverte.
+    // Retirer un seul des deux se règle tout seul — les droits sont relus à
+    // chaque requête par le middleware.
     if (!actif) {
       await executer(`DELETE FROM sessions WHERE role = 'serveur' AND sujet_id = $1`, [employe.id]);
     }
@@ -113,7 +118,8 @@ salonEquipeRouter.post('/salon/equipe/:id/acces', exigerAdmin, verifierCsrf, asy
 salonEquipeRouter.post('/salon/equipe/:id/acces/retirer', exigerAdmin, verifierCsrf, async (req, res, next) => {
   try {
     await executer(
-      `UPDATE employes SET identifiant = NULL, mot_de_passe = NULL, acces_service = false WHERE id = $1`,
+      `UPDATE employes SET identifiant = NULL, mot_de_passe = NULL,
+              acces_service = false, acces_cuisine = false WHERE id = $1`,
       [req.params.id]
     );
     await executer(`DELETE FROM sessions WHERE role = 'serveur' AND sujet_id = $1`, [req.params.id]);

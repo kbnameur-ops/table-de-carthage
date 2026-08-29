@@ -1,0 +1,56 @@
+<% if (!tableau.commandes.length) { %>
+  <p class="cuisine-vide">Rien au feu. Les commandes arrivent ici dès qu'elles sont passées.</p>
+<% } else { %>
+  <div class="cuisine-colonnes">
+    <% ETATS.forEach(etat => { %>
+      <section class="cuisine-col cuisine-col--<%= etat.replace('_','') %>">
+        <h2 class="cuisine-col__titre">
+          <%= LIBELLES[etat] %>
+          <span class="cuisine-col__compte"><%= tableau.parEtat[etat].length %></span>
+        </h2>
+
+        <% if (!tableau.parEtat[etat].length) { %>
+          <p class="cuisine-col__vide">—</p>
+        <% } %>
+
+        <% tableau.parEtat[etat].forEach(cmd => { %>
+          <article class="ticket<%= cmd.minutes >= 20 ? ' est-tardif' : (cmd.minutes >= 10 ? ' est-long' : '') %>">
+            <header class="ticket__tete">
+              <b><%= cmd.type === 'sur_place' ? nomTable(cmd.table_nom) : 'À emporter' %></b>
+              <span class="ticket__minutes"><%= cmd.minutes %> min</span>
+            </header>
+            <p class="ticket__qui">
+              <%= cmd.prenom %>
+              <% if (cmd.type === 'emporter') { %> · retrait <%= cmd.heure %><% } %>
+            </p>
+
+            <ul class="ticket__lignes">
+              <% cmd.lignes.forEach(l => { %>
+                <li><b><%= l.quantite %></b> <%= l.nom %></li>
+              <% }) %>
+            </ul>
+
+            <% if (cmd.message) { %>
+              <p class="ticket__mot"><%= cmd.message %></p>
+            <% } %>
+
+            <div class="ticket__actions">
+              <% if (cmd.suivant) { %>
+                <form method="post" action="/cuisine/<%= cmd.id %>/avancer">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <input type="hidden" name="vers" value="<%= cmd.suivant %>">
+                  <button type="submit" class="btn btn--bloc"><%= LIBELLES[cmd.suivant] %></button>
+                </form>
+              <% } else { %>
+                <form method="post" action="/cuisine/<%= cmd.id %>/retour">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="btn btn--ghost btn--bloc">Remettre au feu</button>
+                </form>
+              <% } %>
+            </div>
+          </article>
+        <% }) %>
+      </section>
+    <% }) %>
+  </div>
+<% } %>

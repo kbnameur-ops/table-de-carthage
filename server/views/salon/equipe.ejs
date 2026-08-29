@@ -85,10 +85,10 @@
       <form method="post" action="/salon/equipe/<%= e.id %>/acces" class="card carte-acces<%= e.acces_service ? ' a-acces' : '' %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <h3 class="carte-acces__titre">
-          Prise de commande
-          <% if (e.acces_service) { %><span class="badge badge--ok">Accès actif</span><% } %>
+          Accès du personnel
+          <% if (e.acces_service || e.acces_cuisine) { %><span class="badge badge--ok">Actif</span><% } %>
         </h3>
-        <p class="aide">Donne à <%= e.prenom %> l'accès à <code>/service</code> depuis une tablette ou un téléphone, sans ouvrir le salon.</p>
+        <p class="aide">Donne à <%= e.prenom %> l'accès depuis une tablette ou un téléphone, sans ouvrir le salon.</p>
         <div class="ligne-champs ligne-champs--serree">
           <div class="field">
             <label for="id-<%= e.id %>">Identifiant</label>
@@ -103,7 +103,11 @@
           </div>
           <label class="case">
             <input type="checkbox" name="accesService" <%- e.acces_service ? 'checked' : '' %>>
-            <span>Accès autorisé</span>
+            <span>Prise de commande</span>
+          </label>
+          <label class="case">
+            <input type="checkbox" name="accesCuisine" <%- e.acces_cuisine ? 'checked' : '' %>>
+            <span>Écran de cuisine</span>
           </label>
         </div>
         <div class="btn-row btn-row--serree">

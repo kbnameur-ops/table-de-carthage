@@ -14,6 +14,7 @@
  *  sont compilés une fois au démarrage et appelés comme de simples
  *  fonctions JavaScript : aucun `include()` ne subsiste dans les gabarits. */
 import ejs from 'ejs';
+import { cssApp } from './version-actifs.js';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,10 +33,17 @@ const fnSalonEntete = compiler('partials/salon-entete.ejs');
 const fnSalonPied = compiler('partials/salon-pied.ejs');
 const fnServiceEntete = compiler('partials/service-entete.ejs');
 const fnServicePied = compiler('partials/service-pied.ejs');
+const fnCuisineTableau = compiler('partials/cuisine-tableau.ejs');
 
-export const entete = donnees => fnEntete(donnees);
+// `cssApp` est ajouté à chaque rendu d'en-tête : aucun appelant n'a à y penser.
+export const entete = donnees => fnEntete({ cssApp, ...donnees });
 export const pied = () => fnPied({});
-export const salonEntete = donnees => fnSalonEntete(donnees);
+export const salonEntete = donnees => fnSalonEntete({ cssApp, ...donnees });
 export const salonPied = donnees => fnSalonPied(donnees);
-export const serviceEntete = donnees => fnServiceEntete(donnees);
+export const serviceEntete = donnees => fnServiceEntete({ cssApp, ...donnees });
 export const servicePied = donnees => fnServicePied(donnees);
+
+/** Le tableau de la cuisine, rendu à part : la page complète l'incorpore au
+ *  premier affichage, et le rafraîchissement automatique va chercher ce
+ *  même fragment seul. Une seule source pour les deux. */
+export const cuisineTableau = donnees => fnCuisineTableau(donnees);
