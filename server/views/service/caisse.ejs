@@ -1,0 +1,56 @@
+<%- serviceEntete %>
+
+<% if (info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
+<form method="get" action="/service/caisse" class="card">
+  <h2 style="margin-top:0">Retrouver un client</h2>
+  <p class="aide">Le numéro de téléphone est l'identifiant du client. Il donne son historique et sa cagnotte.</p>
+  <div class="field">
+    <label for="f-tel">Téléphone</label>
+    <input type="tel" id="f-tel" name="tel" value="<%= telephone %>" inputmode="tel"
+           autocomplete="off" autofocus placeholder="06 12 34 56 78">
+  </div>
+  <button type="submit" class="btn btn--bloc">Chercher</button>
+</form>
+
+<% if (cherche && !client) { %>
+  <div class="alerte alerte--info">Aucun client à ce numéro.</div>
+<% } %>
+
+<% if (client) { %>
+  <div class="card carte-client-service">
+    <div>
+      <strong><%= client.prenom %> <%= client.nom %></strong>
+      <small><%= client.telephone_saisi %></small>
+    </div>
+    <div class="carte-client-service__cagnotte">
+      <span>Cagnotte</span><b><%= euros(client.cagnotte_cents) %></b>
+    </div>
+  </div>
+
+  <% if (!commandes.length) { %>
+    <div class="alerte alerte--info">Rien à encaisser pour ce client.</div>
+  <% } else { %>
+    <% commandes.forEach(cmd => { %>
+      <form method="post" action="/service/caisse/<%= cmd.id %>/encaisser" class="card">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="telephone" value="<%= client.telephone_saisi %>">
+        <div class="addition__entete">
+          <span><%= cmd.reference %> · retrait <%= cmd.heure %></span>
+          <strong><%= euros(cmd.total_cents) %></strong>
+        </div>
+        <% if (client.cagnotte_cents > 0) { %>
+          <div class="field">
+            <label for="cag-<%= cmd.id %>">Régler avec la cagnotte (max <%= euros(Math.min(client.cagnotte_cents, cmd.total_cents)) %>)</label>
+            <input type="text" id="cag-<%= cmd.id %>" name="cagnotte" inputmode="decimal"
+                   placeholder="0" autocomplete="off">
+          </div>
+        <% } %>
+        <button type="submit" class="btn btn--bloc">Encaisser <%= euros(cmd.total_cents) %></button>
+      </form>
+    <% }) %>
+  <% } %>
+<% } %>
+
+<%- servicePied %>

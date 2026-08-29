@@ -38,6 +38,9 @@
   <noscript><button type="submit" class="btn btn--sm">Afficher</button></noscript>
 </form>
 
+<% if (info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
 <% if (!commandes.length) { %>
   <p class="vide">Aucune commande<%= statut ? ' avec ce statut' : '' %> <%= aVenir ? 'à venir' : 'pour ce jour' %>.</p>
 <% } else { %>
@@ -45,7 +48,7 @@
 <table>
   <thead><tr>
     <% if (aVenir) { %><th>Jour</th><% } %>
-    <th>Retrait</th><th>Client</th><th>Contact</th><th>Détail</th><th>Total</th><th>Message</th><th>Statut</th>
+    <th>Retrait</th><th>Client</th><th>Contact</th><th>Détail</th><th>Total</th><th>Message</th><th>Statut</th><th>Caisse</th>
   </tr></thead>
   <tbody>
     <% commandes.forEach(c => { %>
@@ -64,14 +67,35 @@
         <td><%= euros(c.total_cents) %></td>
         <td style="max-width:200px"><%= c.message || '—' %></td>
         <td>
-          <form method="post" action="/salon/commandes/<%= c.id %>/statut">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <select name="statut" onchange="this.form.submit()" class="badge badge--<%= c.statut.replace('_','') %>" style="border:0;padding:.3rem .5rem">
-              <% statuts.forEach(s => { %>
-                <option value="<%= s %>" <%- s === c.statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
-              <% }) %>
-            </select>
-          </form>
+          <% if (c.statut === 'encaissee') { %>
+            <span class="badge badge--honoree">encaissée</span>
+          <% } else { %>
+            <form method="post" action="/salon/commandes/<%= c.id %>/statut">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <select name="statut" onchange="this.form.submit()" class="badge badge--<%= c.statut.replace('_','') %>" style="border:0;padding:.3rem .5rem">
+                <% statuts.forEach(s => { %>
+                  <option value="<%= s %>" <%- s === c.statut ? 'selected' : '' %>><%= s.replace('_',' ') %></option>
+                <% }) %>
+              </select>
+            </form>
+          <% } %>
+        </td>
+        <td>
+          <% if (c.statut === 'encaissee') { %>
+            <small style="color:var(--muted)">
+              <% if (c.remise_cagnotte_cents) { %>dont <%= euros(c.remise_cagnotte_cents) %> de cagnotte<% } else { %>payée<% } %>
+            </small>
+          <% } else if (c.statut !== 'annulee') { %>
+            <form method="post" action="/salon/commandes/<%= c.id %>/encaisser">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <% if (c.cagnotte_cents > 0) { %>
+                <input type="text" name="cagnotte" inputmode="decimal" placeholder="cagnotte"
+                       title="Cagnotte disponible : <%= euros(c.cagnotte_cents) %>"
+                       style="width:6.5rem;margin-bottom:.35rem" autocomplete="off">
+              <% } %>
+              <button type="submit" class="btn btn--sm">Encaisser</button>
+            </form>
+          <% } %>
         </td>
       </tr>
     <% }) %>

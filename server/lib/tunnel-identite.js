@@ -36,6 +36,12 @@ export async function connecterDepuisTunnel({ telephone, dateNaissance }, sessio
   }
 
   const client = await une(`SELECT * FROM clients WHERE telephone = $1`, [numero]);
+  // Un compte ouvert au comptoir n'a pas encore de date de naissance : on
+  // le dit, plutôt que de renvoyer « identifiants incorrects » à quelqu'un
+  // dont le compte existe bel et bien.
+  if (client && !client.date_naissance) {
+    return { erreur: "Ce numéro a un compte ouvert au restaurant, sans date de naissance. Passez par une réservation ou une commande pour le compléter et en prendre possession." };
+  }
   if (!client || client.date_naissance !== dateNaissance) {
     await enregistrerTentative(cle);
     return { erreur: "Aucun compte ne correspond à ce numéro et cette date de naissance." };

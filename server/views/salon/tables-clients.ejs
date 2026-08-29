@@ -19,6 +19,33 @@
   <div class="tuile"><b><%= euros(resume.journee) %></b><span>Total du jour</span></div>
 </div>
 
+<% if (tablesLibres.length) { %>
+  <div class="card" style="margin-bottom:1.8rem">
+    <h2 style="margin-top:0">Installer un client</h2>
+    <p class="aide">Pour un client qui n'a pas scanné le QR. Le numéro de téléphone suffit&nbsp;: s'il est inconnu, un prénom ouvre la fiche.</p>
+    <form method="post" action="/salon/tables-clients/ouvrir" class="ligne-champs ligne-champs--serree">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="field">
+        <label for="f-table">Table</label>
+        <select id="f-table" name="tableId" required>
+          <% tablesLibres.forEach(t => { %>
+            <option value="<%= t.id %>"><%= nomTable(t.nom) %> · <%= t.couverts %> couv. · <%= t.service_nom %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="field">
+        <label for="f-tel">Téléphone</label>
+        <input type="tel" id="f-tel" name="telephone" inputmode="tel" required autocomplete="off" placeholder="06 12 34 56 78">
+      </div>
+      <div class="field">
+        <label for="f-prenom">Prénom (si nouveau)</label>
+        <input type="text" id="f-prenom" name="prenom" maxlength="80">
+      </div>
+      <button type="submit" class="btn btn--sm">Installer</button>
+    </form>
+  </div>
+<% } %>
+
 <% if (!tablees.length) { %>
   <p class="vide">Aucune table ouverte ce jour.</p>
 <% } else { %>

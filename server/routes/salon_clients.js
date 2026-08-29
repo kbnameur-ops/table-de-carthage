@@ -3,6 +3,8 @@ import { query, une, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
 import { euros } from '../lib/money.js';
 import { normaliserTelephone } from '../lib/phone.js';
+import { versCents } from '../lib/money.js';
+import { mouvementsDe, ajuster } from '../lib/fidelite.js';
 
 export const salonClientsRouter = Router();
 
@@ -75,6 +77,8 @@ salonClientsRouter.get('/salon/clients/:id', exigerAdmin, async (req, res, next)
     res.render('salon/client', {
       titre: `${client.prenom} ${client.nom}`, actif: 'clients',
       client, reservations, commandes, tablees, euros,
+      mouvements: await mouvementsDe(client.id, 30),
+      erreur: req.query.erreur || null, info: req.query.info || null,
       csrfToken: res.locals.csrfToken,
     });
   } catch (err) { next(err); }
@@ -90,5 +94,26 @@ salonClientsRouter.post('/salon/clients/:id/notes', exigerAdmin, verifierCsrf, a
       [(req.body.notes || '').trim().slice(0, 1000), req.params.id]
     );
     redirigerRetour(req, res, `/salon/clients/${req.params.id}`);
+  } catch (err) { next(err); }
+});
+
+/** Corriger une cagnotte à la main : geste commercial, erreur de caisse,
+ *  litige. Passe par le même journal que tout le reste — un solde dont on
+ *  ne saurait pas expliquer l'origine ne vaut rien. */
+salonClientsRouter.post('/salon/clients/:id/cagnotte', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const retour = `/salon/clients/${req.params.id}`;
+    const montant = versCents(req.body.montant || '');
+    if (montant === null || montant === 0) {
+      return res.redirect(retour + '?erreur=' + encodeURIComponent('Montant invalide. Exemple : 5,00'));
+    }
+    const signe = req.body.sens === 'retirer' ? -1 : 1;
+    const { erreur } = await ajuster({
+      clientId: Number(req.params.id),
+      deltaCents: signe * montant,
+      libelle: (req.body.motif || '').trim().slice(0, 120) || 'Ajustement par le salon',
+    });
+    if (erreur) return res.redirect(retour + '?erreur=' + encodeURIComponent(erreur));
+    res.redirect(retour + '?info=' + encodeURIComponent('Cagnotte mise à jour.'));
   } catch (err) { next(err); }
 });

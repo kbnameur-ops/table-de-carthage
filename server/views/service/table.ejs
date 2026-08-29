@@ -1,0 +1,167 @@
+<%- serviceEntete %>
+
+<% if (info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+
+<% if (!tablee) { %>
+  <!-- Rien à cette table : on commence par savoir qui s'y installe. -->
+  <form method="post" action="/service/table/<%= table.id %>/client" class="card">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h2 style="margin-top:0">Qui s'installe ?</h2>
+    <p class="aide">Le numéro de téléphone suffit. S'il est inconnu, un prénom ouvre la fiche.</p>
+    <div class="field">
+      <label for="f-tel">Téléphone du client</label>
+      <input type="tel" id="f-tel" name="telephone" value="<%= valeurs.telephone || '' %>"
+             inputmode="tel" autocomplete="off" required autofocus placeholder="06 12 34 56 78">
+    </div>
+    <details class="repli" <%- valeurs.prenom || valeurs.telephone ? 'open' : '' %>>
+      <summary>Nouveau client</summary>
+      <div class="ligne-champs ligne-champs--serree">
+        <div class="field">
+          <label for="f-prenom">Prénom</label>
+          <input type="text" id="f-prenom" name="prenom" value="<%= valeurs.prenom || '' %>" maxlength="80">
+        </div>
+        <div class="field">
+          <label for="f-nom">Nom (facultatif)</label>
+          <input type="text" id="f-nom" name="nom" value="<%= valeurs.nom || '' %>" maxlength="80">
+        </div>
+      </div>
+    </details>
+    <button type="submit" class="btn btn--bloc">Installer à <%= table.nom %></button>
+  </form>
+<% } else { %>
+
+  <div class="card carte-client-service">
+    <div>
+      <strong><%= client.prenom %> <%= client.nom %></strong>
+      <small><%= client.telephone_saisi %></small>
+    </div>
+    <div class="carte-client-service__cagnotte">
+      <span>Cagnotte</span>
+      <b><%= euros(client.cagnotte_cents) %></b>
+    </div>
+  </div>
+
+  <% if (addition.commandes.length) { %>
+    <div class="card">
+      <h2 style="margin-top:0">Addition en cours</h2>
+      <div class="addition">
+        <% addition.commandes.forEach(cmd => { %>
+          <div class="addition__cmd<%= cmd.statut === 'annulee' ? ' est-annulee' : '' %>">
+            <div class="addition__entete">
+              <span><%= cmd.heure %></span>
+              <span><%= euros(cmd.total_cents) %></span>
+            </div>
+            <% cmd.lignes.forEach(l => { %>
+              <div class="addition__ligne">
+                <span><%= l.quantite %> × <%= l.nom %></span>
+                <span><%= euros(l.prix_cents * l.quantite) %></span>
+              </div>
+            <% }) %>
+          </div>
+        <% }) %>
+      </div>
+      <div class="panier-total" style="margin-bottom:0">
+        <span>Total</span><strong><%= euros(addition.total) %></strong>
+      </div>
+    </div>
+
+    <form method="post" action="/service/table/<%= table.id %>/encaisser" class="card">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h2 style="margin-top:0">Encaisser et libérer la table</h2>
+      <% if (client.cagnotte_cents > 0) { %>
+        <div class="field">
+          <label for="f-cagnotte">Régler avec la cagnotte (max <%= euros(Math.min(client.cagnotte_cents, addition.total)) %>)</label>
+          <input type="text" id="f-cagnotte" name="cagnotte" inputmode="decimal" placeholder="0"
+                 value="" autocomplete="off">
+        </div>
+      <% } %>
+      <button type="submit" class="btn btn--bloc"
+              onclick="return confirm('Encaisser <%= euros(addition.total) %> et libérer la table ?')">
+        Encaisser <%= euros(addition.total) %>
+      </button>
+    </form>
+  <% } %>
+
+  <form method="post" action="/service/table/<%= table.id %>/commande" id="formService">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h2 class="titre-section"><%= addition.commandes.length ? 'Ajouter à la table' : 'La carte' %></h2>
+
+    <% categories.forEach(cat => { %>
+      <div class="card">
+        <h3 class="titre-categorie"><%= cat.nom %></h3>
+        <div class="menu-carte">
+          <% cat.plats.forEach(plat => { %>
+            <div class="menu-plat menu-plat--service">
+              <div class="menu-plat__infos">
+                <h4><%= plat.nom %></h4>
+              </div>
+              <div class="menu-plat__prix"><%= euros(plat.prix_cents) %></div>
+              <div class="compteur">
+                <button type="button" class="compteur__btn js-moins" aria-label="Retirer un <%= plat.nom %>">−</button>
+                <input type="number" min="0" max="50" value="0" name="qte_<%= plat.id %>"
+                       data-prix="<%= plat.prix_cents %>" class="js-qte" inputmode="numeric"
+                       aria-label="Quantité de <%= plat.nom %>">
+                <button type="button" class="compteur__btn js-plus" aria-label="Ajouter un <%= plat.nom %>">+</button>
+              </div>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+    <% }) %>
+
+    <div class="card">
+      <div class="field">
+        <label for="f-message">Mot pour la cuisine</label>
+        <textarea id="f-message" name="message" rows="2" placeholder="Sans piment, cuisson à point…"></textarea>
+      </div>
+    </div>
+  </form>
+<% } %>
+
+<% if (tablee) { %>
+<div class="barre-envoi" id="barreEnvoi" hidden>
+  <div class="barre-envoi__total">
+    <span id="nbArticles">0 article</span>
+    <strong id="totalPanier">0,00 €</strong>
+  </div>
+  <button type="submit" form="formService" class="btn">Envoyer en cuisine</button>
+</div>
+<script>
+(function () {
+  const inputs = Array.from(document.querySelectorAll('.js-qte'));
+  if (!inputs.length) return;
+  const barre = document.getElementById('barreEnvoi');
+  const totalEl = document.getElementById('totalPanier');
+  const nbEl = document.getElementById('nbArticles');
+
+  function recalc() {
+    let total = 0, articles = 0;
+    for (const i of inputs) {
+      const q = parseInt(i.value, 10) || 0;
+      total += q * parseInt(i.dataset.prix, 10);
+      articles += q;
+      i.closest('.menu-plat')?.classList.toggle('est-choisi', q > 0);
+      i.closest('.compteur')?.classList.toggle('est-actif', q > 0);
+    }
+    totalEl.textContent = (total / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2 }) + ' €';
+    nbEl.textContent = articles + (articles > 1 ? ' articles' : ' article');
+    barre.hidden = articles === 0;
+  }
+  function ajuster(input, delta) {
+    const max = parseInt(input.max, 10) || 50;
+    input.value = Math.min(max, Math.max(0, (parseInt(input.value, 10) || 0) + delta));
+    recalc();
+  }
+  document.querySelectorAll('.compteur').forEach(c => {
+    const input = c.querySelector('.js-qte');
+    c.querySelector('.js-moins').addEventListener('click', () => ajuster(input, -1));
+    c.querySelector('.js-plus').addEventListener('click', () => ajuster(input, +1));
+  });
+  inputs.forEach(i => i.addEventListener('input', recalc));
+  recalc();
+})();
+</script>
+<% } %>
+
+<%- servicePied %>

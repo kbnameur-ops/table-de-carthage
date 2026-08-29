@@ -30,8 +30,12 @@ const fnEntete = compiler('partials/entete.ejs');
 const fnPied = compiler('partials/pied.ejs');
 const fnSalonEntete = compiler('partials/salon-entete.ejs');
 const fnSalonPied = compiler('partials/salon-pied.ejs');
+const fnServiceEntete = compiler('partials/service-entete.ejs');
+const fnServicePied = compiler('partials/service-pied.ejs');
 
 export const entete = donnees => fnEntete(donnees);
 export const pied = () => fnPied({});
 export const salonEntete = donnees => fnSalonEntete(donnees);
 export const salonPied = donnees => fnSalonPied(donnees);
+export const serviceEntete = donnees => fnServiceEntete(donnees);
+export const servicePied = donnees => fnServicePied(donnees);

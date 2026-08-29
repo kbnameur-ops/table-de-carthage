@@ -298,6 +298,13 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
 .ligne-champs .field{margin-bottom:0;flex:1 1 150px;min-width:120px}
 .ligne-champs--serree{gap:.7rem}
 .ligne-champs--serree .field{flex:1 1 110px}
+/* Sous 520 px, deux champs côte à côte se réduisent à des fentes : chacun
+   prend la ligne, et le bouton avec. */
+@media (max-width:520px){
+  .ligne-champs .field,
+  .ligne-champs--serree .field{flex:1 1 100%}
+  .ligne-champs > .btn{width:100%}
+}
 .field--court{flex:0 0 100px !important;min-width:90px}
 .aide{font-size:.78rem;color:var(--muted);margin:.9rem 0 0}
 
@@ -656,3 +663,136 @@ body:has(.barre-envoi:not([hidden])) main{padding-bottom:7rem}
   .menu-plat .compteur{grid-area:compteur;justify-self:end}
   .menu-plat__qte{grid-area:compteur;justify-self:end}
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Interface de prise de commande (/service)
+   Pensée pour un téléphone tenu d'une main pendant le service :
+   cibles larges, peu d'écrans, rien d'essentiel hors du pouce.
+   ═══════════════════════════════════════════════════════════ */
+.servicebar{
+  position:sticky;top:0;z-index:20;
+  background:var(--navy-900);color:var(--cream);
+  display:flex;align-items:center;gap:.9rem;
+  padding:.75rem clamp(.9rem,3vw,1.4rem);
+  padding-top:calc(.75rem + env(safe-area-inset-top));
+}
+.servicebar__retour{
+  display:grid;place-items:center;width:40px;height:40px;flex:0 0 auto;
+  border:1px solid rgba(201,169,97,.4);border-radius:8px;color:var(--gold-300);
+}
+.servicebar__titre{display:grid;line-height:1.25;min-width:0}
+.servicebar__titre b{font-family:var(--ff-title);font-weight:400;font-size:1.05rem;letter-spacing:.04em}
+.servicebar__titre small{color:rgba(250,246,236,.55);font-size:.74rem;letter-spacing:.1em;text-transform:uppercase}
+.servicebar__qui{
+  margin-left:auto;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--gold-400);white-space:nowrap;
+}
+
+.serviceonglets{
+  position:sticky;top:0;z-index:19;display:flex;
+  background:var(--navy-800);border-bottom:1px solid rgba(201,169,97,.25);
+}
+.serviceonglets a{
+  flex:1;text-align:center;padding:.85rem .4rem;color:rgba(250,246,236,.6);
+  font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;
+  border-bottom:2px solid transparent;
+}
+.serviceonglets a.is-active{color:var(--gold-300);border-bottom-color:var(--gold-500)}
+
+/* La barre d'envoi est fixée en bas : la marge évite qu'elle recouvre
+   la dernière carte de la carte. */
+.servicemain{
+  width:min(100% - 1.6rem, 760px);margin-inline:auto;
+  padding:1.1rem 0 7rem;
+}
+
+/* ── Le plan de salle ────────────────────────────────────── */
+.plan-service{
+  display:grid;gap:.7rem;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));
+}
+.tuile-table{
+  display:grid;gap:.15rem;align-content:start;
+  min-height:104px;padding:.85rem .9rem;
+  background:#fff;border:1px solid rgba(14,42,78,.14);border-left:3px solid var(--ok);
+  box-shadow:0 18px 30px -28px rgba(14,42,78,.7);
+  transition:transform .2s var(--ease),border-color .2s;
+}
+.tuile-table:active{transform:scale(.985)}
+.tuile-table.est-occupee{border-left-color:var(--gold-500);background:#FFFDF7}
+.tuile-table__nom{font-family:var(--ff-title);font-size:1.1rem;color:var(--navy-800)}
+.tuile-table__couverts{font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.tuile-table__libre{margin-top:.35rem;font-size:.8rem;color:var(--ok)}
+.tuile-table__client{margin-top:.35rem;font-size:.92rem;color:var(--ink)}
+.tuile-table__total{font-weight:500;color:var(--navy-800)}
+
+/* ── Titres de section, plus discrets que les h2 du salon ── */
+.titre-section{
+  font-family:var(--ff-title);font-weight:400;font-size:1.25rem;
+  color:var(--navy-800);margin:2rem 0 .9rem;
+}
+.titre-categorie{
+  margin:0 0 .9rem;font-family:var(--ff-title);font-weight:400;color:var(--gold-500);
+}
+
+/* ── La fiche client, rappelée partout où l'on encaisse ──── */
+.carte-client-service{
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+}
+.carte-client-service small{display:block;color:var(--muted);font-size:.85rem}
+.carte-client-service__cagnotte{text-align:right}
+.carte-client-service__cagnotte span{
+  display:block;font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);
+}
+.carte-client-service__cagnotte b{font-size:1.25rem;color:var(--gold-500)}
+
+/* ── Une ligne de carte en salle : ni photo ni description,
+      seulement le nom, le prix et le compteur. ───────────── */
+.menu-plat--service{
+  display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:.8rem;
+}
+.menu-plat--service .menu-plat__infos h4{margin:0;font-size:1rem;font-weight:400}
+@media (max-width:420px){
+  .menu-plat--service{grid-template-columns:1fr auto;grid-template-areas:'nom prix' 'compteur compteur';row-gap:.5rem}
+  .menu-plat--service .menu-plat__infos{grid-area:nom}
+  .menu-plat--service .menu-plat__prix{grid-area:prix}
+  .menu-plat--service .compteur{grid-area:compteur;justify-self:stretch}
+}
+
+/* ── Repli « nouveau client » ─────────────────────────────── */
+.repli{margin:.6rem 0 1rem;border-top:1px solid rgba(14,42,78,.12);padding-top:.6rem}
+.repli > summary{
+  cursor:pointer;font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-500);
+  padding:.35rem 0;
+}
+
+/* ── Accès serveur, sur la fiche employé du salon ────────── */
+.carte-acces{border-left:3px solid rgba(14,42,78,.14);margin-top:-.6rem}
+.carte-acces.a-acces{border-left-color:var(--gold-500)}
+.carte-acces__titre{
+  margin:0 0 .3rem;font-family:var(--ff-title);font-weight:400;font-size:1.1rem;
+  color:var(--navy-800);display:flex;align-items:center;gap:.7rem;
+}
+.badge--ok{background:rgba(62,122,76,.14);color:var(--ok)}
+
+/* ── La cagnotte dans l'espace client ────────────────────── */
+.cagnotte{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;
+  background:linear-gradient(120deg,var(--navy-900),var(--navy-700));color:var(--cream);
+  padding:1.4rem clamp(1.1rem,3vw,1.8rem);
+}
+.cagnotte__somme{font-family:var(--ff-display);font-size:clamp(2rem,7vw,2.8rem);color:var(--gold-300);line-height:1}
+.cagnotte__quoi{font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;color:rgba(250,246,236,.6)}
+.cagnotte__aide{margin:.4rem 0 0;font-size:.9rem;color:rgba(250,246,236,.75);max-width:40ch}
+
+.mouvements{display:grid;gap:.1rem}
+.mouvement{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1rem;
+  padding:.7rem 0;border-top:1px solid rgba(14,42,78,.1);
+}
+.mouvement:first-child{border-top:0}
+.mouvement__quoi{display:grid;gap:.1rem;min-width:0}
+.mouvement__quoi small{color:var(--muted);font-size:.8rem}
+.mouvement__delta{font-weight:500;white-space:nowrap}
+.mouvement__delta.est-positif{color:var(--ok)}
+.mouvement__delta.est-negatif{color:var(--muted)}

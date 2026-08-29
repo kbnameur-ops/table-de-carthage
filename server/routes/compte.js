@@ -10,6 +10,8 @@ import {
 import { exigerClient, verifierCsrf } from '../middleware.js';
 import { notifier, quand } from '../lib/notifications.js';
 import { tableeOuverteDuClient, additionDeTablee } from '../lib/tablees.js';
+import { mouvementsDe, transferer, tauxFidelite } from '../lib/fidelite.js';
+import { versCents } from '../lib/money.js';
 
 export const compteRouter = Router();
 
@@ -19,8 +21,13 @@ const LIBELLES_RESA = {
 };
 const LIBELLES_CMD = {
   en_attente: 'En attente', confirmee: 'Confirmée', prete: 'Prête',
-  retiree: 'Retirée', annulee: 'Annulée',
+  retiree: 'Retirée', encaissee: 'Payée', annulee: 'Annulée',
 };
+
+// Une commande payée est aussi définitive qu'une commande annulée : elle a
+// crédité la cagnotte, l'annuler depuis l'espace client laisserait un gain
+// sans contrepartie.
+const CMD_TERMINEE = ['annulee', 'retiree', 'encaissee'];
 
 compteRouter.get('/compte/connexion', (req, res) => {
   if (req.session.role === 'client') return res.redirect('/compte');
@@ -45,6 +52,9 @@ compteRouter.post('/compte/connexion', verifierCsrf, async (req, res, next) => {
     }
 
     const client = await une(`SELECT * FROM clients WHERE telephone = $1`, [num]);
+    if (client && !client.date_naissance) {
+      return rendreErreur("Ce numéro a un compte ouvert au restaurant, sans date de naissance. Passez par une réservation ou une commande pour le compléter et en prendre possession.");
+    }
     if (!client || client.date_naissance !== dateNaissance) {
       await enregistrerTentative(cle);
       return rendreErreur('Numéro de téléphone ou date de naissance incorrects.');
@@ -79,7 +89,7 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
       .filter(c => c.type !== 'sur_place')
       .map(c => ({
         ...c,
-        annulable: c.statut !== 'annulee' && c.statut !== 'retiree' && c.date >= aujourdHui,
+        annulable: !CMD_TERMINEE.includes(c.statut) && c.date >= aujourdHui,
       }));
 
     // Si le client est attablé, son addition en cours passe devant tout le
@@ -89,6 +99,8 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
 
     res.render('compte-tableau', {
       client, reservations, commandes, tablee, addition, euros,
+      mouvements: await mouvementsDe(client.id), taux: await tauxFidelite(),
+      erreurCagnotte: req.query.err || null, valeursEnvoi: {},
       libellesStatutResa: LIBELLES_RESA, libellesStatutCmd: LIBELLES_CMD,
       message: req.query.msg || null,
       session: req.session, csrfToken: res.locals.csrfToken,
@@ -124,9 +136,9 @@ compteRouter.post('/compte/commandes/:id/annuler', exigerClient, verifierCsrf, a
   try {
     const annulee = await une(
       `UPDATE commandes SET statut = 'annulee'
-        WHERE id = $1 AND client_id = $2 AND statut NOT IN ('annulee','retiree')
+        WHERE id = $1 AND client_id = $2 AND statut <> ALL($3::text[])
         RETURNING reference, date, heure, total_cents`,
-      [req.params.id, req.clientId]
+      [req.params.id, req.clientId, CMD_TERMINEE]
     );
     if (annulee) {
       const client = await une(`SELECT prenom, nom FROM clients WHERE id = $1`, [req.clientId]);
@@ -138,6 +150,36 @@ compteRouter.post('/compte/commandes/:id/annuler', exigerClient, verifierCsrf, a
       });
     }
     res.redirect('/compte?msg=' + encodeURIComponent('Commande annulée.'));
+  } catch (err) { next(err); }
+});
+
+/** Envoyer une partie de sa cagnotte à quelqu'un d'autre.
+ *
+ *  C'est ce qui débloque la situation d'une table où tout le monde voudrait
+ *  payer séparément pour toucher ses propres points : une personne règle
+ *  l'addition, gagne pour la tablée, puis rend à chacun sa part. */
+compteRouter.post('/compte/cagnotte/envoyer', exigerClient, verifierCsrf, async (req, res, next) => {
+  try {
+    const montant = versCents(req.body.montant || '');
+    if (montant === null) {
+      return res.redirect('/compte?err=' + encodeURIComponent('Montant invalide. Exemple : 5,50'));
+    }
+    const { erreur, destinataire } = await transferer({
+      deClientId: req.clientId,
+      versTelephone: req.body.telephone,
+      montantCents: montant,
+      motCle: (req.body.mot || '').trim().slice(0, 80),
+    });
+    if (erreur) return res.redirect('/compte?err=' + encodeURIComponent(erreur));
+
+    await notifier({
+      type: 'fidelite',
+      titre: `Transfert de cagnotte — ${euros(montant)}`,
+      detail: `Vers ${destinataire.prenom} ${destinataire.nom}`,
+      lien: `/salon/clients/${destinataire.id}`,
+    });
+    res.redirect('/compte?msg=' + encodeURIComponent(
+      `${euros(montant)} envoyés à ${destinataire.prenom}.`));
   } catch (err) { next(err); }
 });
 

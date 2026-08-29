@@ -4,6 +4,67 @@
   <p class="lead"><%= client.email %> · <%= client.telephone_saisi %></p>
 
   <% if (message) { %><div class="alerte alerte--ok"><%= message %></div><% } %>
+  <% if (erreurCagnotte) { %><div class="alerte alerte--erreur"><%= erreurCagnotte %></div><% } %>
+
+  <div class="card cagnotte">
+    <div>
+      <span class="cagnotte__quoi">Ma cagnotte</span>
+      <div class="cagnotte__somme"><%= euros(client.cagnotte_cents) %></div>
+      <p class="cagnotte__aide">
+        <%= taux %> % de chaque addition réglée revient sur votre cagnotte, utilisable
+        au restaurant sur une prochaine commande.
+      </p>
+    </div>
+  </div>
+
+  <h2>Envoyer des points</h2>
+  <div class="card">
+    <p class="aide">
+      Une seule personne règle l'addition et gagne pour toute la table&nbsp;: elle peut
+      ensuite rendre à chacun sa part. Le destinataire doit avoir un espace client
+      sur le numéro que vous indiquez.
+    </p>
+    <form method="post" action="/compte/cagnotte/envoyer" class="ligne-champs">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="field">
+        <label for="f-dest">Téléphone du destinataire</label>
+        <input type="tel" id="f-dest" name="telephone" inputmode="tel" required
+               autocomplete="off" placeholder="06 12 34 56 78">
+      </div>
+      <div class="field">
+        <label for="f-montant">Montant</label>
+        <input type="text" id="f-montant" name="montant" inputmode="decimal" required
+               autocomplete="off" placeholder="5,00">
+      </div>
+      <div class="field">
+        <label for="f-mot">Motif (facultatif)</label>
+        <input type="text" id="f-mot" name="mot" maxlength="80" placeholder="Ta part de samedi">
+      </div>
+      <button type="submit" class="btn"
+              <%- client.cagnotte_cents > 0 ? '' : 'disabled' %>>Envoyer</button>
+    </form>
+  </div>
+
+  <h2>Mouvements de la cagnotte</h2>
+  <% if (!mouvements.length) { %>
+    <p class="vide">Rien pour l'instant. Votre première addition réglée créditera votre cagnotte.</p>
+  <% } else { %>
+    <div class="card">
+      <div class="mouvements">
+        <% mouvements.forEach(m => { %>
+          <div class="mouvement">
+            <span class="mouvement__quoi">
+              <span><%= m.libelle %></span>
+              <small><%= new Date(m.cree_le).toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' }) %></small>
+            </span>
+            <span class="mouvement__delta <%= m.delta_cents > 0 ? 'est-positif' : 'est-negatif' %>">
+              <%= m.delta_cents > 0 ? '+' : '−' %><%= euros(Math.abs(m.delta_cents)) %>
+            </span>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+  <% } %>
 
   <% if (tablee) { %>
     <h2>Votre table en ce moment</h2>

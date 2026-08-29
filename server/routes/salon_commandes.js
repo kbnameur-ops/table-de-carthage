@@ -2,11 +2,16 @@ import { Router } from 'express';
 import { query, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
 import { dateValide } from '../lib/validate.js';
-import { euros } from '../lib/money.js';
+import { euros, versCents } from '../lib/money.js';
+import { encaisserCommande } from '../lib/encaissement.js';
 import { jourVoisin, aujourdHui, libelleJour } from '../lib/jours.js';
 
 export const salonCommandesRouter = Router();
 
+// 'encaissee' n'est pas dans cette liste : on n'y arrive pas en changeant un
+// menu déroulant, mais par l'action « encaisser », qui bouge aussi la
+// cagnotte. Le laisser sélectionnable créerait des commandes payées sans
+// gain de fidélité.
 const STATUTS = ['en_attente', 'confirmee', 'prete', 'retiree', 'annulee'];
 
 salonCommandesRouter.get('/salon/commandes', exigerAdmin, async (req, res, next) => {
@@ -22,7 +27,7 @@ salonCommandesRouter.get('/salon/commandes', exigerAdmin, async (req, res, next)
     if (statut) { params.push(statut); conditions.push(`cmd.statut = $${params.length}`); }
 
     const commandesBrutes = await query(
-      `SELECT cmd.*, c.prenom, c.nom, c.telephone_saisi, c.email
+      `SELECT cmd.*, c.prenom, c.nom, c.telephone_saisi, c.email, c.cagnotte_cents
          FROM commandes cmd JOIN clients c ON c.id = cmd.client_id
         WHERE ${conditions.join(' AND ')}
         ORDER BY cmd.date, cmd.heure`,
@@ -49,6 +54,7 @@ salonCommandesRouter.get('/salon/commandes', exigerAdmin, async (req, res, next)
       lendemain: date ? jourVoisin(date, 1) : null,
       aujourdHui: aujourdHui(),
       libelle: date ? libelleJour(date) : 'Tout ce qui vient',
+      info: req.query.info || null, erreur: req.query.erreur || null,
       csrfToken: res.locals.csrfToken,
     });
   } catch (err) { next(err); }
@@ -58,6 +64,19 @@ salonCommandesRouter.post('/salon/commandes/:id/statut', exigerAdmin, verifierCs
   try {
     if (STATUTS.includes(req.body.statut)) {
       await executer(`UPDATE commandes SET statut = $1 WHERE id = $2`, [req.body.statut, req.params.id]);
+    }
+    redirigerRetour(req, res, '/salon/commandes');
+  } catch (err) { next(err); }
+});
+
+/** Encaisser une commande à emporter : déduit la cagnotte si le client s'en
+ *  sert, marque la commande payée, crédite la fidélité. */
+salonCommandesRouter.post('/salon/commandes/:id/encaisser', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const remise = req.body.cagnotte ? (versCents(req.body.cagnotte) ?? 0) : 0;
+    const r = await encaisserCommande(req.params.id, { remiseCents: remise });
+    if (r.erreur) {
+      return redirigerRetour(req, res, '/salon/commandes?erreur=' + encodeURIComponent(r.erreur));
     }
     redirigerRetour(req, res, '/salon/commandes');
   } catch (err) { next(err); }

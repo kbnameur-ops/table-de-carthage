@@ -309,3 +309,91 @@ DO $$ BEGIN
   );
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
+
+-- ═══════════════════════════════════════════════════════════
+-- v4 — Cagnotte de fidélité, encaissement, comptes serveurs
+-- ═══════════════════════════════════════════════════════════
+
+-- ── La cagnotte ────────────────────────────────────────────
+-- Le solde est une colonne dénormalisée, tenue dans la même transaction
+-- que le mouvement qui la fait bouger. Un SUM() sur l'historique donnerait
+-- la même valeur, mais ne permettrait pas au CHECK ci-dessous de refuser
+-- un découvert : deux transferts simultanés pourraient chacun lire un
+-- solde suffisant et vider la cagnotte deux fois.
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS cagnotte_cents INTEGER NOT NULL DEFAULT 0;
+DO $$ BEGIN
+  ALTER TABLE clients ADD CONSTRAINT clients_cagnotte_positive CHECK (cagnotte_cents >= 0);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- L'historique, en mouvements signés. Le client doit pouvoir répondre à
+-- « d'où vient ce solde ? », et le restaurant à « qui a envoyé quoi ».
+CREATE TABLE IF NOT EXISTS fidelite_mouvements (
+  id              INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  client_id       INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  delta_cents     INTEGER NOT NULL CHECK (delta_cents <> 0),
+  type            TEXT    NOT NULL CHECK (type IN
+                    ('gain','depense','transfert_envoye','transfert_recu','ajustement')),
+  commande_id     INTEGER REFERENCES commandes(id) ON DELETE SET NULL,
+  contrepartie_id INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+  libelle         TEXT    NOT NULL DEFAULT '',
+  cree_le         TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_fidelite_client ON fidelite_mouvements(client_id, cree_le DESC);
+
+-- Un gain et un seul par commande. C'est ce qui rend l'encaissement
+-- rejouable sans risque : un double clic sur « encaisser », ou une
+-- requête réémise par un réseau capricieux, ne crédite pas deux fois.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_fidelite_gain_unique
+  ON fidelite_mouvements(commande_id) WHERE type = 'gain';
+
+-- Ce que la cagnotte a payé sur cette commande. Nécessaire pour que le
+-- gain porte sur ce qui a réellement été payé, et non sur le montant
+-- affiché : sans quoi la cagnotte se regénérerait elle-même.
+ALTER TABLE commandes ADD COLUMN IF NOT EXISTS remise_cagnotte_cents INTEGER NOT NULL DEFAULT 0;
+DO $$ BEGIN
+  ALTER TABLE commandes ADD CONSTRAINT commandes_remise_positive CHECK (remise_cagnotte_cents >= 0);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Le statut 'encaissee' rejoint la liste : jusqu'ici une commande à
+-- emporter s'arrêtait à 'retiree', et une commande sur place n'avait pas
+-- d'état final du tout. C'est cet état qui déclenche le gain.
+DO $$ BEGIN
+  ALTER TABLE commandes DROP CONSTRAINT IF EXISTS commandes_statut_check;
+  ALTER TABLE commandes ADD CONSTRAINT commandes_statut_check CHECK (statut IN
+    ('en_attente','confirmee','prete','retiree','encaissee','annulee'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- ── Comptes serveurs ───────────────────────────────────────
+-- Un employé peut recevoir un accès à l'interface de prise de commande.
+-- L'identifiant est court et sans arobase : il se tape au clavier tactile
+-- d'une tablette, en salle, entre deux services.
+ALTER TABLE employes ADD COLUMN IF NOT EXISTS identifiant   TEXT;
+ALTER TABLE employes ADD COLUMN IF NOT EXISTS mot_de_passe  TEXT;
+ALTER TABLE employes ADD COLUMN IF NOT EXISTS acces_service BOOLEAN NOT NULL DEFAULT false;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_employes_identifiant
+  ON employes(identifiant) WHERE identifiant IS NOT NULL;
+
+-- Le rôle 'serveur' rejoint les sessions.
+DO $$ BEGIN
+  ALTER TABLE sessions DROP CONSTRAINT IF EXISTS sessions_role_check;
+  ALTER TABLE sessions ADD CONSTRAINT sessions_role_check CHECK (role IN
+    ('invite','client','admin','serveur'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Le taux est un réglage et non une constante : 10 % est un choix
+-- commercial, qui se révise sans redéploiement.
+INSERT INTO reglages (cle, valeur) VALUES ('fidelite_taux_pourcent', '10')
+  ON CONFLICT (cle) DO NOTHING;
+
+-- Un transfert de cagnotte est un mouvement d'argent entre deux comptes :
+-- le salon doit le voir passer comme il voit passer une commande.
+DO $$ BEGIN
+  ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+  ALTER TABLE notifications ADD CONSTRAINT notifications_type_check CHECK (type IN
+    ('reservation','commande','annulation_reservation','annulation_commande','fidelite'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

@@ -1,0 +1,42 @@
+<%- serviceEntete %>
+
+<% if (locals.info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
+
+<% if (!service) { %>
+  <div class="alerte alerte--info">
+    Aucun service prévu aujourd'hui. Vous pouvez toujours prendre une commande à emporter.
+  </div>
+<% } %>
+
+<% if (tables.length) { %>
+  <div class="plan-service">
+    <% tables.forEach(t => { %>
+      <a class="tuile-table<%= t.tablee ? ' est-occupee' : '' %>" href="/service/table/<%= t.id %>">
+        <span class="tuile-table__nom"><%= nomTable(t.nom) %></span>
+        <span class="tuile-table__couverts"><%= t.couverts %> couv.</span>
+        <% if (t.tablee) { %>
+          <span class="tuile-table__client"><%= t.tablee.prenom %></span>
+          <span class="tuile-table__total"><%= euros(t.tablee.total) %></span>
+        <% } else { %>
+          <span class="tuile-table__libre">Libre</span>
+        <% } %>
+      </a>
+    <% }) %>
+  </div>
+<% } %>
+
+<% if (ouvertesHorsService.length) { %>
+  <h2 class="titre-section">Tables ouvertes sur un autre service</h2>
+  <p class="aide">Ouvertes sur une table qui n'appartient pas au service du jour. Elles restent à encaisser.</p>
+  <div class="plan-service">
+    <% ouvertesHorsService.forEach(o => { %>
+      <a class="tuile-table est-occupee" href="/service/table/<%= o.table_id %>">
+        <span class="tuile-table__nom">Table</span>
+        <span class="tuile-table__client"><%= o.prenom %></span>
+        <span class="tuile-table__total"><%= euros(o.total) %></span>
+      </a>
+    <% }) %>
+  </div>
+<% } %>
+
+<%- servicePied %>
