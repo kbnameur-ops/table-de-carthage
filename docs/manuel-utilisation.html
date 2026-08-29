@@ -94,12 +94,13 @@ code{
 
 /* ── Marches numérotées : uniquement pour de vraies séquences ─────── */
 .marches{list-style:none;counter-reset:m;margin:0 0 1.4rem;padding:0;display:grid;gap:.85rem}
-.marches li{
-  counter-increment:m;display:grid;grid-template-columns:1.9rem 1fr;gap:.75rem;
-  align-items:baseline;
-}
+.marches li{counter-increment:m;position:relative;padding-left:2.65rem}
+/* Le numéro est posé à côté, pas mis en colonne : une grille sur le <li>
+   ferait de chaque mot en gras une cellule à part, et la phrase se
+   disloquerait dès qu'elle contient un <strong>. */
 .marches li::before{
-  content:counter(m);font-family:var(--ff-mono);font-size:.78rem;font-weight:500;
+  content:counter(m);position:absolute;left:0;top:.12em;width:1.9rem;
+  font-family:var(--ff-mono);font-size:.78rem;font-weight:500;
   color:var(--or);border-bottom:1px solid var(--or-doux);text-align:center;padding-bottom:.1rem;
 }
 
@@ -153,7 +154,10 @@ tbody tr:last-child td{border-bottom:0}
   .page{width:auto;padding:0}
   section{break-inside:auto}
   section > h2{break-after:avoid}
+  h3{break-after:avoid}
   .encart,.tableau,.etats{break-inside:avoid}
+  /* Une marche coupée en deux par un saut de page se lit deux fois. */
+  .marches li,.question,.etat{break-inside:avoid}
 }
 </style>
 

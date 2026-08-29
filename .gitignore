@@ -10,3 +10,6 @@ server/public/uploads/plats/*.jpeg
 server/public/uploads/plats/*.png
 server/public/uploads/plats/*.webp
 !server/public/uploads/plats/.gitkeep
+
+# Fontes et copie de travail du tirage PDF du manuel.
+.cache/
