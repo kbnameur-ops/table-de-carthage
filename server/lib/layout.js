@@ -34,10 +34,12 @@ const fnSalonPied = compiler('partials/salon-pied.ejs');
 const fnServiceEntete = compiler('partials/service-entete.ejs');
 const fnServicePied = compiler('partials/service-pied.ejs');
 const fnCuisineTableau = compiler('partials/cuisine-tableau.ejs');
+const fnTeteApp = compiler('partials/tete-app.ejs');
+const fnEpingler = compiler('partials/epingler.ejs');
 
 // `cssApp` est ajouté à chaque rendu d'en-tête : aucun appelant n'a à y penser.
 export const entete = donnees => fnEntete({ cssApp, ...donnees });
-export const pied = () => fnPied({});
+export const pied = donnees => fnPied(donnees ?? {});
 export const salonEntete = donnees => fnSalonEntete({ cssApp, ...donnees });
 export const salonPied = donnees => fnSalonPied(donnees);
 export const serviceEntete = donnees => fnServiceEntete({ cssApp, ...donnees });
@@ -47,3 +49,9 @@ export const servicePied = donnees => fnServicePied(donnees);
  *  premier affichage, et le rafraîchissement automatique va chercher ce
  *  même fragment seul. Une seule source pour les deux. */
 export const cuisineTableau = donnees => fnCuisineTableau(donnees);
+
+/** Les balises qui font d'une page une application épinglable, et l'appel
+ *  à l'épingler. Rendus à part pour que les quatre mises en page partagent
+ *  exactement le même code. */
+export const teteApp = donnees => fnTeteApp(donnees);
+export const epingler = donnees => fnEpingler(donnees);

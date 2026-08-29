@@ -13,6 +13,13 @@
   --ease:cubic-bezier(.22,1,.36,1);
 }
 *,*::before,*::after{box-sizing:border-box}
+/* La règle [hidden] du navigateur a la spécificité d'un attribut : la
+   moindre classe qui pose un display la bat. Les barres fixées en bas de
+   page (envoi, épinglage) portent toutes deux un display, et restaient donc
+   affichées malgré leur attribut hidden — la barre d'envoi s'est ainsi
+   montrée en permanence, panier vide, avec un bouton qui soumettait le
+   néant. Une seule règle remet l'attribut au-dessus de tout. */
+[hidden]{display:none !important}
 body{
   margin:0;background:var(--cream);color:var(--ink);font-family:var(--ff-body);
   font-weight:300;line-height:1.6;font-size:16px;
@@ -897,3 +904,52 @@ body:has(.barre-envoi:not([hidden])) main{padding-bottom:7rem}
 .etat-plat--vue{background:rgba(201,169,97,.2);color:#8A6A1E}
 .etat-plat--enpreparation{background:rgba(20,52,95,.12);color:var(--navy-700)}
 .etat-plat--prete{background:rgba(62,122,76,.16);color:var(--ok)}
+
+/* ═══════════════════════════════════════════════════════════
+   Appel à épingler l'application sur l'écran d'accueil
+   ═══════════════════════════════════════════════════════════ */
+.epingler{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  display:flex;align-items:center;gap:.9rem;
+  padding:.85rem clamp(.9rem,3vw,1.3rem);
+  padding-bottom:calc(.85rem + env(safe-area-inset-bottom));
+  background:var(--navy-900);color:var(--cream);
+  box-shadow:0 -12px 30px -22px rgba(0,0,0,.9);
+  animation:epinglerMonte .5s var(--ease) both;
+}
+@keyframes epinglerMonte{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@media (prefers-reduced-motion:reduce){.epingler{animation:none}}
+
+.epingler__icone{
+  flex:0 0 auto;width:44px;height:44px;border-radius:10px;object-fit:cover;
+  box-shadow:0 0 0 1px rgba(201,169,97,.45);
+}
+.epingler__mots{display:grid;gap:.1rem;min-width:0;line-height:1.35}
+.epingler__mots b{font-family:var(--ff-title);font-weight:400;font-size:1rem;letter-spacing:.02em}
+.epingler__mots span{font-size:.82rem;color:rgba(250,246,236,.66);text-wrap:pretty}
+.epingler__mots b:only-child{font-size:1.02rem}
+
+/* Le pictogramme « Partager » d'iOS, aligné sur la ligne de texte. */
+/* « Sur l'écran d'accueil » est le nom exact du bouton d'iOS : le couper en
+   deux lignes le rendrait moins reconnaissable. */
+.epingler__insecable{white-space:nowrap;font-weight:500;color:var(--cream)}
+.epingler__geste{
+  display:inline-flex;vertical-align:-.18em;margin:0 .1em;
+  color:var(--gold-300);
+}
+
+.epingler__actions{margin-left:auto;display:flex;align-items:center;gap:.5rem;flex:0 0 auto}
+.epingler__fermer{
+  background:none;border:0;cursor:pointer;color:rgba(250,246,236,.5);
+  font-size:1.5rem;line-height:1;padding:.2rem .45rem;border-radius:4px;
+}
+.epingler__fermer:hover{color:var(--cream)}
+
+/* La barre d'envoi occupe déjà le bas de l'écran sur les pages de commande.
+   Le décalage est posé par le script, qui seul sait quand elle est visible. */
+.epingler{bottom:var(--epingler-bas, 0px)}
+@media (max-width:520px){
+  .epingler{gap:.7rem;padding-left:.8rem;padding-right:.8rem}
+  .epingler__mots span{font-size:.78rem}
+  .epingler__icone{width:38px;height:38px}
+}

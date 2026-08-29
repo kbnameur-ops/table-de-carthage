@@ -1,5 +1,6 @@
 import { creerSessionInvite, obtenirSession } from './lib/auth.js';
-import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied } from './lib/layout.js';
+import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied, teteApp, epingler } from './lib/layout.js';
+import { ESPACES, espaceDe } from './lib/epinglage.js';
 import { nomTable } from './lib/jours.js';
 import { cssApp } from './lib/version-actifs.js';
 
@@ -140,6 +141,13 @@ export function injecterMiseEnPage(req, res, next) {
   res.render = (vue, donnees = {}, callback) => {
     donnees.nomTable ??= nomTable;
     donnees.cssApp ??= cssApp;
+
+    // L'espace se déduit de l'URL : aucune route n'a à le préciser, et une
+    // page nouvelle hérite du bon manifeste sans qu'on y pense.
+    const espace = donnees.espace ?? espaceDe(req.path);
+    const court = ESPACES[espace].court;
+    donnees.teteApp ??= teteApp({ espace, court });
+    donnees.epingler ??= epingler({ espace, court });
     const defauts = PAGES[vue];
     if (defauts) {
       donnees.titre ??= defauts.titre;
@@ -151,20 +159,29 @@ export function injecterMiseEnPage(req, res, next) {
           titre: donnees.titre, sousTitre: donnees.sousTitre ?? '',
           actif: donnees.actif ?? '', qui: donnees.qui ?? '',
           droits: donnees.droits ?? res.locals.droits ?? { service: true, cuisine: true },
+          teteApp: donnees.teteApp,
         });
-        donnees.servicePied = servicePied({ csrfToken: donnees.csrfToken ?? res.locals.csrfToken });
+        donnees.servicePied = servicePied({
+          csrfToken: donnees.csrfToken ?? res.locals.csrfToken, epingler: donnees.epingler,
+        });
       } else if (vue.startsWith('salon/')) {
         donnees.salonEntete = salonEntete({
           titre: donnees.titre, actif: donnees.actif,
           notifs: donnees.notifs ?? res.locals.notifs ?? 0,
+          teteApp: donnees.teteApp,
         });
-        donnees.salonPied = salonPied({ csrfToken: donnees.csrfToken ?? res.locals.csrfToken });
+        donnees.salonPied = salonPied({
+          csrfToken: donnees.csrfToken ?? res.locals.csrfToken, epingler: donnees.epingler,
+        });
       } else {
         // req.session peut être absent si sessionMiddleware a échoué avant
         // de l'attacher (ex. base injoignable) : on retombe sur un visiteur
         // anonyme plutôt que de planter le rendu de la page d'erreur elle-même.
-        donnees.entete = entete({ titre: donnees.titre, session: donnees.session ?? req.session ?? { role: 'invite' }, actif: donnees.actif });
-        donnees.pied = pied();
+        donnees.entete = entete({
+          titre: donnees.titre, session: donnees.session ?? req.session ?? { role: 'invite' },
+          actif: donnees.actif, teteApp: donnees.teteApp,
+        });
+        donnees.pied = pied({ epingler: donnees.epingler });
       }
     }
     rendreOriginal(vue, donnees, callback);
