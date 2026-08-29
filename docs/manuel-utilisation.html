@@ -1,0 +1,596 @@
+<title>Manuel de la Table de Carthage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Jost:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --fond:#FAF6EC; --fond-2:#F2EADA; --carte:#FFFFFF;
+  --encre:#12212F; --marine:#0E2A4E; --sourdine:#6C7A88;
+  --or:#C9A961; --or-doux:rgba(201,169,97,.34);
+  --trait:rgba(14,42,78,.14);
+  --ok:#3E7A4C; --alerte:#B4402A; --code-fond:#F0EADC;
+  --puce-fond:rgba(201,169,97,.18); --puce-encre:#7A5C18;
+  --ff-titre:'Marcellus', Georgia, 'Times New Roman', serif;
+  --ff-texte:'Jost', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --ff-mono:'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --fond:#0B1420; --fond-2:#101C2B; --carte:#101C2B;
+    --encre:#E9E3D5; --marine:#C6D5E6; --sourdine:#93A3B3;
+    --or:#D9BE7E; --or-doux:rgba(217,190,126,.28);
+    --trait:rgba(198,213,230,.16);
+    --ok:#77B98C; --alerte:#E08268; --code-fond:#16263A;
+    --puce-fond:rgba(217,190,126,.16); --puce-encre:#E4C98F;
+  }
+}
+:root[data-theme="dark"]{
+  --fond:#0B1420; --fond-2:#101C2B; --carte:#101C2B;
+  --encre:#E9E3D5; --marine:#C6D5E6; --sourdine:#93A3B3;
+  --or:#D9BE7E; --or-doux:rgba(217,190,126,.28);
+  --trait:rgba(198,213,230,.16);
+  --ok:#77B98C; --alerte:#E08268; --code-fond:#16263A;
+  --puce-fond:rgba(217,190,126,.16); --puce-encre:#E4C98F;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--fond);color:var(--encre);
+  font-family:var(--ff-texte);font-weight:300;font-size:17px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2px solid var(--or);outline-offset:3px;border-radius:2px}
+.page{width:min(100% - 2.4rem, 720px);margin-inline:auto;padding:clamp(2.4rem,6vw,4.5rem) 0 6rem}
+
+/* ── Ouverture ────────────────────────────────────────────────────── */
+.chapeau{border-bottom:1px solid var(--trait);padding-bottom:2.2rem;margin-bottom:2.6rem}
+.chapeau__oeil{
+  font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;color:var(--or);
+  margin:0 0 .9rem;font-weight:500;
+}
+.chapeau h1{
+  font-family:var(--ff-titre);font-weight:400;margin:0 0 .6rem;
+  font-size:clamp(2.1rem,5.5vw,3.1rem);line-height:1.06;color:var(--marine);text-wrap:balance;
+}
+.chapeau p{margin:0;color:var(--sourdine);font-size:1.05rem;max-width:56ch}
+
+/* ── Sommaire d'ouverture ─────────────────────────────────────────── */
+.depart{background:var(--fond-2);padding:1.4rem 1.5rem;margin-bottom:3rem}
+.depart h2{
+  font-family:var(--ff-texte);font-weight:500;font-size:.72rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--sourdine);margin:0 0 .9rem;
+}
+.depart ul{list-style:none;margin:0;padding:0;display:grid;gap:.42rem}
+.depart a{
+  color:var(--encre);text-decoration:none;display:flex;gap:.7rem;align-items:baseline;
+  border-bottom:1px solid transparent;
+}
+.depart a:hover{border-bottom-color:var(--or-doux)}
+.depart a b{font-weight:400}
+.depart a i{font-style:normal;color:var(--sourdine);font-size:.88rem}
+
+/* ── Sections ─────────────────────────────────────────────────────── */
+section{margin-bottom:3.6rem;scroll-margin-top:1.5rem}
+section > h2{
+  font-family:var(--ff-titre);font-weight:400;color:var(--marine);
+  font-size:clamp(1.5rem,3.4vw,2rem);line-height:1.16;margin:0 0 .35rem;text-wrap:balance;
+}
+.pour-qui{
+  display:inline-block;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  background:var(--puce-fond);color:var(--puce-encre);padding:.22rem .6rem;
+  margin:0 0 1.2rem;font-weight:500;
+}
+h3{
+  font-family:var(--ff-texte);font-weight:500;font-size:1.06rem;color:var(--encre);
+  margin:2.2rem 0 .55rem;
+}
+p{margin:0 0 1.05rem}
+strong{font-weight:500}
+a{color:var(--encre);text-decoration-color:var(--or-doux);text-underline-offset:3px}
+code{
+  font-family:var(--ff-mono);font-size:.85em;background:var(--code-fond);
+  padding:.1em .38em;border-radius:2px;
+}
+
+/* ── Marches numérotées : uniquement pour de vraies séquences ─────── */
+.marches{list-style:none;counter-reset:m;margin:0 0 1.4rem;padding:0;display:grid;gap:.85rem}
+.marches li{
+  counter-increment:m;display:grid;grid-template-columns:1.9rem 1fr;gap:.75rem;
+  align-items:baseline;
+}
+.marches li::before{
+  content:counter(m);font-family:var(--ff-mono);font-size:.78rem;font-weight:500;
+  color:var(--or);border-bottom:1px solid var(--or-doux);text-align:center;padding-bottom:.1rem;
+}
+
+ul.simple{margin:0 0 1.2rem;padding-left:1.25rem}
+ul.simple li{margin-bottom:.4rem}
+ul.simple li::marker{color:var(--or)}
+
+/* ── Encarts ──────────────────────────────────────────────────────── */
+.encart{border-left:2px solid var(--or);background:var(--fond-2);padding:.95rem 1.15rem;margin:0 0 1.4rem;font-size:.97rem}
+.encart p:last-child{margin-bottom:0}
+.encart__quoi{
+  display:block;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--or);margin-bottom:.35rem;font-weight:500;
+}
+.encart--attention{border-left-color:var(--alerte)}
+.encart--attention .encart__quoi{color:var(--alerte)}
+
+/* ── Tableaux ─────────────────────────────────────────────────────── */
+.tableau{overflow-x:auto;margin:0 0 1.5rem;border:1px solid var(--trait);background:var(--carte)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{text-align:left;padding:.6rem .85rem;border-bottom:1px solid var(--trait);vertical-align:top}
+th{
+  font-weight:500;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--sourdine);background:var(--fond-2);
+}
+tbody tr:last-child td{border-bottom:0}
+
+/* ── États de cuisine : la couleur porte l'information ────────────── */
+.etats{display:grid;gap:.55rem;margin:0 0 1.4rem}
+.etat{display:grid;grid-template-columns:.55rem 1fr;gap:.85rem;align-items:stretch}
+.etat i{display:block;background:var(--sourdine)}
+.etat--nouvelle i{background:var(--alerte)}
+.etat--lue i{background:var(--or)}
+.etat--prep i{background:var(--marine)}
+.etat--prete i{background:var(--ok)}
+.etat div{padding:.35rem 0}
+.etat b{display:block;font-weight:500}
+.etat span{color:var(--sourdine);font-size:.93rem}
+
+/* ── Questions ────────────────────────────────────────────────────── */
+.question{border-top:1px solid var(--trait);padding:1rem 0}
+.question:last-of-type{border-bottom:1px solid var(--trait)}
+.question b{display:block;font-weight:500;margin-bottom:.25rem}
+.question p{margin:0;color:var(--sourdine)}
+
+.pied{border-top:1px solid var(--trait);margin-top:1rem;padding-top:1.6rem;color:var(--sourdine);font-size:.86rem}
+
+@media print{
+  body{background:#fff;color:#000;font-size:10.5pt}
+  .depart{display:none}
+  .page{width:auto;padding:0}
+  section{break-inside:auto}
+  section > h2{break-after:avoid}
+  .encart,.tableau,.etats{break-inside:avoid}
+}
+</style>
+
+<div class="page">
+
+  <header class="chapeau">
+    <p class="chapeau__oeil">Manuel d'utilisation</p>
+    <h1>La Table de Carthage</h1>
+    <p>Comment tenir la salle, la caisse et la cuisine depuis l'application.
+       Un chapitre par poste&nbsp;: chacun n'a besoin de lire que le sien.</p>
+  </header>
+
+  <nav class="depart">
+    <h2>Trouver son chapitre</h2>
+    <ul>
+      <li><a href="#adresses"><b>Les trois adresses</b> <i>tout le monde</i></a></li>
+      <li><a href="#salon"><b>Le salon</b> <i>direction</i></a></li>
+      <li><a href="#carte"><b>Tenir la carte</b> <i>direction</i></a></li>
+      <li><a href="#salle-config"><b>Services, tables et QR</b> <i>direction</i></a></li>
+      <li><a href="#equipe"><b>L'équipe et ses accès</b> <i>direction</i></a></li>
+      <li><a href="#service"><b>Prendre une commande</b> <i>salle</i></a></li>
+      <li><a href="#caisse"><b>Encaisser</b> <i>salle, caisse</i></a></li>
+      <li><a href="#cuisine"><b>L'écran de cuisine</b> <i>cuisine</i></a></li>
+      <li><a href="#fidelite"><b>La cagnotte</b> <i>tout le monde</i></a></li>
+      <li><a href="#client"><b>Ce que voit le client</b> <i>pour information</i></a></li>
+      <li><a href="#questions"><b>Que faire si…</b></a></li>
+    </ul>
+  </nav>
+
+  <main>
+
+    <section id="adresses">
+      <h2>Les trois adresses</h2>
+      <span class="pour-qui">Tout le monde</span>
+      <p>L'application se présente sous trois adresses différentes selon le poste. Toutes
+         s'ouvrent dans un navigateur, sur un téléphone comme sur un ordinateur.</p>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Adresse</th><th>Pour</th><th>Qui s'y connecte</th></tr></thead>
+          <tbody>
+            <tr><td><code>/salon</code></td><td>Le back-office complet</td><td>La direction, avec son e-mail</td></tr>
+            <tr><td><code>/service</code></td><td>Prise de commande et caisse</td><td>La salle, avec un identifiant court</td></tr>
+            <tr><td><code>/cuisine</code></td><td>Le passe</td><td>La cuisine, même identifiant</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="encart">
+        <span class="encart__quoi">À faire une fois</span>
+        <p>Sur la tablette de la salle et sur l'écran de la cuisine, ouvrez l'adresse puis
+           «&nbsp;Ajouter à l'écran d'accueil&nbsp;». L'application s'ouvre alors comme
+           une application, sans barre de navigateur. La connexion tient
+           <strong>trente jours</strong>&nbsp;: il n'y a pas à se reconnecter chaque
+           matin.</p>
+      </div>
+    </section>
+
+    <section id="salon">
+      <h2>Le salon</h2>
+      <span class="pour-qui">Direction</span>
+      <p>Le tableau de bord ouvre sur les chiffres du jour&nbsp;: couverts réservés,
+         réservations en attente, commandes à préparer, recette. <strong>Chaque chiffre est
+         cliquable</strong> et mène à l'écran correspondant, déjà filtré.</p>
+
+      <h3>La cloche</h3>
+      <p>En haut à droite, elle compte les événements non lus&nbsp;: nouvelle réservation,
+         nouvelle commande, annulation par un client, transfert de cagnotte. Elle se met à
+         jour toute seule pendant le service, sans recharger la page.</p>
+
+      <h3>Les écrans du salon</h3>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Écran</th><th>À quoi il sert</th></tr></thead>
+          <tbody>
+            <tr><td>Salle</td><td>Le plan sur un créneau. Cocher une table occupée, la libérer.</td></tr>
+            <tr><td>Tables clients</td><td>Qui est attablé, l'addition en cours, l'encaissement.</td></tr>
+            <tr><td>Réservations</td><td>Le carnet jour par jour, avec les statuts.</td></tr>
+            <tr><td>Commandes</td><td>Les commandes à emporter, leur détail et leur heure de retrait.</td></tr>
+            <tr><td>La carte</td><td>Catégories, plats, photos, prix.</td></tr>
+            <tr><td>Services</td><td>Horaires, tables, jours de fermeture.</td></tr>
+            <tr><td>QR des tables</td><td>La planche à imprimer.</td></tr>
+            <tr><td>Clients</td><td>Le fichier client, son historique, sa cagnotte, vos notes.</td></tr>
+            <tr><td>Équipe</td><td>Effectif, planning de la semaine, présences, accès du personnel.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="encart encart--attention">
+        <span class="encart__quoi">Sécurité</span>
+        <p>Le compte du salon donne accès à tout, y compris au fichier client. Il ne se
+           partage pas avec le personnel&nbsp;: la salle et la cuisine ont leurs propres
+           identifiants, décrits plus bas.</p>
+      </div>
+    </section>
+
+    <section id="carte">
+      <h2>Tenir la carte</h2>
+      <span class="pour-qui">Direction</span>
+      <p>Ce que vous mettez dans <strong>La carte</strong> alimente d'un coup le site
+         public, le tunnel de commande à emporter, la page du QR de table, la prise de
+         commande en salle et l'écran de cuisine. Une seule saisie.</p>
+
+      <h3>Ajouter un plat</h3>
+      <ol class="marches">
+        <li>Ouvrez <strong>La carte</strong>, puis «&nbsp;Nouveau plat&nbsp;».</li>
+        <li>Choisissez sa catégorie, son nom, sa description et son prix.</li>
+        <li>Ajoutez une photo si vous en avez une&nbsp;: elle est redimensionnée
+            automatiquement, inutile de la préparer.</li>
+        <li>Cochez <strong>Végétarien</strong> et <strong>Proposé à emporter</strong> selon
+            le cas. Un plat non coché «&nbsp;à emporter&nbsp;» reste servi en salle.</li>
+        <li>Enregistrez. Il apparaît immédiatement partout.</li>
+      </ol>
+
+      <h3>Retirer un plat du jour</h3>
+      <p>Décochez <strong>Visible</strong> plutôt que de le supprimer. Il disparaît de la
+         carte sans effacer l'historique des commandes qui le contiennent. Remettre la case
+         le fait réapparaître.</p>
+
+      <div class="encart">
+        <span class="encart__quoi">Bon à savoir</span>
+        <p>Les commandes déjà passées gardent le nom et le prix qu'avait le plat au moment
+           de la commande. Changer un prix ne réécrit jamais une addition ancienne.</p>
+      </div>
+    </section>
+
+    <section id="salle-config">
+      <h2>Services, tables et QR</h2>
+      <span class="pour-qui">Direction</span>
+
+      <h3>Un service</h3>
+      <p>Un service, c'est des jours de la semaine et une plage horaire. Le restaurant en a
+         un aujourd'hui&nbsp;; vous pouvez en créer un second si la salle se découpe
+         autrement le soir ou le week-end.</p>
+
+      <h3>Les tables font la capacité</h3>
+      <p>La capacité ne se règle pas par un nombre de couverts&nbsp;: elle découle des
+         tables que vous déclarez. Une réservation n'est acceptée que s'il reste une table
+         libre <strong>assez grande</strong>, et le système attribue la plus petite qui
+         convient — placer deux personnes sur une table de huit gâcherait la salle.</p>
+      <ol class="marches">
+        <li>Ouvrez <strong>Services</strong>, puis <strong>Tables</strong> sur le service
+            concerné.</li>
+        <li>Ajoutez vos tables par lots&nbsp;: un nom, un nombre de couverts, une quantité.</li>
+        <li>Une table hors service se décoche plutôt qu'elle ne se supprime&nbsp;: son
+            historique reste.</li>
+      </ol>
+
+      <h3>Imprimer les QR</h3>
+      <p>Chaque table porte un code unique. Le client le scanne, s'identifie, et commande
+         depuis son téléphone&nbsp;— sa commande arrive sur l'addition de cette table.</p>
+      <ol class="marches">
+        <li>Ouvrez <strong>QR des tables</strong> dans la barre du salon.</li>
+        <li>Cliquez <strong>Imprimer</strong>. La planche sort sans navigation ni adresse,
+            deux fiches par ligne.</li>
+        <li>Découpez et collez chaque fiche sur sa table. Vérifiez que le nom imprimé
+            correspond bien à la table.</li>
+      </ol>
+      <div class="encart encart--attention">
+        <span class="encart__quoi">Attention</span>
+        <p>Un QR collé sur la mauvaise table enverra les commandes sur la mauvaise
+           addition. Contrôlez la correspondance au moment de coller, pas après.</p>
+      </div>
+    </section>
+
+    <section id="equipe">
+      <h2>L'équipe et ses accès</h2>
+      <span class="pour-qui">Direction</span>
+      <p>Une fiche par personne. Une fois créée, elle apparaît dans le planning et la
+         feuille de présence.</p>
+
+      <h3>Donner un accès</h3>
+      <ol class="marches">
+        <li>Ouvrez <strong>Équipe</strong> et repérez le bloc
+            <strong>Accès du personnel</strong> à côté de la fiche.</li>
+        <li>Choisissez un <strong>identifiant</strong> court, en minuscules, sans espace ni
+            accent — il se tape sur un clavier tactile, debout&nbsp;: <code>sami</code>,
+            <code>karim</code>, <code>cuisine1</code>.</li>
+        <li>Choisissez un <strong>mot de passe</strong> d'au moins huit caractères. Il
+            s'affiche pendant que vous le tapez, pour pouvoir le transmettre.</li>
+        <li>Cochez ce à quoi la personne a droit&nbsp;: <strong>Prise de commande</strong>,
+            <strong>Écran de cuisine</strong>, ou les deux.</li>
+        <li>Enregistrez, et communiquez l'identifiant et le mot de passe à l'intéressé.</li>
+      </ol>
+      <p>Une personne qui n'a que la cuisine arrive directement sur le passe en se
+         connectant, et ne voit pas les écrans de salle.</p>
+
+      <h3>Retirer un accès</h3>
+      <p>Décochez la case, ou utilisez <strong>Retirer l'accès</strong> pour supprimer
+         l'identifiant. L'effet est <strong>immédiat</strong>&nbsp;: une tablette déjà
+         connectée se retrouve déconnectée à sa requête suivante. À faire le jour du départ
+         d'un salarié.</p>
+
+      <h3>Planning et présences</h3>
+      <p>Le planning se remplit par semaine, une ligne par service. La feuille de présence
+         se coche en un clic depuis le jour en cours. Les deux sont séparés
+         volontairement&nbsp;: on compare le prévu et le réalisé, et on peut pointer
+         quelqu'un qui n'était pas prévu.</p>
+    </section>
+
+    <section id="service">
+      <h2>Prendre une commande</h2>
+      <span class="pour-qui">Salle</span>
+      <p>Trois onglets, tenus d'une main&nbsp;: <strong>Salle</strong>,
+         <strong>À emporter</strong>, <strong>Caisse</strong>.</p>
+
+      <h3>Lire le plan</h3>
+      <p>Chaque table est une tuile. Un liseré <span style="color:var(--ok)">vert</span> et
+         la mention «&nbsp;Libre&nbsp;»&nbsp;: personne. Un liseré
+         <span style="color:var(--or)">doré</span> avec un prénom et un montant&nbsp;: la
+         table est ouverte, et voilà son addition en cours.</p>
+
+      <h3>Installer un client</h3>
+      <ol class="marches">
+        <li>Touchez la table libre.</li>
+        <li>Tapez le <strong>numéro de téléphone</strong> du client. C'est la seule chose à
+            demander.</li>
+        <li>Si le numéro est connu, la fiche s'ouvre. S'il est inconnu, dépliez
+            <strong>Nouveau client</strong> et ajoutez un prénom&nbsp;: cela suffit.</li>
+        <li>Validez avec <strong>Installer</strong>.</li>
+      </ol>
+      <div class="encart">
+        <span class="encart__quoi">Ne demandez jamais de date de naissance</span>
+        <p>Elle n'est utile qu'au client pour ouvrir son espace en ligne. Au comptoir ou à
+           table, le numéro suffit. Le client complétera son compte lui-même plus tard, sur
+           ce même numéro, et retrouvera tout son historique.</p>
+      </div>
+
+      <h3>Composer la commande</h3>
+      <ol class="marches">
+        <li>Faites défiler la carte et touchez <strong>+</strong> sur chaque plat.
+            <strong>−</strong> corrige.</li>
+        <li>Ajoutez un mot pour la cuisine si besoin&nbsp;: «&nbsp;sans piment&nbsp;»,
+            «&nbsp;cuisson à point&nbsp;». Il s'affichera sur le ticket du passe.</li>
+        <li>Une barre apparaît en bas avec le nombre d'articles et le total.
+            <strong>Envoyer en cuisine</strong> valide.</li>
+      </ol>
+      <p>Pour ajouter en cours de repas, revenez sur la table et recommencez&nbsp;: tout
+         rejoint la même addition. L'addition affiche l'état de chaque commande
+         (<em>Nouvelle</em>, <em>Lue</em>, <em>En préparation</em>, <em>Prête</em>), ce qui
+         évite d'aller demander en cuisine.</p>
+
+      <h3>Une commande à emporter</h3>
+      <p>Onglet <strong>À emporter</strong>. Une commande à emporter n'est
+         <strong>jamais</strong> rattachée à une table, même prise en salle.</p>
+      <ol class="marches">
+        <li>Tapez le numéro et touchez <strong>Retrouver ce client</strong>. Cette
+            recherche n'envoie rien en cuisine.</li>
+        <li>Composez la commande et indiquez une heure de retrait.</li>
+        <li><strong>Enregistrer</strong> vous amène directement à la caisse pour ce client.</li>
+      </ol>
+    </section>
+
+    <section id="caisse">
+      <h2>Encaisser</h2>
+      <span class="pour-qui">Salle, caisse</span>
+      <p>L'encaissement est le seul geste qui clôt une addition. Il déduit la cagnotte si le
+         client s'en sert, marque les commandes payées, crédite les points, et libère la
+         table.</p>
+
+      <h3>Une table</h3>
+      <ol class="marches">
+        <li>Ouvrez la table depuis le plan.</li>
+        <li>Vérifiez le total de l'addition.</li>
+        <li>Si le client veut utiliser sa cagnotte, saisissez le montant à déduire. Le
+            maximum utilisable est indiqué.</li>
+        <li><strong>Encaisser et libérer la table</strong>. Un message confirme le montant
+            encaissé, la part réglée en cagnotte et les points gagnés.</li>
+      </ol>
+
+      <h3>Une commande à emporter</h3>
+      <p>Onglet <strong>Caisse</strong>, tapez le numéro du client&nbsp;: tout ce qui reste
+         à encaisser pour lui s'affiche, avec sa cagnotte. Même geste.</p>
+
+      <div class="encart encart--attention">
+        <span class="encart__quoi">Irréversible</span>
+        <p>Une commande encaissée ne peut plus être annulée, ni par vous ni par le client&nbsp;:
+           elle a crédité une cagnotte. En cas d'erreur, corrigez le solde du client depuis
+           sa fiche dans le salon (§&nbsp;la cagnotte).</p>
+      </div>
+
+      <h3>Fermer sans encaisser</h3>
+      <p>Depuis le salon, écran <strong>Tables clients</strong>, une tablée ouverte par
+         erreur ou un client parti sans consommer se ferme sans rien créditer.</p>
+    </section>
+
+    <section id="cuisine">
+      <h2>L'écran de cuisine</h2>
+      <span class="pour-qui">Cuisine</span>
+      <p>Quatre colonnes, dans l'ordre du service. Une commande avance de gauche à droite,
+         un bouton à la fois.</p>
+
+      <div class="etats">
+        <div class="etat etat--nouvelle"><i></i><div><b>Nouvelle</b><span>Elle vient de tomber. Personne ne l'a encore vue.</span></div></div>
+        <div class="etat etat--lue"><i></i><div><b>Lue</b><span>Prise en compte. La salle sait qu'elle est arrivée.</span></div></div>
+        <div class="etat etat--prep"><i></i><div><b>En préparation</b><span>Au feu.</span></div></div>
+        <div class="etat etat--prete"><i></i><div><b>Prête</b><span>À sortir. C'est le seul état qui appelle quelqu'un de la salle.</span></div></div>
+      </div>
+
+      <h3>Le ticket</h3>
+      <p>Il porte la table (ou «&nbsp;À emporter&nbsp;»), le prénom du client, les
+         quantités en gras, et le mot pour la cuisine s'il y en a un. En haut à droite, le
+         <strong>temps d'attente</strong>.</p>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Couleur du compteur</th><th>Signification</th></tr></thead>
+          <tbody>
+            <tr><td>Gris</td><td>Moins de dix minutes.</td></tr>
+            <tr><td style="color:var(--or)">Orange</td><td>Dix minutes ou plus.</td></tr>
+            <tr><td style="color:var(--alerte)">Rouge</td><td>Vingt minutes ou plus. À traiter.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Le compteur ne mesure pas l'âge de la commande mais le temps passé dans l'état
+         en cours. Un plat <em>prêt depuis vingt minutes</em> et non servi se signale donc
+         tout seul.</p>
+
+      <h3>Un plat retombé</h3>
+      <p>Sur une commande prête, <strong>Remettre au feu</strong> la renvoie en préparation
+         et remet son compteur à zéro.</p>
+
+      <div class="encart">
+        <span class="encart__quoi">L'écran se tient à jour seul</span>
+        <p>Il se rafraîchit toutes les quinze secondes sans qu'on y touche. Inutile de
+           recharger la page&nbsp;— et inutile de toucher l'écran avec les mains sales pour
+           savoir si une commande est tombée.</p>
+        <p>Une commande ne recule jamais toute seule&nbsp;: si deux personnes touchent le
+           même ticket en même temps, seule la première action compte.</p>
+      </div>
+    </section>
+
+    <section id="fidelite">
+      <h2>La cagnotte</h2>
+      <span class="pour-qui">Tout le monde</span>
+      <p><strong>10&nbsp;% de chaque addition réglée</strong> revient au client, utilisable
+         au restaurant sur une commande suivante.</p>
+
+      <h3>Les deux règles à connaître</h3>
+      <ul class="simple">
+        <li>Les points portent sur ce qui a été <strong>réellement payé</strong>. Si le
+            client règle 5&nbsp;€ avec sa cagnotte sur une addition de 20&nbsp;€, il gagne
+            10&nbsp;% de 15&nbsp;€, soit 1,50&nbsp;€. La cagnotte ne se régénère pas
+            elle-même.</li>
+        <li>Une commande ne crédite qu'une fois. Un double clic sur
+            «&nbsp;Encaisser&nbsp;» ne double pas les points.</li>
+      </ul>
+
+      <h3>Les clients peuvent s'envoyer des points</h3>
+      <p>Depuis leur espace, un client envoie une partie de sa cagnotte à un autre, désigné
+         par son numéro. C'est ce qui évite que chacun demande à payer sa part juste pour
+         toucher ses propres points&nbsp;: une personne règle l'addition, gagne pour toute
+         la table, puis rend à chacun la sienne.</p>
+      <p>Le destinataire doit avoir un espace client sur le numéro indiqué. Vous voyez
+         passer ces transferts dans les notifications du salon.</p>
+
+      <h3>Corriger un solde</h3>
+      <p>Fiche du client dans le salon&nbsp;: choisissez <strong>Ajouter</strong> ou
+         <strong>Retirer</strong>, un montant, un motif. Le mouvement apparaît dans
+         l'historique comme les autres — un solde dont on ne saurait pas expliquer
+         l'origine ne vaudrait rien.</p>
+
+      <h3>Changer le taux</h3>
+      <p>Les 10&nbsp;% sont un réglage, pas une valeur figée dans le programme. Demandez la
+         modification&nbsp;: elle se fait en base, sans nouvelle mise en ligne.</p>
+    </section>
+
+    <section id="client">
+      <h2>Ce que voit le client</h2>
+      <span class="pour-qui">Pour information</span>
+      <p>Utile pour répondre au téléphone.</p>
+
+      <h3>Réserver ou commander</h3>
+      <p>Depuis le site, le client choisit une date, une heure et un nombre de couverts
+         parmi les créneaux <strong>réellement disponibles</strong>. On lui propose d'abord
+         de se reconnaître avec son téléphone et sa date de naissance&nbsp;; à défaut, il
+         saisit ses coordonnées complètes.</p>
+
+      <h3>Scanner le QR de sa table</h3>
+      <p>Il s'identifie, commande depuis son téléphone, et voit l'addition de la table
+         monter. Il peut recommander pendant tout le repas.</p>
+
+      <h3>Son espace</h3>
+      <p><code>/compte</code>, avec téléphone et date de naissance. Il y trouve ses
+         réservations, ses commandes, sa table en cours, sa cagnotte et son historique de
+         points, et le formulaire d'envoi.</p>
+      <p>Il peut annuler lui-même une réservation ou une commande <strong>tant qu'elle
+         n'est pas encaissée</strong>. Vous êtes prévenu par une notification.</p>
+    </section>
+
+    <section id="questions">
+      <h2>Que faire si…</h2>
+
+      <div class="question">
+        <b>Un client dit avoir un compte mais n'arrive pas à se connecter.</b>
+        <p>Son compte a probablement été ouvert au comptoir&nbsp;: il n'a pas de date de
+           naissance. Qu'il passe par une réservation ou une commande sur le site avec le
+           même numéro&nbsp;: il complétera son compte et retrouvera son historique.</p>
+      </div>
+
+      <div class="question">
+        <b>La table est déjà ouverte au nom de quelqu'un d'autre.</b>
+        <p>Elle n'a pas été encaissée au service précédent. Encaissez-la, ou fermez-la sans
+           encaisser depuis <strong>Tables clients</strong> dans le salon.</p>
+      </div>
+
+      <div class="question">
+        <b>Une commande n'apparaît pas en cuisine.</b>
+        <p>Vérifiez qu'elle a bien été envoyée&nbsp;: la barre du bas doit avoir été
+           validée. Une commande annulée ou déjà encaissée ne figure pas au passe.</p>
+      </div>
+
+      <div class="question">
+        <b>L'écran n'a plus la bonne mise en page.</b>
+        <p>Videz le cache du navigateur une fois. Les pages sont désormais versionnées&nbsp;:
+           cela ne devrait plus se reproduire.</p>
+      </div>
+
+      <div class="question">
+        <b>Un salarié part aujourd'hui.</b>
+        <p>Fiche <strong>Équipe</strong> → <strong>Retirer l'accès</strong>. Ses sessions
+           ouvertes sont coupées immédiatement.</p>
+      </div>
+
+      <div class="question">
+        <b>Une addition a été encaissée par erreur.</b>
+        <p>L'encaissement ne se défait pas. Corrigez la cagnotte du client depuis sa fiche,
+           avec un motif, et rouvrez une tablée si le repas continue.</p>
+      </div>
+
+      <div class="question">
+        <b>Le restaurant ferme un jour exceptionnel.</b>
+        <p><strong>Services</strong> → <strong>Fermetures</strong>. Aucun créneau ne sera
+           proposé ce jour-là.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="pied">
+    La Table de Carthage — 6 boulevard Richard Wallace, 92800 Puteaux · 07 61 97 67 11.
+    Manuel de la version 2.0 de l'application.
+  </footer>
+</div>

@@ -1,0 +1,655 @@
+<title>Dossier technique de la Table de Carthage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Jost:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* ── Jetons : repris de la feuille de style de l'application, pour que le
+      dossier appartienne visiblement au produit qu'il décrit. ───────── */
+:root{
+  --fond:#FAF6EC; --fond-2:#F2EADA; --carte:#FFFFFF;
+  --encre:#12212F; --marine:#0E2A4E; --sourdine:#6C7A88;
+  --or:#C9A961; --or-doux:rgba(201,169,97,.34);
+  --trait:rgba(14,42,78,.14); --trait-fort:rgba(14,42,78,.26);
+  --ok:#3E7A4C; --alerte:#B4402A; --code-fond:#F0EADC;
+  --ff-titre:'Marcellus', Georgia, 'Times New Roman', serif;
+  --ff-texte:'Jost', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  --ff-mono:'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --fond:#0B1420; --fond-2:#101C2B; --carte:#101C2B;
+    --encre:#E9E3D5; --marine:#C6D5E6; --sourdine:#93A3B3;
+    --or:#D9BE7E; --or-doux:rgba(217,190,126,.28);
+    --trait:rgba(198,213,230,.16); --trait-fort:rgba(198,213,230,.3);
+    --ok:#77B98C; --alerte:#E08268; --code-fond:#16263A;
+  }
+}
+:root[data-theme="dark"]{
+  --fond:#0B1420; --fond-2:#101C2B; --carte:#101C2B;
+  --encre:#E9E3D5; --marine:#C6D5E6; --sourdine:#93A3B3;
+  --or:#D9BE7E; --or-doux:rgba(217,190,126,.28);
+  --trait:rgba(198,213,230,.16); --trait-fort:rgba(198,213,230,.3);
+  --ok:#77B98C; --alerte:#E08268; --code-fond:#16263A;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+body{
+  margin:0;background:var(--fond);color:var(--encre);
+  font-family:var(--ff-texte);font-weight:300;font-size:16.5px;line-height:1.68;
+  -webkit-font-smoothing:antialiased;
+}
+:focus-visible{outline:2px solid var(--or);outline-offset:3px;border-radius:2px}
+
+/* ── Charpente : rail de sommaire à gauche dès qu'il y a la place ─── */
+.page{
+  display:grid;gap:clamp(2rem,5vw,4rem);
+  grid-template-columns:minmax(0,1fr);
+  width:min(100% - 2.4rem, 1160px);margin-inline:auto;
+  padding:clamp(2.4rem,6vw,4.5rem) 0 6rem;
+}
+@media (min-width:1000px){
+  .page{grid-template-columns:210px minmax(0,1fr);align-items:start}
+  .sommaire{position:sticky;top:2.5rem;max-height:calc(100vh - 5rem);overflow-y:auto}
+}
+
+/* ── En-tête ──────────────────────────────────────────────────────── */
+.chapeau{grid-column:1/-1;border-bottom:1px solid var(--trait);padding-bottom:2rem;margin-bottom:.5rem}
+.chapeau__oeil{
+  font-size:.7rem;letter-spacing:.28em;text-transform:uppercase;color:var(--or);
+  margin:0 0 .9rem;font-weight:500;
+}
+.chapeau h1{
+  font-family:var(--ff-titre);font-weight:400;margin:0 0 .5rem;
+  font-size:clamp(2rem,5vw,3rem);line-height:1.08;color:var(--marine);text-wrap:balance;
+}
+.chapeau p{margin:0;color:var(--sourdine);max-width:62ch;font-size:1.02rem}
+.chapeau__meta{
+  display:flex;flex-wrap:wrap;gap:.5rem 1.6rem;margin-top:1.4rem;
+  font-family:var(--ff-mono);font-size:.76rem;color:var(--sourdine);
+}
+.chapeau__meta b{color:var(--encre);font-weight:500}
+
+/* ── Sommaire ─────────────────────────────────────────────────────── */
+.sommaire ol{list-style:none;margin:0;padding:0;display:grid;gap:.1rem}
+.sommaire a{
+  display:grid;grid-template-columns:1.7rem 1fr;gap:.4rem;
+  padding:.32rem 0;color:var(--sourdine);text-decoration:none;
+  font-size:.83rem;line-height:1.35;border-bottom:1px solid transparent;
+}
+.sommaire a:hover{color:var(--encre)}
+.sommaire a span{font-family:var(--ff-mono);font-size:.72rem;color:var(--or);padding-top:.1em}
+.sommaire__titre{
+  font-size:.68rem;letter-spacing:.24em;text-transform:uppercase;
+  color:var(--sourdine);margin:0 0 .9rem;font-weight:500;
+}
+
+/* ── Corps ────────────────────────────────────────────────────────── */
+.corps{min-width:0;max-width:74ch}
+section{margin-bottom:3.4rem;scroll-margin-top:2rem}
+section > h2{
+  font-family:var(--ff-titre);font-weight:400;color:var(--marine);
+  font-size:clamp(1.35rem,2.6vw,1.72rem);line-height:1.2;
+  margin:0 0 1.1rem;display:grid;grid-template-columns:2.3rem 1fr;gap:.3rem;
+  text-wrap:balance;
+}
+section > h2 em{
+  font-style:normal;font-family:var(--ff-mono);font-size:.8rem;font-weight:500;
+  color:var(--or);padding-top:.55em;
+}
+h3{
+  font-family:var(--ff-texte);font-weight:500;font-size:1.02rem;
+  color:var(--encre);margin:2rem 0 .6rem;letter-spacing:.005em;
+}
+p{margin:0 0 1.05rem;max-width:70ch}
+ul,ol{margin:0 0 1.05rem;padding-left:1.3rem;max-width:70ch}
+li{margin-bottom:.45rem}
+li::marker{color:var(--or)}
+strong{font-weight:500;color:var(--encre)}
+a{color:var(--encre);text-decoration-color:var(--or-doux);text-underline-offset:3px}
+
+code{
+  font-family:var(--ff-mono);font-size:.845em;background:var(--code-fond);
+  padding:.1em .38em;border-radius:2px;color:var(--encre);
+}
+pre{
+  font-family:var(--ff-mono);font-size:.8rem;line-height:1.6;
+  background:var(--code-fond);border-left:2px solid var(--or);
+  padding:.95rem 1.1rem;overflow-x:auto;margin:0 0 1.2rem;
+}
+pre code{background:none;padding:0;font-size:1em}
+
+/* ── Tableaux ─────────────────────────────────────────────────────── */
+.tableau{overflow-x:auto;margin:0 0 1.4rem;border:1px solid var(--trait);background:var(--carte)}
+table{border-collapse:collapse;width:100%;font-size:.87rem}
+th,td{text-align:left;padding:.58rem .8rem;border-bottom:1px solid var(--trait);vertical-align:top}
+th{
+  font-weight:500;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--sourdine);background:var(--fond-2);white-space:nowrap;
+}
+tbody tr:last-child td{border-bottom:0}
+td code{font-size:.8rem;white-space:nowrap}
+.num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+
+/* ── Encarts ──────────────────────────────────────────────────────── */
+.note{
+  border-left:2px solid var(--or);background:var(--fond-2);
+  padding:.9rem 1.1rem;margin:0 0 1.3rem;font-size:.95rem;
+}
+.note p:last-child{margin-bottom:0}
+.note__quoi{
+  display:block;font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--or);margin-bottom:.35rem;font-weight:500;
+}
+.note--attention{border-left-color:var(--alerte)}
+.note--attention .note__quoi{color:var(--alerte)}
+
+/* ── Liste de définitions pour les fichiers ───────────────────────── */
+.fichiers{display:grid;gap:0;margin:0 0 1.4rem;border-top:1px solid var(--trait)}
+.fichier{
+  display:grid;gap:.15rem .9rem;padding:.62rem 0;border-bottom:1px solid var(--trait);
+  grid-template-columns:minmax(0,1fr);
+}
+@media (min-width:620px){.fichier{grid-template-columns:15.5rem minmax(0,1fr);align-items:baseline}}
+.fichier b{font-family:var(--ff-mono);font-size:.82rem;font-weight:500;color:var(--encre);word-break:break-word}
+.fichier span{color:var(--sourdine);font-size:.92rem}
+
+/* ── Pied ─────────────────────────────────────────────────────────── */
+.pied{
+  grid-column:1/-1;border-top:1px solid var(--trait);margin-top:1rem;padding-top:1.6rem;
+  color:var(--sourdine);font-size:.85rem;
+}
+
+@media print{
+  body{background:#fff;color:#000;font-size:10.5pt}
+  .sommaire{display:none}
+  .page{display:block;width:auto;padding:0}
+  section{break-inside:auto;page-break-inside:auto}
+  section > h2{break-after:avoid}
+  pre,.tableau,.note{break-inside:avoid}
+}
+</style>
+
+<div class="page">
+
+  <header class="chapeau">
+    <p class="chapeau__oeil">Dossier technique</p>
+    <h1>La Table de Carthage</h1>
+    <p>Site vitrine, tunnels de réservation et de commande, espace client, back-office,
+       prise de commande en salle et écran de cuisine — une seule application Node.</p>
+    <div class="chapeau__meta">
+      <span>Version <b>2.0</b></span>
+      <span>Node <b>≥ 20</b></span>
+      <span>Environ <b>4 500</b> lignes de JavaScript</span>
+      <span><b>20</b> tables Postgres</span>
+      <span><b>22</b> tests</span>
+    </div>
+  </header>
+
+  <nav class="sommaire" aria-label="Sommaire">
+    <p class="sommaire__titre">Sommaire</p>
+    <ol>
+      <li><a href="#perimetre"><span>01</span>Périmètre</a></li>
+      <li><a href="#architecture"><span>02</span>Architecture</a></li>
+      <li><a href="#pile"><span>03</span>Pile technique</a></li>
+      <li><a href="#donnees"><span>04</span>Modèle de données</a></li>
+      <li><a href="#invariants"><span>05</span>Invariants</a></li>
+      <li><a href="#securite"><span>06</span>Accès et sécurité</a></li>
+      <li><a href="#metier"><span>07</span>Règles métier</a></li>
+      <li><a href="#rendu"><span>08</span>Rendu des pages</a></li>
+      <li><a href="#deploiement"><span>09</span>Déploiement</a></li>
+      <li><a href="#exploitation"><span>10</span>Exploitation</a></li>
+      <li><a href="#attention"><span>11</span>Points d'attention</a></li>
+    </ol>
+  </nav>
+
+  <main class="corps">
+
+    <section id="perimetre">
+      <h2><em>01</em>Périmètre</h2>
+      <p>L'application couvre quatre publics distincts, servis par un même processus et
+         une même base :</p>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Espace</th><th>Adresse</th><th>Pour qui</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Vitrine</strong></td><td><code>/</code></td><td>Le public. Page statique, carte, accès aux tunnels.</td></tr>
+            <tr><td><strong>Tunnels</strong></td><td><code>/reserver</code>, <code>/commander</code>, <code>/table/:code</code></td><td>Le client, depuis son téléphone.</td></tr>
+            <tr><td><strong>Espace client</strong></td><td><code>/compte</code></td><td>Le client identifié : historique, table en cours, cagnotte.</td></tr>
+            <tr><td><strong>Salon</strong></td><td><code>/salon</code></td><td>La direction. Carte, salle, réservations, clients, équipe.</td></tr>
+            <tr><td><strong>Service</strong></td><td><code>/service</code></td><td>La salle. Plan, prise de commande, caisse.</td></tr>
+            <tr><td><strong>Cuisine</strong></td><td><code>/cuisine</code></td><td>Le passe. File des commandes par état.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>La vitrine reste un fichier HTML statique servi tel quel&nbsp;: elle ne dépend
+         ni de la base ni d'un rendu serveur, et continue donc de s'afficher même si la
+         base est injoignable.</p>
+    </section>
+
+    <section id="architecture">
+      <h2><em>02</em>Architecture</h2>
+      <p>Application Express monolithique, rendue côté serveur, sans étape de
+         construction pour le front. Aucun framework client&nbsp;: les rares
+         comportements dynamiques (compteurs de quantité, badge de notifications,
+         rafraîchissement du passe) tiennent dans des scripts inclus dans la page.</p>
+      <pre><code>index.html            vitrine statique
+api/index.js          point d'entrée Vercel → réexporte l'app Express
+server/index.js       montage des routeurs, statiques, 404, erreurs
+server/db.js          pool Postgres, helpers query/une/executer/transaction
+server/middleware.js  session, CSRF, rôles, injection de mise en page
+server/schema.sql     schéma complet, idempotent, versionné par blocs
+server/routes/*.js    un routeur par domaine fonctionnel
+server/lib/*.js       règles métier, sans dépendance à Express
+server/views/*.ejs    gabarits</code></pre>
+      <p>La séparation qui compte est celle entre <code>routes/</code> et
+         <code>lib/</code>&nbsp;: les modules de <code>lib/</code> ne connaissent ni
+         <code>req</code> ni <code>res</code>, ce qui les rend testables directement
+         contre une base, sans passer par HTTP.</p>
+
+      <h3>Les modules métier</h3>
+      <div class="fichiers">
+        <div class="fichier"><b>lib/fidelite.js</b><span>Cagnotte&nbsp;: gains, dépenses, transferts entre clients, ajustements.</span></div>
+        <div class="fichier"><b>lib/encaissement.js</b><span>Le seul endroit où de l'argent change de main.</span></div>
+        <div class="fichier"><b>lib/cuisine.js</b><span>File du passe et transitions d'état d'une commande.</span></div>
+        <div class="fichier"><b>lib/tablees.js</b><span>Ouverture, addition et fermeture d'une tablée.</span></div>
+        <div class="fichier"><b>lib/availability.js</b><span>Créneaux disponibles, attribution d'une table, état de la salle.</span></div>
+        <div class="fichier"><b>lib/clients.js</b><span>Identification, création au comptoir, reprise d'un compte.</span></div>
+        <div class="fichier"><b>lib/auth.js</b><span>Mots de passe, sessions, limitation des tentatives.</span></div>
+        <div class="fichier"><b>lib/money.js</b><span>Centimes entiers et formatage en euros.</span></div>
+        <div class="fichier"><b>lib/layout.js</b><span>En-têtes et pieds pré-compilés (voir §08).</span></div>
+        <div class="fichier"><b>lib/version-actifs.js</b><span>Empreinte de contenu de la feuille de style.</span></div>
+      </div>
+    </section>
+
+    <section id="pile">
+      <h2><em>03</em>Pile technique</h2>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Brique</th><th>Choix</th><th>Pourquoi</th></tr></thead>
+          <tbody>
+            <tr><td>Exécution</td><td>Node 20+, ESM</td><td>Une seule fonction serverless sur Vercel.</td></tr>
+            <tr><td>Serveur</td><td>Express 4</td><td>Rendu serveur, pas d'API à consommer.</td></tr>
+            <tr><td>Gabarits</td><td>EJS 3</td><td>Aucune étape de construction.</td></tr>
+            <tr><td>Base</td><td>Postgres via <code>pg</code></td><td>Neon en production, Postgres local en développement.</td></tr>
+            <tr><td>Fichiers</td><td>Vercel&nbsp;Blob</td><td>Le système de fichiers d'une fonction serverless ne persiste pas.</td></tr>
+            <tr><td>Images</td><td>sharp</td><td>Redimensionnement à 1000&nbsp;px, JPEG qualité 82.</td></tr>
+            <tr><td>QR</td><td>qrcode</td><td>Rendus en SVG&nbsp;: nets à toute taille d'impression.</td></tr>
+            <tr><td>Envois</td><td>multer</td><td>Photos de plats, en mémoire.</td></tr>
+            <tr><td>Tests</td><td><code>node --test</code></td><td>Pas de dépendance de test à maintenir.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Sept dépendances de production, aucune de développement. C'est un choix&nbsp;:
+         un restaurant n'a pas d'équipe technique, et chaque dépendance est une
+         mise à jour de sécurité à suivre.</p>
+    </section>
+
+    <section id="donnees">
+      <h2><em>04</em>Modèle de données</h2>
+      <p>Vingt tables. Le schéma vit dans un seul fichier, <code>server/schema.sql</code>,
+         organisé en blocs versionnés (v2 à v5) tous idempotents&nbsp;: le même fichier
+         s'applique à une base neuve comme à une base en service.</p>
+
+      <h3>Carte et salle</h3>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Table</th><th>Contenu</th></tr></thead>
+          <tbody>
+            <tr><td><code>categories</code></td><td>Sections de la carte, ordonnées.</td></tr>
+            <tr><td><code>plats</code></td><td>Nom, description, prix en centimes, photo, végétarien, à emporter.</td></tr>
+            <tr><td><code>services</code></td><td>Un service = des jours de la semaine + une plage horaire.</td></tr>
+            <tr><td><code>tables_resto</code></td><td>Les tables réelles d'un service, avec leur nombre de couverts et leur code QR.</td></tr>
+            <tr><td><code>fermetures</code></td><td>Jours de fermeture exceptionnelle.</td></tr>
+            <tr><td><code>occupations</code></td><td>Table cochée occupée à la main depuis le salon.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Clients et flux</h3>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Table</th><th>Contenu</th></tr></thead>
+          <tbody>
+            <tr><td><code>clients</code></td><td>Téléphone normalisé (clé d'identité), date de naissance, notes internes, <code>cagnotte_cents</code>.</td></tr>
+            <tr><td><code>reservations</code></td><td>Référence, créneau, couverts, table attribuée, statut.</td></tr>
+            <tr><td><code>tablees</code></td><td>Des clients installés à une table, de l'arrivée à l'encaissement.</td></tr>
+            <tr><td><code>commandes</code></td><td>À emporter ou sur place. Porte le statut de cuisine et les horodatages.</td></tr>
+            <tr><td><code>commande_lignes</code></td><td>Nom et prix <em>recopiés</em>&nbsp;: une commande passée reste lisible si le plat change.</td></tr>
+            <tr><td><code>fidelite_mouvements</code></td><td>Journal signé de la cagnotte.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Exploitation</h3>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Table</th><th>Contenu</th></tr></thead>
+          <tbody>
+            <tr><td><code>admins</code></td><td>Comptes du salon. Créés en ligne de commande uniquement.</td></tr>
+            <tr><td><code>employes</code></td><td>Effectif, et accès optionnels à la salle et à la cuisine.</td></tr>
+            <tr><td><code>plannings</code>, <code>pointages</code></td><td>Prévu et réalisé, volontairement séparés.</td></tr>
+            <tr><td><code>sessions</code></td><td>Une ligne par navigateur, dès la première visite.</td></tr>
+            <tr><td><code>tentatives</code></td><td>Journal des tentatives, pour la limitation de débit.</td></tr>
+            <tr><td><code>notifications</code></td><td>Événements à signaler à l'équipe.</td></tr>
+            <tr><td><code>reglages</code></td><td>Clé/valeur. Contient le taux de fidélité.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="note">
+        <span class="note__quoi">Convention</span>
+        <p>Tous les montants sont des <strong>entiers en centimes</strong>. Aucun flottant
+           ne transite&nbsp;: <code>0.1 + 0.2</code> ne fait pas <code>0.3</code>, et une
+           addition fausse d'un centime est une addition fausse. La conversion en euros
+           n'a lieu qu'à l'affichage, dans <code>lib/money.js</code>.</p>
+      </div>
+    </section>
+
+    <section id="invariants">
+      <h2><em>05</em>Invariants</h2>
+      <p>Quatre règles ne sont <em>pas</em> vérifiées en JavaScript. Elles sont tenues par
+         la base, parce qu'une vérification applicative se fait doubler dès que deux
+         requêtes arrivent en même temps&nbsp;— ce qui, dans un restaurant, arrive tous
+         les services.</p>
+
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Garantie</th><th>Mécanisme</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Une table ne porte qu'une tablée ouverte</td>
+              <td><code>UNIQUE (table_id) WHERE statut = 'ouverte'</code></td>
+            </tr>
+            <tr>
+              <td>Un gain de fidélité par commande</td>
+              <td><code>UNIQUE (commande_id) WHERE type = 'gain'</code></td>
+            </tr>
+            <tr>
+              <td>Cagnotte jamais négative</td>
+              <td><code>CHECK (cagnotte_cents &gt;= 0)</code></td>
+            </tr>
+            <tr>
+              <td>À emporter et sur place ne se mélangent pas</td>
+              <td><code>CHECK ((type='emporter' AND tablee_id IS NULL) OR (type='sur_place' AND tablee_id IS NOT NULL))</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>Le cas de la cagnotte est le plus parlant. Lire le solde puis décider en
+         JavaScript laisserait passer deux transferts simultanés, chacun ayant lu un
+         solde suffisant. Le <code>CHECK</code> refuse le second&nbsp;; le code attrape
+         l'erreur <code>23514</code> et la traduit en «&nbsp;votre cagnotte ne couvre pas
+         ce montant&nbsp;». Un verrou <code>SELECT … FOR UPDATE</code> sérialise le cas
+         courant, la contrainte rattrape le reste.</p>
+
+      <p>Même logique pour la file de cuisine&nbsp;: l'avancement d'une commande porte sur
+         <code>statut = ANY(états antérieurs)</code> plutôt que sur une égalité simple.
+         Deux écrans ouverts sur le même passe se doublent forcément&nbsp;; un
+         «&nbsp;lue&nbsp;» arrivé en retard ne doit pas faire reculer une commande déjà au
+         feu.</p>
+    </section>
+
+    <section id="securite">
+      <h2><em>06</em>Accès et sécurité</h2>
+
+      <h3>Sessions</h3>
+      <p>Sessions opaques en base, pas de <code>express-session</code>. Toute requête,
+         même anonyme, obtient une ligne&nbsp;: c'est ce qui permet à un visiteur non
+         identifié d'avoir un jeton CSRF sur les formulaires publics.</p>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Élément</th><th>Valeur</th></tr></thead>
+          <tbody>
+            <tr><td>Cookie</td><td><code>sid</code>, <code>HttpOnly</code>, <code>SameSite=Lax</code>, <code>Secure</code> en production</td></tr>
+            <tr><td>Identifiant</td><td>32 octets aléatoires, hexadécimal</td></tr>
+            <tr><td>Durée — visiteur</td><td class="num">1 jour</td></tr>
+            <tr><td>Durée — connecté</td><td class="num">30 jours</td></tr>
+            <tr><td>Rôles</td><td><code>invite</code>, <code>client</code>, <code>admin</code>, <code>serveur</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>La connexion ne crée pas de nouvelle session&nbsp;: <code>elargirSession()</code>
+         élève le rôle sur la ligne existante, en conservant l'identifiant et le jeton
+         CSRF. Un formulaire déjà rempli reste donc valide après une connexion en cours
+         de tunnel.</p>
+
+      <h3>CSRF</h3>
+      <p>Un jeton par session, injecté dans chaque formulaire et vérifié sur
+         <strong>toutes</strong> les requêtes <code>POST</code> par
+         <code>verifierCsrf</code>. Un jeton absent ou faux rend une page d'erreur 403
+         explicite plutôt qu'un échec silencieux.</p>
+
+      <h3>Mots de passe</h3>
+      <p><code>scrypt</code>, sel de 16 octets, empreinte de 64 octets, comparaison en
+         temps constant (<code>timingSafeEqual</code>). Stockés au format
+         <code>sel:empreinte</code> en hexadécimal.</p>
+
+      <h3>Limitation des tentatives</h3>
+      <p>Cinq tentatives par fenêtre de quinze minutes, sur une clé qui combine
+         l'identifiant visé et l'adresse IP. Le même mécanisme protège les tunnels
+         publics&nbsp;: sans lui, le message «&nbsp;ce numéro est déjà associé à un
+         compte&nbsp;» deviendrait un oracle à volume illimité pour savoir qui est
+         client.</p>
+
+      <h3>Droits du personnel</h3>
+      <p>Salle et cuisine sont deux droits distincts portés par la fiche employé
+         (<code>acces_service</code>, <code>acces_cuisine</code>). Ils sont <strong>relus à
+         chaque requête</strong>&nbsp;: retirer un accès depuis le salon ferme la porte
+         immédiatement, pas à la prochaine connexion. Couper les deux détruit les
+         sessions ouvertes.</p>
+
+      <div class="note">
+        <span class="note__quoi">Création du premier compte</span>
+        <p>Aucune inscription administrateur par le site. Le premier compte s'obtient en
+           ligne de commande, sur la machine qui héberge le service&nbsp;:
+           <code>npm run admin -- "email" "mot de passe" "Nom"</code>. C'est la garantie
+           qu'un tiers ne peut pas s'auto-déclarer administrateur.</p>
+      </div>
+    </section>
+
+    <section id="metier">
+      <h2><em>07</em>Règles métier</h2>
+
+      <h3>La capacité se compte en tables, pas en couverts</h3>
+      <p>Un créneau n'est proposé que s'il reste une table libre <em>assez grande</em>.
+         La confirmation attribue la plus petite qui convient&nbsp;— placer deux personnes
+         sur une table de huit gâcherait la salle. Une demande plus grande que la plus
+         grande table est refusée, ce qu'aucun total global ne saurait exprimer.</p>
+      <p>Une table est occupée de deux façons&nbsp;: par une réservation active, ou cochée
+         à la main depuis l'écran Salle.</p>
+
+      <h3>La tablée</h3>
+      <p>Objet central du service à table. Toutes les commandes sur place s'y rattachent,
+         y compris celles ajoutées en cours de repas&nbsp;— c'est ce qui permet à un
+         client de recommander sans que ça parte sur une addition séparée. Elle s'ouvre
+         par un scan de QR, depuis le salon, ou depuis l'écran de service.</p>
+
+      <h3>La cagnotte</h3>
+      <p>Deux règles gouvernent tout&nbsp;:</p>
+      <ol>
+        <li>On gagne un pourcentage de ce qui a été <strong>réellement payé</strong>, part
+            réglée avec la cagnotte exclue. Sans cela, un solde se régénérerait à chaque
+            passage et ne s'épuiserait jamais.</li>
+        <li>Un gain et un seul par commande, garanti par un index unique partiel.
+            L'encaissement est donc rejouable&nbsp;: un double clic ne crédite pas deux
+            fois.</li>
+      </ol>
+      <p>Le taux est un <strong>réglage en base</strong>
+         (<code>reglages.fidelite_taux_pourcent</code>, 10&nbsp;% par défaut), pas une
+         constante&nbsp;: c'est un choix commercial, il se révise sans redéploiement.
+         Le gain est arrondi vers le bas.</p>
+      <p>Les transferts entre clients écrivent deux mouvements symétriques dans une même
+         transaction, après un verrou sur l'émetteur.</p>
+
+      <h3>L'encaissement</h3>
+      <p>Seul moment où de l'argent change de main. Il fait trois choses indissociables,
+         donc dans une seule transaction&nbsp;: déduire la cagnotte, marquer les commandes
+         <code>encaissee</code>, créditer le gain. Une tablée s'encaisse d'un bloc, la
+         remise s'étalant sur ses commandes dans l'ordre où elles ont été passées.</p>
+      <p><code>encaissee</code> n'est pas dans le menu déroulant des statuts du
+         salon&nbsp;: on n'y arrive que par l'action «&nbsp;Encaisser&nbsp;», sinon on
+         créerait des commandes payées sans gain de fidélité.</p>
+
+      <h3>La file de cuisine</h3>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Statut</th><th>Libellé</th><th>Horodatage posé</th></tr></thead>
+          <tbody>
+            <tr><td><code>confirmee</code></td><td>Nouvelle</td><td><code>cree_le</code></td></tr>
+            <tr><td><code>vue</code></td><td>Lue</td><td><code>vue_le</code></td></tr>
+            <tr><td><code>en_preparation</code></td><td>En préparation</td><td><code>preparation_le</code></td></tr>
+            <tr><td><code>prete</code></td><td>Prête</td><td><code>prete_le</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Les horodatages servent à afficher un temps d'attente qui a du sens&nbsp;: au
+         passe, ce qui compte n'est pas l'âge de la commande mais depuis combien de temps
+         elle est au feu, ou <em>prête et non servie</em>. Le compteur passe à l'orange à
+         dix minutes, au rouge à vingt.</p>
+
+      <h3>Le téléphone comme identité</h3>
+      <p>Le numéro est stocké normalisé (chiffres seuls, <code>0</code> initial réécrit en
+         <code>33</code>), si bien que <code>06 12 34 56 78</code>,
+         <code>0612345678</code> et <code>+33612345678</code> désignent la même personne.
+         En salle et à la caisse, c'est la seule clé demandée.</p>
+      <p>Un compte ouvert au comptoir n'a pas de date de naissance. La première personne
+         qui crée son espace sur ce numéro en prend possession et récupère son
+         historique&nbsp;; une tentative de connexion sur un tel compte reçoit une
+         explication, pas «&nbsp;identifiants incorrects&nbsp;».</p>
+    </section>
+
+    <section id="rendu">
+      <h2><em>08</em>Rendu des pages</h2>
+      <div class="note note--attention">
+        <span class="note__quoi">Contournement à connaître</span>
+        <p>Aucun gabarit n'utilise <code>&lt;%- include(…) %&gt;</code>. Sur ce projet, un
+           gabarit combinant un <code>include</code> avec une boucle
+           <code>.forEach()</code> contenant un <code>if</code> déclenche de façon
+           reproductible «&nbsp;<code>include is not a function</code>&nbsp;» sur
+           EJS&nbsp;3.1.10 / Node&nbsp;22.</p>
+        <p>Les en-têtes, pieds et fragments sont donc <strong>compilés une fois au
+           démarrage</strong> dans <code>lib/layout.js</code> et appelés comme de simples
+           fonctions. Un middleware les injecte dans les données de chaque rendu, ce qui
+           évite d'y penser route par route.</p>
+      </div>
+
+      <h3>Conséquence pratique</h3>
+      <p>Modifier un partiel exige de <strong>redémarrer le serveur</strong>&nbsp;: les
+         gabarits compilés ne sont pas relus. En développement, <code>npm run dev</code>
+         s'en charge.</p>
+
+      <h3>Feuille de style et cache</h3>
+      <p>L'URL de <code>app.css</code> porte une empreinte de son contenu
+         (<code>/css/app.css?v=…</code>), calculée au chargement du module. Elle change à
+         chaque modification, donc un cache long est sans danger. La vitrine, qui référence
+         sa feuille par un chemin fixe depuis un fichier statique, revalide à chaque visite
+         (<code>no-cache</code>)&nbsp;; ses images gardent un cache d'un jour.</p>
+      <div class="note">
+        <span class="note__quoi">Pourquoi ce détail compte</span>
+        <p>Sans ce mécanisme, un navigateur ayant visité le site garde l'ancienne feuille
+           pendant toute la durée du cache. Le symptôme est trompeur&nbsp;: les styles déjà
+           connus s'appliquent, les nouveaux non, et la page paraît à moitié brute.</p>
+      </div>
+    </section>
+
+    <section id="deploiement">
+      <h2><em>09</em>Déploiement</h2>
+      <p>Hébergement Vercel. <code>vercel.json</code> réécrit toutes les URL vers
+         <code>/api/index</code>, qui réexporte l'application Express. Il n'y a donc
+         qu'une seule fonction, et pas de <code>app.listen()</code> en production.</p>
+
+      <h3>Variables d'environnement</h3>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Variable</th><th>Rôle</th></tr></thead>
+          <tbody>
+            <tr><td><code>POSTGRES_URL</code><br><code>DATABASE_URL</code></td><td>Chaîne de connexion. La première l'emporte. À défaut, un Postgres local.</td></tr>
+            <tr><td><code>BLOB_READ_WRITE_TOKEN</code></td><td>Stockage des photos. Absent&nbsp;: repli sur le disque local.</td></tr>
+            <tr><td><code>NODE_ENV</code></td><td><code>production</code> ajoute <code>Secure</code> aux cookies.</td></tr>
+            <tr><td><code>VERCEL</code></td><td>Posée par la plateforme. Limite le pool à une connexion et désactive <code>listen</code> et les tâches périodiques.</td></tr>
+            <tr><td><code>PORT</code></td><td>Hors Vercel seulement. Par défaut&nbsp;3000.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Particularités serverless</h3>
+      <ul>
+        <li>Pool limité à <strong>une</strong> connexion&nbsp;: une fonction ne sert qu'une
+            requête à la fois, et Neon compte les connexions.</li>
+        <li>Le TLS est activé selon l'hôte visé (<code>neon.tech</code>,
+            <code>vercel-storage.com</code>) et non selon <code>NODE_ENV</code>&nbsp;: on
+            peut ainsi tester contre la base distante en développement.</li>
+        <li>Aucun système de fichiers persistant&nbsp;: les photos passent par Blob.</li>
+        <li>Le nettoyage périodique des sessions et tentatives ne tourne qu'en local&nbsp;;
+            une fonction ne vit pas assez longtemps pour qu'un <code>setInterval</code> s'y
+            déclenche utilement.</li>
+      </ul>
+
+      <div class="note note--attention">
+        <span class="note__quoi">Ordre des opérations</span>
+        <p>Le schéma s'applique <strong>avant</strong> le déploiement du code qui en dépend.
+           Il n'ajoute que des colonnes, des tables et des contraintes élargies&nbsp;:
+           l'ancien code continue de fonctionner dessus. L'inverse produirait des erreurs
+           500 le temps de la migration.</p>
+      </div>
+    </section>
+
+    <section id="exploitation">
+      <h2><em>10</em>Exploitation</h2>
+      <div class="tableau">
+        <table>
+          <thead><tr><th>Commande</th><th>Effet</th></tr></thead>
+          <tbody>
+            <tr><td><code>npm run migrate</code></td><td>Applique <code>schema.sql</code>. Idempotent, rejouable.</td></tr>
+            <tr><td><code>npm run seed</code></td><td>Peuple la carte depuis <code>assets/js/menu-data.js</code> et copie les photos. Sans effet si la carte existe, sauf <code>-- --force</code>.</td></tr>
+            <tr><td><code>npm run admin</code></td><td>Crée ou met à jour un compte du salon. Mot de passe de 10 caractères minimum.</td></tr>
+            <tr><td><code>npm test</code></td><td>22 tests. Ceux qui touchent la base se sautent d'eux-mêmes si elle est injoignable.</td></tr>
+            <tr><td><code>npm run dev</code></td><td>Serveur local avec rechargement.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Mise en route sur un poste neuf</h3>
+      <pre><code>createdb table_de_carthage
+npm install
+npm run migrate
+npm run seed
+npm run admin -- "vous@exemple.fr" "un mot de passe solide" "Direction"
+npm run dev</code></pre>
+
+      <h3>Tests</h3>
+      <p>Les tests unitaires portent sur les fonctions pures (montants, téléphone,
+         validation, calcul du gain). Les tests d'intégration portent sur des propriétés
+         que <em>seule</em> la base garantit&nbsp;: idempotence du gain, refus du
+         découvert, anti-retour de la file de cuisine. Un objet simulé ne les
+         démontrerait pas.</p>
+    </section>
+
+    <section id="attention">
+      <h2><em>11</em>Points d'attention</h2>
+      <ul>
+        <li><strong>Un partiel modifié exige un redémarrage.</strong> Les gabarits de mise
+            en page sont compilés au chargement du module.</li>
+        <li><strong>Une seule définition par contrainte.</strong> Deux blocs du schéma qui
+            redéfinissent chacun la même contrainte se contredisent, et le premier fait
+            échouer tout le fichier dès qu'une ligne porte une valeur que lui seul ignore.
+            Le dernier bloc fait foi.</li>
+        <li><strong>Pas de sauvegarde applicative.</strong> Elle repose entièrement sur les
+            instantanés de Neon. À vérifier selon le plan souscrit.</li>
+        <li><strong>Aucun envoi d'e-mail ni de SMS.</strong> Les confirmations passent par
+            WhatsApp, à la main. Les notifications restent internes au salon.</li>
+        <li><strong>Pas de paiement en ligne.</strong> Le règlement se fait sur place&nbsp;;
+            l'encaissement est une saisie, pas une transaction bancaire.</li>
+        <li><strong>Le taux de fidélité à 10&nbsp;%</strong> est généreux pour ce type de
+            programme et dépensable. Il se règle en base sans redéploiement.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer class="pied">
+    La Table de Carthage — 6 boulevard Richard Wallace, 92800 Puteaux.
+    Ce dossier décrit la version 2.0 de l'application.
+  </footer>
+</div>
