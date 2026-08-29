@@ -326,6 +326,12 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
 .liste-tables .card{margin-top:0}
 .carte-table{padding:1.1rem}
 .carte-table.est-inactive{opacity:.6;background:#FAFBFC}
+/* Ce qui remplace le bouton « Supprimer » quand la table a déjà servi :
+   une explication, pas un bouton grisé qu'on cliquerait dix fois. */
+.carte-table__tenue{
+  font-size:.74rem;line-height:1.35;color:var(--muted);
+  align-self:center;flex:1 1 140px;
+}
 .btn-row--serree{margin-top:1rem;gap:.5rem}
 .case{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:var(--muted);white-space:nowrap;padding-bottom:.55rem}
 .case input{width:18px;height:18px;accent-color:var(--navy-800)}

@@ -6,10 +6,13 @@
     La capacité du service découle de ces tables : une réservation n'est acceptée
     que s'il reste une table libre assez grande. Total actuel :
     <strong><%= tables.filter(t => t.actif).length %> tables · <%= total %> places</strong>.
+    Une table qui a déjà servi ne se supprime pas — décochez « En service » pour
+    la retirer de la salle sans effacer ses additions.
   </p>
 </div>
 
 <% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+<% if (info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
 
 <div class="btn-row" style="margin-top:0;margin-bottom:1.5rem">
   <a class="btn btn--ghost" href="/salon/services/<%= service.id %>/qr">QR codes à imprimer</a>
@@ -33,7 +36,8 @@
     </div>
     <button type="submit" class="btn">Ajouter</button>
   </form>
-  <p class="aide">Au-delà d'une table, le nom est numéroté automatiquement : « Table 1 », « Table 2 »…</p>
+  <p class="aide">Au-delà d'une table, le nom est numéroté automatiquement : « Table 1 », « Table 2 »…
+     Chaque table reçoit son propre QR à l'ajout : pensez à réimprimer la planche.</p>
 </div>
 
 <% if (!tables.length) { %>
@@ -57,11 +61,22 @@
             <span>En service</span>
           </label>
         </div>
+        <% const servi = additions[t.id] || 0; %>
         <div class="btn-row btn-row--serree">
           <button type="submit" class="btn btn--sm">Enregistrer</button>
-          <button type="submit" class="btn btn--danger btn--sm"
-                  formaction="/salon/tables/<%= t.id %>/supprimer"
-                  onclick="return confirm('Supprimer <%= t.nom %> ? Les réservations déjà placées dessus resteront valides mais sans table.')">Supprimer</button>
+          <% if (servi) { %>
+            <%# Une table qui a déjà servi porte des additions : la supprimer
+                effacerait de l'historique de caisse. On la retire du service
+                à la place, ce que fait la case « En service ». %>
+            <span class="carte-table__tenue" title="<%= servi %> addition<%= servi > 1 ? 's' : '' %> passée<%= servi > 1 ? 's' : '' %> sur cette table">
+              <%= servi %> addition<%= servi > 1 ? 's' : '' %> — se retire en décochant
+            </span>
+          <% } else { %>
+            <button type="submit" class="btn btn--danger btn--sm"
+                    formnovalidate
+                    formaction="/salon/tables/<%= t.id %>/supprimer"
+                    onclick="return confirm('Supprimer cette table ? Les réservations déjà placées dessus resteront valides, mais sans table attribuée.')">Supprimer</button>
+          <% } %>
         </div>
       </form>
     <% }) %>

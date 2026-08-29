@@ -181,7 +181,7 @@ td code{font-size:.8rem;white-space:nowrap}
       <span>Node <b>≥ 20</b></span>
       <span>Environ <b>4 500</b> lignes de JavaScript</span>
       <span><b>20</b> tables Postgres</span>
-      <span><b>30</b> tests</span>
+      <span><b>38</b> tests</span>
     </div>
   </header>
 
@@ -251,7 +251,8 @@ server/views/*.ejs    gabarits</code></pre>
         <div class="fichier"><b>lib/fidelite.js</b><span>Cagnotte&nbsp;: gains, dépenses, transferts entre clients, ajustements.</span></div>
         <div class="fichier"><b>lib/encaissement.js</b><span>Le seul endroit où de l'argent change de main.</span></div>
         <div class="fichier"><b>lib/cuisine.js</b><span>File du passe et transitions d'état d'une commande.</span></div>
-            <div class="fichier"><b>lib/personnel.js</b><span>Connexion du personnel, partagée par la salle et le passe, et choix de l'écran d'arrivée selon les droits.</span></div>
+        <div class="fichier"><b>lib/tables.js</b><span>Tables de la salle : création avec code QR, et la règle qui autorise ou refuse une suppression selon les additions portées.</span></div>
+        <div class="fichier"><b>lib/personnel.js</b><span>Connexion du personnel, partagée par la salle et le passe, et choix de l'écran d'arrivée selon les droits.</span></div>
         <div class="fichier"><b>lib/tablees.js</b><span>Ouverture, addition et fermeture d'une tablée.</span></div>
         <div class="fichier"><b>lib/availability.js</b><span>Créneaux disponibles, attribution d'une table, état de la salle.</span></div>
         <div class="fichier"><b>lib/clients.js</b><span>Identification, création au comptoir, reprise d'un compte.</span></div>
@@ -613,7 +614,7 @@ server/views/*.ejs    gabarits</code></pre>
             <tr><td><code>npm run migrate</code></td><td>Applique <code>schema.sql</code>. Idempotent, rejouable.</td></tr>
             <tr><td><code>npm run seed</code></td><td>Peuple la carte depuis <code>assets/js/menu-data.js</code> et copie les photos. Sans effet si la carte existe, sauf <code>-- --force</code>.</td></tr>
             <tr><td><code>npm run admin</code></td><td>Crée ou met à jour un compte du salon. Mot de passe de 10 caractères minimum.</td></tr>
-            <tr><td><code>npm test</code></td><td>30 tests. Ceux qui touchent la base se sautent d'eux-mêmes si elle est injoignable.</td></tr>
+            <tr><td><code>npm test</code></td><td>38 tests. Ceux qui touchent la base se sautent d'eux-mêmes si elle est injoignable.</td></tr>
             <tr><td><code>npm run dev</code></td><td>Serveur local avec rechargement.</td></tr>
           </tbody>
         </table>
