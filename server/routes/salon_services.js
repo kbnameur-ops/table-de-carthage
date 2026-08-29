@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { query, une, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf } from '../middleware.js';
 import { heureValide, dateValide, texteNonVide } from '../lib/validate.js';
+import { creerTables, supprimerTable, additionsParTable } from '../lib/tables.js';
 
 export const salonServicesRouter = Router();
 
@@ -133,7 +134,11 @@ salonServicesRouter.get('/salon/services/:id/tables', exigerAdmin, async (req, r
     const total = tables.filter(t => t.actif).reduce((s, t) => s + t.couverts, 0);
     res.render('salon/tables', {
       titre: `Tables — ${service.nom}`, actif: 'services', service, tables, total,
-      erreur: req.query.erreur || null, csrfToken: res.locals.csrfToken,
+      // Combien d'additions chaque table porte : une table qui a servi ne
+      // se supprime pas, et l'écran doit le dire avant le clic, pas après.
+      additions: await additionsParTable(service.id),
+      erreur: req.query.erreur || null, info: req.query.info || null,
+      csrfToken: res.locals.csrfToken,
     });
   } catch (err) { next(err); }
 });
@@ -155,19 +160,11 @@ salonServicesRouter.post('/salon/services/:id/tables', exigerAdmin, verifierCsrf
     const service = await une(`SELECT id FROM services WHERE id = $1`, [req.params.id]);
     if (!service) return res.redirect('/salon/services');
 
-    // Créer plusieurs tables identiques d'un coup : une salle se configure
-    // le plus souvent par lots (« six tables de 4 »), pas une par une.
-    const nombre = Math.min(Math.max(parseInt(req.body.nombre, 10) || 1, 1), 40);
-    const { p: depart } = await une(
-      `SELECT COALESCE(MAX(position), -1) + 1 AS p FROM tables_resto WHERE service_id = $1`, [service.id]
-    );
-    for (let i = 0; i < nombre; i++) {
-      const nom = nombre === 1 ? req.body.nom.trim() : `${req.body.nom.trim()} ${i + 1}`;
-      await executer(
-        `INSERT INTO tables_resto (service_id, nom, couverts, position) VALUES ($1, $2, $3, $4)`,
-        [service.id, nom, parseInt(req.body.couverts, 10), depart + i]
-      );
-    }
+    await creerTables(service.id, {
+      nom: req.body.nom.trim(),
+      couverts: parseInt(req.body.couverts, 10),
+      nombre: req.body.nombre,
+    });
     res.redirect(retour);
   } catch (err) { next(err); }
 });
@@ -191,10 +188,10 @@ salonServicesRouter.post('/salon/tables/:id/supprimer', exigerAdmin, verifierCsr
   try {
     const table = await une(`SELECT service_id FROM tables_resto WHERE id = $1`, [req.params.id]);
     if (!table) return res.redirect('/salon/services');
-    // Une réservation déjà placée sur cette table perd son placement
-    // (ON DELETE SET NULL) mais reste honorée : on ne supprime jamais
-    // une réservation client en réorganisant la salle.
-    await executer(`DELETE FROM tables_resto WHERE id = $1`, [req.params.id]);
-    res.redirect(`/salon/services/${table.service_id}/tables`);
+    const retour = `/salon/services/${table.service_id}/tables`;
+
+    const { erreur } = await supprimerTable(req.params.id);
+    if (erreur) return res.redirect(`${retour}?erreur=` + encodeURIComponent(erreur));
+    res.redirect(`${retour}?info=` + encodeURIComponent('Table supprimée.'));
   } catch (err) { next(err); }
 });

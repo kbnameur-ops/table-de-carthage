@@ -29,6 +29,14 @@
   </div>
 <% } else { %>
 
+  <%# Le lien vers la configuration ne s'affichait qu'une salle vide : une
+      fois les tables créées, plus rien ne menait à l'écran qui permet de les
+      renommer, de changer leur nombre de couverts ou de les retirer. %>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1.4rem">
+    <a class="btn btn--ghost btn--sm" href="/salon/services/<%= service.id %>/tables">Configurer les tables</a>
+    <a class="btn btn--ghost btn--sm" href="/salon/services/<%= service.id %>/qr">QR à imprimer</a>
+  </div>
+
   <div class="tuiles">
     <div class="tuile"><b><%= resume.libres %></b><span>Tables libres</span></div>
     <div class="tuile tuile--accent"><b><%= resume.occupees %></b><span>Tables occupées</span></div>
