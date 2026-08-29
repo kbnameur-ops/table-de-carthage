@@ -818,94 +818,6 @@ body:has(.barre-envoi:not([hidden])) main{padding-bottom:7rem}
 .mouvement__delta.est-negatif{color:var(--muted)}
 
 /* ═══════════════════════════════════════════════════════════
-   Écran de cuisine (/cuisine)
-   Il se lit à un mètre, au-dessus du piano : gros caractères,
-   contrastes francs, aucune information décorative.
-   ═══════════════════════════════════════════════════════════ */
-/* Le passe a besoin de ses quatre colonnes côte à côte : la largeur de
-   lecture confortable des autres écrans du service (760 px) les ferait
-   passer à la ligne dès la quatrième. */
-.servicemain--large{width:min(100% - 1.6rem, 1500px)}
-
-.cuisine-vide{
-  text-align:center;color:var(--muted);padding:4rem 1rem;font-size:1.05rem;
-}
-.cuisine-colonnes{
-  display:grid;gap:.9rem;align-items:start;
-  grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));
-}
-.cuisine-col{
-  background:#fff;border:1px solid rgba(14,42,78,.12);
-  border-top:3px solid var(--muted);padding:.8rem .8rem 1rem;
-}
-/* Une couleur par état : au passe, on repère la colonne avant de lire son
-   titre. Le vert n'arrive qu'à « prête » — c'est le seul état qui appelle
-   quelqu'un de la salle. */
-.cuisine-col--confirmee{border-top-color:var(--err)}
-.cuisine-col--vue{border-top-color:var(--gold-500)}
-.cuisine-col--enpreparation{border-top-color:var(--navy-700)}
-.cuisine-col--prete{border-top-color:var(--ok)}
-
-.cuisine-col__titre{
-  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
-  margin:0 0 .8rem;font-family:var(--ff-title);font-weight:400;font-size:1.05rem;
-  color:var(--navy-800);letter-spacing:.02em;
-}
-/* Le filet doré que portent les h2 du salon n'a rien à faire en tête d'une
-   colonne : la barre de couleur au-dessus dit déjà de quel état il s'agit. */
-.cuisine-col__titre::after{display:none}
-.cuisine-col__compte{
-  min-width:1.8rem;text-align:center;padding:.1rem .45rem;border-radius:999px;
-  background:var(--cream-2);color:var(--navy-800);font-size:.82rem;font-weight:500;
-  font-family:var(--ff-body);
-}
-.cuisine-col__vide{text-align:center;color:rgba(108,122,136,.5);margin:1.2rem 0}
-
-/* ── Le ticket ────────────────────────────────────────────── */
-.ticket{
-  border:1px solid rgba(14,42,78,.14);background:var(--cream);
-  padding:.7rem .75rem;margin-bottom:.7rem;
-}
-.ticket:last-child{margin-bottom:0}
-.ticket__tete{
-  display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;
-  font-family:var(--ff-title);font-size:1.05rem;color:var(--navy-800);
-}
-/* Le compteur passe à l'orange puis au rouge : un plat qui traîne doit se
-   voir de loin, sans qu'on ait à lire le chiffre. */
-.ticket__minutes{
-  font-family:var(--ff-body);font-size:.8rem;font-weight:500;
-  color:var(--muted);white-space:nowrap;
-}
-.ticket.est-long{border-color:rgba(201,169,97,.7)}
-.ticket.est-long .ticket__minutes{color:#9A6B12}
-.ticket.est-tardif{border-color:var(--err);background:#FDF3F0}
-.ticket.est-tardif .ticket__minutes{color:var(--err);font-weight:600}
-
-.ticket__qui{margin:.1rem 0 .5rem;font-size:.85rem;color:var(--muted)}
-.ticket__lignes{list-style:none;margin:0 0 .5rem;padding:0;display:grid;gap:.15rem}
-.ticket__lignes li{font-size:1rem;line-height:1.35}
-.ticket__lignes b{
-  display:inline-block;min-width:1.4rem;font-weight:600;color:var(--navy-800);
-}
-.ticket__mot{
-  margin:.4rem 0 .6rem;padding:.4rem .55rem;background:rgba(201,169,97,.16);
-  border-left:2px solid var(--gold-500);font-size:.88rem;color:var(--navy-800);
-}
-.ticket__actions .btn{padding:.7rem 1rem;font-size:.72rem}
-
-/* ── L'état d'un plat, rappelé côté salle ────────────────── */
-.etat-plat{
-  display:inline-block;padding:.12rem .5rem;border-radius:999px;
-  font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
-  background:var(--cream-2);color:var(--muted);
-}
-.etat-plat--confirmee{background:rgba(180,64,42,.14);color:var(--err)}
-.etat-plat--vue{background:rgba(201,169,97,.2);color:#8A6A1E}
-.etat-plat--enpreparation{background:rgba(20,52,95,.12);color:var(--navy-700)}
-.etat-plat--prete{background:rgba(62,122,76,.16);color:var(--ok)}
-
-/* ═══════════════════════════════════════════════════════════
    Appel à épingler l'application sur l'écran d'accueil
    ═══════════════════════════════════════════════════════════ */
 .epingler{
@@ -953,3 +865,175 @@ body:has(.barre-envoi:not([hidden])) main{padding-bottom:7rem}
   .epingler__mots span{font-size:.78rem}
   .epingler__icone{width:38px;height:38px}
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Le passe (/cuisine)
+   Écran autonome, lu à un mètre au-dessus du piano, les mains
+   occupées : gros caractères, contrastes francs, et l'origine
+   d'une commande visible avant même de lire le ticket.
+   ═══════════════════════════════════════════════════════════ */
+body.cuisine{background:var(--cream-2)}
+
+.passebar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;gap:1rem;
+  background:var(--navy-900);color:var(--cream);
+  padding:.7rem clamp(.9rem,2.5vw,1.6rem);
+  padding-top:calc(.7rem + env(safe-area-inset-top));
+}
+.passebar__qui{display:grid;line-height:1.2;min-width:0}
+.passebar__qui b{font-family:var(--ff-title);font-weight:400;font-size:1.15rem;letter-spacing:.04em}
+.passebar__qui small{color:rgba(250,246,236,.55);font-size:.72rem;letter-spacing:.12em;text-transform:uppercase}
+
+/* L'heure : on s'y réfère sans arrêt pour les retraits. */
+.passebar__heure{
+  margin-inline:auto;font-family:var(--ff-display);font-size:clamp(1.6rem,4vw,2.2rem);
+  font-weight:600;color:var(--gold-300);line-height:1;font-variant-numeric:tabular-nums;
+}
+.passebar__droite{display:flex;align-items:center;gap:1rem;flex:0 0 auto}
+.passebar__nom{
+  font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400);
+  white-space:nowrap;
+}
+.passebar__lien{
+  font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;
+  color:rgba(250,246,236,.62);white-space:nowrap;
+}
+.passebar__lien:hover{color:var(--cream)}
+
+/* ── Le filtre de circuit ─────────────────────────────────── */
+.passefiltre{
+  position:sticky;top:0;z-index:19;display:flex;
+  background:var(--navy-800);border-bottom:1px solid rgba(201,169,97,.25);
+}
+.passefiltre__btn{
+  flex:1;background:none;border:0;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  padding:.8rem .5rem;color:rgba(250,246,236,.6);
+  font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap;
+  border-bottom:2px solid transparent;transition:color .2s,border-color .2s;
+}
+.passefiltre__btn:hover{color:var(--cream)}
+.passefiltre__btn.is-active{color:var(--gold-300);border-bottom-color:var(--gold-500)}
+.passefiltre__n{
+  min-width:1.5rem;padding:.05rem .4rem;border-radius:999px;
+  background:rgba(250,246,236,.14);font-size:.76rem;letter-spacing:0;
+  font-variant-numeric:tabular-nums;
+}
+.passefiltre__btn.is-active .passefiltre__n{background:rgba(201,169,97,.28);color:var(--gold-300)}
+@media (max-width:440px){
+  .passefiltre__btn{font-size:.7rem;letter-spacing:.04em;padding:.8rem .3rem;gap:.35rem}
+}
+
+.passemain{width:min(100% - 1.4rem, 1600px);margin-inline:auto;padding:1rem 0 5rem}
+.passepied{text-align:center;padding:0 0 2rem}
+.passe-vide{text-align:center;color:var(--muted);padding:4rem 1rem;font-size:1.05rem}
+
+/* ── Les colonnes ─────────────────────────────────────────── */
+.passe-colonnes{
+  display:grid;gap:.8rem;align-items:start;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));
+}
+.passe-col{
+  background:#fff;border:1px solid rgba(14,42,78,.12);
+  border-top:3px solid var(--muted);padding:.75rem .75rem 1rem;
+}
+/* Une couleur par état : au passe, on repère la colonne avant de lire son
+   titre. Le vert n'arrive qu'à « prête » — le seul état qui appelle
+   quelqu'un de la salle. */
+.passe-col--confirmee{border-top-color:var(--err)}
+.passe-col--vue{border-top-color:var(--gold-500)}
+.passe-col--enpreparation{border-top-color:var(--navy-700)}
+.passe-col--prete{border-top-color:var(--ok)}
+
+.passe-col__titre{
+  display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+  margin:0 0 .75rem;font-family:var(--ff-title);font-weight:400;font-size:1.05rem;
+  color:var(--navy-800);letter-spacing:.02em;
+}
+.passe-col__titre::after{display:none}
+.passe-col__compte{
+  min-width:1.8rem;text-align:center;padding:.1rem .45rem;border-radius:999px;
+  background:var(--cream-2);color:var(--navy-800);font-size:.82rem;font-weight:500;
+  font-family:var(--ff-body);font-variant-numeric:tabular-nums;
+}
+.passe-col__vide{text-align:center;color:rgba(108,122,136,.5);margin:1.2rem 0}
+
+/* ── Le ticket ────────────────────────────────────────────── */
+.ticket{
+  border:1px solid rgba(14,42,78,.14);background:var(--cream);
+  border-left:4px solid var(--navy-700);
+  padding:.7rem .75rem;margin-bottom:.7rem;
+}
+.ticket:last-child{margin-bottom:0}
+/* L'origine se lit au liseré, avant même le texte : marine pour la salle,
+   doré pour l'emporter. Deux circuits, deux façons de travailler. */
+.ticket--salle{border-left-color:var(--navy-700)}
+.ticket--emporter{border-left-color:var(--gold-500);background:#FFFCF3}
+
+.ticket__tete{
+  display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;
+}
+.ticket__origine{
+  font-family:var(--ff-title);font-weight:400;font-size:1.08rem;color:var(--navy-800);
+}
+.ticket__origine--emporter{
+  font-family:var(--ff-body);font-size:.74rem;font-weight:500;
+  letter-spacing:.16em;text-transform:uppercase;color:#8A6A1E;
+}
+.ticket__minutes{
+  font-family:var(--ff-body);font-size:.8rem;font-weight:500;
+  color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+/* Un plat qui traîne se voit de loin, sans qu'on ait à lire le chiffre. */
+.ticket.est-long{border-color:rgba(201,169,97,.7)}
+.ticket.est-long .ticket__minutes{color:#9A6B12}
+.ticket.est-tardif{border-color:var(--err);background:#FDF3F0}
+.ticket.est-tardif .ticket__minutes{color:var(--err);font-weight:600}
+
+.ticket__qui{
+  margin:.15rem 0 .5rem;font-size:.85rem;color:var(--muted);
+  display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;flex-wrap:wrap;
+}
+/* L'heure de retrait pilote la cuisson d'une commande à emporter : elle a
+   le même poids que le nom de la table pour une commande en salle. */
+.ticket__retrait{color:var(--navy-800);font-size:.88rem}
+.ticket__retrait b{font-weight:600;font-variant-numeric:tabular-nums}
+
+.ticket__lignes{list-style:none;margin:0 0 .5rem;padding:0;display:grid;gap:.15rem}
+.ticket__lignes li{font-size:1rem;line-height:1.35}
+.ticket__lignes b{display:inline-block;min-width:1.4rem;font-weight:600;color:var(--navy-800)}
+.ticket__mot{
+  margin:.4rem 0 .6rem;padding:.4rem .55rem;background:rgba(201,169,97,.16);
+  border-left:2px solid var(--gold-500);font-size:.88rem;color:var(--navy-800);
+}
+.ticket__actions .btn{padding:.75rem 1rem;font-size:.72rem}
+
+/* Une commande tombée depuis le dernier rafraîchissement se signale une
+   fois : au coup de feu, un ticket qui apparaît sans bruit se rate. */
+.vient-de-tomber{animation:ticketArrive 2.4s ease-out 2}
+@keyframes ticketArrive{
+  0%,100%{box-shadow:0 0 0 0 rgba(180,64,42,0)}
+  35%{box-shadow:0 0 0 4px rgba(180,64,42,.35)}
+}
+@media (prefers-reduced-motion:reduce){.vient-de-tomber{animation:none;outline:2px solid var(--err)}}
+
+/* ── Le lien vers la cuisine, dans la barre du service ───── */
+.serviceonglets__ailleurs{
+  flex:0 0 auto;color:var(--gold-400) !important;
+  border-left:1px solid rgba(201,169,97,.28);
+}
+
+/* ── L'état d'un plat, rappelé côté salle ────────────────── */
+/* Le serveur vient vérifier où en est un plat avant de passer au pass :
+   l'information vit en cuisine, mais elle se lit sur l'addition. */
+.etat-plat{
+  display:inline-block;padding:.12rem .5rem;border-radius:999px;
+  font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  background:var(--cream-2);color:var(--muted);
+}
+.etat-plat--enattente,
+.etat-plat--confirmee{background:rgba(180,64,42,.14);color:var(--err)}
+.etat-plat--vue{background:rgba(201,169,97,.2);color:#8A6A1E}
+.etat-plat--enpreparation{background:rgba(20,52,95,.12);color:var(--navy-700)}
+.etat-plat--prete{background:rgba(62,122,76,.16);color:var(--ok)}

@@ -1,0 +1,119 @@
+<%- cuisineEntete %>
+
+<div id="tableauCuisine">
+  <%- tableauHtml %>
+</div>
+
+<script>
+(function () {
+  var cible = document.getElementById('tableauCuisine');
+  if (!cible) return;
+
+  // ── L'heure au passe ────────────────────────────────────
+  var heure = document.getElementById('passeHeure');
+  function battre() {
+    var d = new Date();
+    heure.textContent = String(d.getHours()).padStart(2, '0') + ':'
+      + String(d.getMinutes()).padStart(2, '0');
+  }
+  battre();
+  setInterval(battre, 20000);
+
+  // ── Le filtre de circuit ────────────────────────────────
+  // La cuisine ne travaille pas de la même façon les deux : une commande à
+  // emporter se cale sur une heure de retrait, une commande en salle part
+  // dès qu'elle tombe. Pouvoir n'en regarder qu'un seul aide au coup de feu.
+  var CLE = 'cuisine-filtre';
+  var filtre = 'tout';
+  try { filtre = localStorage.getItem(CLE) || 'tout'; } catch (e) {}
+
+  var boutons = Array.prototype.slice.call(document.querySelectorAll('.passefiltre__btn'));
+
+  function appliquer() {
+    var tickets = cible.querySelectorAll('.ticket');
+    var comptes = { tout: 0, sur_place: 0, emporter: 0 };
+
+    Array.prototype.forEach.call(tickets, function (t) {
+      var type = t.dataset.type;
+      comptes.tout++;
+      comptes[type]++;
+      t.hidden = (filtre !== 'tout' && type !== filtre);
+    });
+
+    // Les compteurs du filtre portent sur tout ce qui est au feu, pas sur ce
+    // qui est affiché : c'est ce qui permet de voir qu'il reste des commandes
+    // dans le circuit qu'on a masqué.
+    Object.keys(comptes).forEach(function (k) {
+      var n = document.querySelector('[data-compte="' + k + '"]');
+      if (n) n.textContent = comptes[k];
+    });
+
+    // Chaque colonne recompte ce qu'elle montre réellement, et affiche son
+    // tiret si le filtre l'a vidée.
+    cible.querySelectorAll('.passe-col').forEach(function (col) {
+      var etat = col.dataset.colonne;
+      var visibles = col.querySelectorAll('.ticket:not([hidden])').length;
+      var n = col.querySelector('[data-colonne-compte="' + etat + '"]');
+      if (n) n.textContent = visibles;
+      var vide = col.querySelector('[data-vide="' + etat + '"]');
+      if (vide) vide.hidden = visibles > 0;
+    });
+
+    boutons.forEach(function (b) {
+      b.classList.toggle('is-active', b.dataset.filtre === filtre);
+      b.setAttribute('aria-pressed', b.dataset.filtre === filtre ? 'true' : 'false');
+    });
+  }
+
+  boutons.forEach(function (b) {
+    b.addEventListener('click', function () {
+      filtre = b.dataset.filtre;
+      try { localStorage.setItem(CLE, filtre); } catch (e) {}
+      appliquer();
+    });
+  });
+  appliquer();
+
+  // ── Le rafraîchissement ─────────────────────────────────
+  // L'écran vit au-dessus du piano : il se tient à jour sans qu'on le touche.
+  // On remplace le seul tableau — recharger la page ferait sauter le
+  // défilement et clignoter l'écran toutes les quinze secondes.
+  var enCours = false;
+  var connues = null;
+
+  function marquerLesNouvelles() {
+    var ids = Array.prototype.map.call(cible.querySelectorAll('.ticket'), function (t) { return t.dataset.id; });
+    if (connues) {
+      ids.forEach(function (id) {
+        if (connues.indexOf(id) === -1) {
+          var t = cible.querySelector('.ticket[data-id="' + id + '"]');
+          if (t) t.classList.add('vient-de-tomber');
+        }
+      });
+    }
+    connues = ids;
+  }
+  marquerLesNouvelles();
+
+  async function rafraichir() {
+    if (enCours || document.hidden) return;
+    if (document.activeElement && document.activeElement.tagName === 'BUTTON') return;
+    enCours = true;
+    try {
+      var r = await fetch('/cuisine/tableau', { headers: { 'Accept': 'text/html' } });
+      if (r.redirected) { location.href = r.url; return; }
+      if (r.ok) {
+        cible.innerHTML = await r.text();
+        marquerLesNouvelles();
+        appliquer();
+      }
+    } catch (e) { /* réseau capricieux en cuisine : on retentera */ }
+    finally { enCours = false; }
+  }
+
+  setInterval(rafraichir, 15000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) rafraichir(); });
+})();
+</script>
+
+<%- cuisinePied %>

@@ -30,7 +30,9 @@
     <a href="/service/caisse"<%- actif === 'caisse' ? ' class="is-active"' : '' %>>Caisse</a>
   <% } %>
   <% if (droits.cuisine) { %>
-    <a href="/cuisine"<%- actif === 'cuisine' ? ' class="is-active"' : '' %>>Cuisine</a>
+    <!-- La cuisine a son propre écran, pas un onglet du service : le lien
+         sort de la barre plutôt que d'y prétendre à une place égale. -->
+    <a href="/cuisine" class="serviceonglets__ailleurs">Cuisine ↗</a>
   <% } %>
 </nav>
-<main class="servicemain<%- actif === 'cuisine' ? ' servicemain--large' : '' %>">
+<main class="servicemain">

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cuisine — La Table de Carthage</title>
+<link rel="icon" href="/assets/img/logo.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=Marcellus&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="<%= cssApp %>">
+<%- teteApp %>
+</head>
+<body class="cuisine">
+<header class="passebar">
+  <div class="passebar__qui">
+    <b>Cuisine</b>
+    <small><%= sousTitre %></small>
+  </div>
+
+  <!-- L'heure au passe : on s'y réfère sans arrêt pour les retraits, et
+       personne ne va sortir son téléphone les mains prises. -->
+  <div class="passebar__heure" id="passeHeure" aria-live="off">--:--</div>
+
+  <div class="passebar__droite">
+    <span class="passebar__nom"><%= qui %></span>
+    <% if (retourService) { %>
+      <a class="passebar__lien" href="/service">Salle ↗</a>
+    <% } %>
+  </div>
+</header>
+
+<nav class="passefiltre" aria-label="Filtrer par circuit">
+  <button type="button" class="passefiltre__btn is-active" data-filtre="tout">
+    Tout <span class="passefiltre__n" data-compte="tout">0</span>
+  </button>
+  <button type="button" class="passefiltre__btn" data-filtre="sur_place">
+    En salle <span class="passefiltre__n" data-compte="sur_place">0</span>
+  </button>
+  <button type="button" class="passefiltre__btn" data-filtre="emporter">
+    À emporter <span class="passefiltre__n" data-compte="emporter">0</span>
+  </button>
+</nav>
+
+<main class="passemain">

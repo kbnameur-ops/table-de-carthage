@@ -8,7 +8,31 @@ import { query, une, executer } from '../db.js';
  *  qu'on se pose au passe — où en est ce plat ?
  */
 
+/** Les quatre colonnes du passe.
+ *
+ *  'confirmee' porte la colonne « Nouvelle », mais elle n'est pas seule à y
+ *  tomber : une commande passée par un client — QR de table ou tunnel à
+ *  emporter — arrive en 'en_attente', l'état qui dit « reçue, pas encore
+ *  traitée par la maison ». Les deux veulent dire la même chose au piano,
+ *  et n'en distinguer qu'une revenait à ne jamais montrer les commandes des
+ *  clients. */
 export const ETATS = ['confirmee', 'vue', 'en_preparation', 'prete'];
+
+/** Les statuts qu'une colonne accepte. Seule la première en couvre deux. */
+export const STATUTS_DE = {
+  confirmee: ['en_attente', 'confirmee'],
+  vue: ['vue'],
+  en_preparation: ['en_preparation'],
+  prete: ['prete'],
+};
+
+/** Tous les statuts visibles au passe, à plat. */
+export const STATUTS_AU_PASSE = ETATS.flatMap(e => STATUTS_DE[e]);
+
+/** La colonne d'un statut. */
+export function colonneDe(statut) {
+  return ETATS.find(e => STATUTS_DE[e].includes(statut)) ?? null;
+}
 
 export const LIBELLES = {
   en_attente: 'En attente',
@@ -44,7 +68,10 @@ export function suivant(statut) {
 export async function avancer(commandeId, vers) {
   if (!ETATS.includes(vers)) return { erreur: 'État inconnu.' };
   const rang = ETATS.indexOf(vers);
-  const anterieurs = ETATS.slice(0, rang);
+  // Les statuts acceptés en entrée, et non les seules colonnes : une
+  // commande client part de 'en_attente', qui doit pouvoir avancer comme
+  // 'confirmee'.
+  const anterieurs = ETATS.slice(0, rang).flatMap(e => STATUTS_DE[e]);
   const colonne = HORODATAGE[vers];
 
   const maj = await une(
@@ -67,6 +94,41 @@ export async function ramenerEnPreparation(commandeId) {
   );
 }
 
+/** L'heure de Paris en minutes depuis minuit.
+ *
+ *  Le serveur tourne en UTC ; les heures de retrait sont écrites à l'heure
+ *  de la salle. Comparer les deux sans conversion décalerait le compte à
+ *  rebours de deux heures l'été. */
+function minutesDuJourAParis() {
+  const f = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+  const parties = Object.fromEntries(f.formatToParts(new Date()).map(p => [p.type, p.value]));
+  return Number(parties.hour) * 60 + Number(parties.minute);
+}
+
+/** 'HH:MM' en minutes depuis minuit. */
+function minutesDeLHeure(hhmm) {
+  const [h, m] = String(hhmm || '').split(':').map(Number);
+  return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : 0;
+}
+
+/** Le degré d'urgence d'un ticket, sur lequel se règle sa couleur.
+ *
+ *  En salle : le temps passé dans l'état en cours. À emporter : la
+ *  proximité de l'heure de retrait. */
+function urgenceDe(type, attente, avantRetrait) {
+  if (type === 'emporter') {
+    if (avantRetrait === null) return 'calme';
+    if (avantRetrait <= 0) return 'tardif';      // l'heure est passée
+    if (avantRetrait <= 20) return 'long';       // il faut s'y mettre
+    return 'calme';
+  }
+  if (attente >= 20) return 'tardif';
+  if (attente >= 10) return 'long';
+  return 'calme';
+}
+
 /** Le tableau de la cuisine : tout ce qui est en cours aujourd'hui.
  *
  *  Les commandes payées, retirées ou annulées n'y figurent pas — elles ne
@@ -83,9 +145,11 @@ export async function tableauDuJour(date) {
        LEFT JOIN tables_resto t ON t.id = tb.table_id
       WHERE cmd.date = $1 AND cmd.statut = ANY($2::text[])
       ORDER BY cmd.cree_le`,
-    [date, ETATS]
+    [date, STATUTS_AU_PASSE]
   );
-  if (!commandes.length) return { commandes: [], parEtat: Object.fromEntries(ETATS.map(e => [e, []])) };
+  if (!commandes.length) {
+    return { commandes: [], parEtat: Object.fromEntries(ETATS.map(e => [e, []])) };
+  }
 
   const lignes = await query(
     `SELECT commande_id, nom, quantite FROM commande_lignes
@@ -96,20 +160,37 @@ export async function tableauDuJour(date) {
   for (const l of lignes) parCommande.get(l.commande_id)?.push(l);
 
   const maintenant = Date.now();
+  const minutesMaintenant = minutesDuJourAParis();
+
   const enrichies = commandes.map(c => {
     const depuis = c.statut === 'prete' ? c.prete_le
       : c.statut === 'en_preparation' ? c.preparation_le
       : c.cree_le;
+    const colonne = colonneDe(c.statut);
+    const attente = Math.max(0, Math.round((maintenant - new Date(depuis ?? c.cree_le).getTime()) / 60000));
+
+    // Les deux circuits ne se mesurent pas de la même façon. Une commande
+    // en salle est urgente parce qu'elle attend depuis longtemps ; une
+    // commande à emporter l'est parce que l'heure de retrait approche.
+    // Afficher son ancienneté n'apprendrait rien — un client qui commande
+    // le matin pour le soir afficherait « 512 min » sans que rien ne presse.
+    const avantRetrait = c.type === 'emporter'
+      ? minutesDeLHeure(c.heure) - minutesMaintenant
+      : null;
+
     return {
       ...c,
+      colonne,
       lignes: parCommande.get(c.id) || [],
-      minutes: Math.max(0, Math.round((maintenant - new Date(depuis ?? c.cree_le).getTime()) / 60000)),
-      suivant: suivant(c.statut),
+      minutes: attente,
+      avantRetrait,
+      urgence: urgenceDe(c.type, attente, avantRetrait),
+      suivant: suivant(colonne),
     };
   });
 
   return {
     commandes: enrichies,
-    parEtat: Object.fromEntries(ETATS.map(e => [e, enrichies.filter(c => c.statut === e)])),
+    parEtat: Object.fromEntries(ETATS.map(e => [e, enrichies.filter(c => c.colonne === e)])),
   };
 }
