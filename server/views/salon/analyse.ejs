@@ -1,0 +1,247 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Analyse</h1>
+  <p class="lead">
+    Ce qui s'est vendu, et à qui le créditer. Le chiffre d'affaires ne compte que
+    ce qui est <strong>encaissé</strong> ; les compteurs de commandes et de plats
+    comptent tout ce qui a été passé, encaissé ou non — c'est la demande réelle,
+    utile pour prévoir, même avant l'encaissement du soir.
+  </p>
+</div>
+
+<nav class="sous-onglets" aria-label="Période">
+  <a href="/salon/analyse?periode=7j"   class="<%= periode === '7j'   ? 'is-active' : '' %>">7 jours</a>
+  <a href="/salon/analyse?periode=30j"  class="<%= periode === '30j'  ? 'is-active' : '' %>">30 jours</a>
+  <a href="/salon/analyse?periode=90j"  class="<%= periode === '90j'  ? 'is-active' : '' %>">90 jours</a>
+  <a href="/salon/analyse?periode=365j" class="<%= periode === '365j' ? 'is-active' : '' %>">12 mois</a>
+</nav>
+
+<form method="get" action="/salon/analyse" class="barre-filtres">
+  <div class="field">
+    <label for="f-debut">Du</label>
+    <input type="date" id="f-debut" name="debut" value="<%= debut %>">
+  </div>
+  <div class="field">
+    <label for="f-fin">Au</label>
+    <input type="date" id="f-fin" name="fin" value="<%= fin %>">
+  </div>
+  <button type="submit" class="btn btn--sm">Afficher</button>
+  <p class="aide" style="margin:0 0 .3rem;flex-basis:100%"><%= nomPeriode %> · du <%= debut %> au <%= fin %></p>
+</form>
+
+<div class="tuiles">
+  <div class="tuile">
+    <b><%= euros(kpis.ca_cents) %></b>
+    <span>Chiffre d'affaires encaissé</span>
+  </div>
+  <div class="tuile">
+    <b><%= kpis.nb_commandes %></b>
+    <span>Commandes passées</span>
+  </div>
+  <div class="tuile">
+    <b><%= euros(kpis.panierMoyenCents) %></b>
+    <span>Panier moyen encaissé</span>
+  </div>
+  <div class="tuile">
+    <b><%= kpis.nbPlats %></b>
+    <span>Plats vendus</span>
+  </div>
+  <div class="tuile">
+    <b><%= kpis.nb_sur_place %></b>
+    <span>Commandes en salle</span>
+  </div>
+  <div class="tuile">
+    <b><%= kpis.nb_emporter %></b>
+    <span>Commandes à emporter</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Chiffre d'affaires par jour</h2>
+  <% if (!kpis.ca_cents && !kpis.nb_commandes) { %>
+    <p class="vide">Rien sur cette période.</p>
+  <% } else { %>
+    <svg class="graph-jours" viewBox="0 0 <%= graphique.largeur %> <%= graphique.hauteur + 16 %>" role="img" aria-label="Chiffre d'affaires par jour">
+      <% graphique.barres.forEach(b => { %>
+        <rect x="<%= b.x %>" y="<%= b.y %>" width="<%= b.largeur %>" height="<%= Math.max(b.hauteur, b.caCents ? 1 : 0) %>"
+              class="graph-jours__barre<%= b.nbCommandes ? '' : ' est-vide' %>">
+          <title><%= b.date %> (<%= b.jourSemaine %>) — <%= euros(b.caCents) %>, <%= b.nbCommandes %> commande<%= b.nbCommandes > 1 ? 's' : '' %></title>
+        </rect>
+        <% if (b.etiquette) { %>
+          <text x="<%= b.x %>" y="<%= graphique.hauteur + 12 %>" class="graph-jours__etiquette"><%= b.etiquette %></text>
+        <% } %>
+      <% }) %>
+    </svg>
+
+    <details>
+      <summary>Voir le détail jour par jour (<%= parJour.length %> jour<%= parJour.length > 1 ? 's' : '' %>)</summary>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Date</th><th>Jour</th><th>Commandes</th><th>Chiffre d'affaires</th></tr></thead>
+          <tbody>
+            <% parJour.forEach(j => { %>
+              <tr>
+                <td><%= j.date %></td>
+                <td><%= j.jourSemaine %></td>
+                <td><%= j.nbCommandes %></td>
+                <td><%= euros(j.caCents) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </details>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Ce qui se vend</h2>
+  <% if (!plats.length) { %>
+    <p class="vide">Aucun plat vendu sur cette période.</p>
+  <% } else { %>
+    <div class="barres-plats">
+      <% plats.forEach(p => { %>
+        <div class="barre-plat">
+          <span class="barre-plat__nom"><%= p.nom %></span>
+          <div class="barre-plat__jauge"><i style="width:<%= Math.round(p.quantite / platsMax * 100) %>%"></i></div>
+          <span class="barre-plat__nombre"><%= p.quantite %></span>
+          <span class="barre-plat__ca"><%= euros(p.ca_cents) %></span>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Chiffre d'affaires par serveur</h2>
+  <p class="aide" style="margin-top:-.6rem">
+    « Sans serveur (client) » regroupe les commandes passées par le client lui-même
+    — tunnel à emporter ou QR de table — sans passage par la prise de commande en salle.
+  </p>
+  <% if (!serveurs.length) { %>
+    <p class="vide">Rien sur cette période.</p>
+  <% } else { %>
+    <div class="barres-plats">
+      <% serveurs.forEach(s => { %>
+        <div class="barre-plat">
+          <span class="barre-plat__nom"><%= s.serveur %></span>
+          <div class="barre-plat__jauge"><i style="width:<%= Math.round(s.caCents / serveursMax * 100) %>%"></i></div>
+          <span class="barre-plat__nombre"><%= s.nbCommandes %> cmd.</span>
+          <span class="barre-plat__ca"><%= euros(s.caCents) %></span>
+        </div>
+      <% }) %>
+    </div>
+
+    <% if (grilleServeurs) { %>
+      <details style="margin-top:1.2rem">
+        <summary>Voir le détail jour par jour</summary>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Date</th><% grilleServeurs.serveurs.forEach(s => { %><th><%= s %></th><% }) %></tr>
+            </thead>
+            <tbody>
+              <% grilleServeurs.grille.forEach(ligne => { %>
+                <tr>
+                  <td><%= ligne.date %></td>
+                  <% ligne.parServeur.forEach(cents => { %>
+                    <td><%= cents ? euros(cents) : '—' %></td>
+                  <% }) %>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    <% } else { %>
+      <p class="aide">
+        Le détail jour par jour ne s'affiche que sur 31 jours ou moins — au-delà,
+        téléchargez l'export « Par serveur » plus bas.
+      </p>
+    <% } %>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Pour préparer l'avenir</h2>
+  <p class="aide" style="margin-top:-.6rem">
+    Trois premiers repères de saisonnalité, à affiner au fil des services. Le climat
+    n'est pas une donnée que ce site tient : pour le croiser avec les ventes,
+    exportez le détail ci-dessous et rapprochez-le d'une source météo par la date.
+  </p>
+
+  <div class="grid-analyse">
+    <div>
+      <h3>Par jour de semaine</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Jour</th><th>Observé</th><th>CA moyen</th><th>Commandes moy.</th></tr></thead>
+          <tbody>
+            <% semaine.forEach(j => { %>
+              <tr>
+                <td><%= j.jourSemaine %></td>
+                <td><%= j.nbJoursObserves %> j.</td>
+                <td><%= euros(j.caMoyenCents) %></td>
+                <td><%= j.commandesMoyennes %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <h3>Par mois</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Mois</th><th>Commandes</th><th>Chiffre d'affaires</th></tr></thead>
+          <tbody>
+            <% if (!mois.length) { %><tr><td colspan="3" class="vide">—</td></tr><% } %>
+            <% mois.forEach(m => { %>
+              <tr>
+                <td><%= m.mois %></td>
+                <td><%= m.nb_commandes %></td>
+                <td><%= euros(m.ca_cents) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <h3>Par saison</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Saison</th><th>Jours couverts</th><th>Chiffre d'affaires</th></tr></thead>
+          <tbody>
+            <% saison.forEach(s => { %>
+              <tr>
+                <td><%= s.saison %></td>
+                <td><%= s.nbJours %></td>
+                <td><%= euros(s.caCents) %></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Extraire les données</h2>
+  <p class="aide" style="margin-top:-.6rem">
+    Quatre fichiers CSV sur la période affichée (<%= debut %> → <%= fin %>), à ouvrir
+    dans un tableur ou à lire depuis un notebook. Celui « Détail des plats » est le
+    plus fin : une ligne par plat commandé, pour recombiner comme vous voulez.
+  </p>
+  <div class="btn-row">
+    <a class="btn btn--ghost btn--sm" href="/salon/analyse/export/jours.csv?debut=<%= debut %>&fin=<%= fin %>">CA par jour</a>
+    <a class="btn btn--ghost btn--sm" href="/salon/analyse/export/plats.csv?debut=<%= debut %>&fin=<%= fin %>">Plats vendus</a>
+    <a class="btn btn--ghost btn--sm" href="/salon/analyse/export/serveurs.csv?debut=<%= debut %>&fin=<%= fin %>">Par serveur et par jour</a>
+    <a class="btn btn--ghost btn--sm" href="/salon/analyse/export/commandes.csv?debut=<%= debut %>&fin=<%= fin %>">Détail des plats commandés</a>
+  </div>
+</div>
+
+<%- salonPied %>

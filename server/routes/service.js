@@ -132,11 +132,12 @@ async function lirePanier(body) {
   return { lignes, total: lignes.reduce((s, l) => s + l.prix_cents * l.quantite, 0) };
 }
 
-async function enregistrerCommande(t, { reference, clientId, type, tableeId, date, heure, total, message }) {
+async function enregistrerCommande(t, { reference, clientId, type, tableeId, date, heure, total, message, prisParId, prisParNom }) {
   return t.une(
-    `INSERT INTO commandes (reference, client_id, type, tablee_id, date, heure, total_cents, message, statut)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'confirmee') RETURNING *`,
-    [reference, clientId, type, tableeId, date, heure, total, message]
+    `INSERT INTO commandes
+       (reference, client_id, type, tablee_id, date, heure, total_cents, message, statut, pris_par_id, pris_par_nom)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'confirmee', $9, $10) RETURNING *`,
+    [reference, clientId, type, tableeId, date, heure, total, message, prisParId, prisParNom]
   );
 }
 
@@ -224,11 +225,13 @@ serviceRouter.post('/service/table/:id/commande', exigerService, verifierCsrf, a
     }
 
     const reference = genererReference('SUR');
+    const qui = await quiSert(req);
     await transaction(async (t) => {
       const commande = await enregistrerCommande(t, {
         reference, clientId: tablee.client_id, type: 'sur_place', tableeId: tablee.id,
         date: aujourdHui(), heure: maintenant(), total: panier.total,
         message: (req.body.message || '').trim(),
+        prisParId: req.employeId, prisParNom: qui,
       });
       for (const l of panier.lignes) {
         await t.executer(
@@ -328,11 +331,13 @@ serviceRouter.post('/service/emporter', exigerService, verifierCsrf, async (req,
     }
 
     const reference = genererReference('EMP');
+    const qui = await quiSert(req);
     await transaction(async (t) => {
       const commande = await enregistrerCommande(t, {
         reference, clientId: client.id, type: 'emporter', tableeId: null,
         date: aujourdHui(), heure: (req.body.heure || maintenant()).slice(0, 5),
         total: panier.total, message: (req.body.message || '').trim(),
+        prisParId: req.employeId, prisParNom: qui,
       });
       for (const l of panier.lignes) {
         await t.executer(
