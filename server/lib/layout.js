@@ -34,6 +34,8 @@ const fnSalonPied = compiler('partials/salon-pied.ejs');
 const fnServiceEntete = compiler('partials/service-entete.ejs');
 const fnServicePied = compiler('partials/service-pied.ejs');
 const fnCuisineTableau = compiler('partials/cuisine-tableau.ejs');
+const fnCuisineEntete = compiler('partials/cuisine-entete.ejs');
+const fnCuisinePied = compiler('partials/cuisine-pied.ejs');
 const fnTeteApp = compiler('partials/tete-app.ejs');
 const fnEpingler = compiler('partials/epingler.ejs');
 
@@ -49,6 +51,11 @@ export const servicePied = donnees => fnServicePied(donnees);
  *  premier affichage, et le rafraîchissement automatique va chercher ce
  *  même fragment seul. Une seule source pour les deux. */
 export const cuisineTableau = donnees => fnCuisineTableau(donnees);
+
+/** L'écran de cuisine a sa propre mise en page : au passe on ne navigue
+ *  pas entre des onglets de salle, on regarde ce qui est au feu. */
+export const cuisineEntete = donnees => fnCuisineEntete({ cssApp, ...donnees });
+export const cuisinePied = donnees => fnCuisinePied(donnees);
 
 /** Les balises qui font d'une page une application épinglable, et l'appel
  *  à l'épingler. Rendus à part pour que les quatre mises en page partagent

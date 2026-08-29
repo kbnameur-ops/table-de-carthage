@@ -496,17 +496,25 @@ server/views/*.ejs    gabarits</code></pre>
         <table>
           <thead><tr><th>Statut</th><th>Libellé</th><th>Horodatage posé</th></tr></thead>
           <tbody>
-            <tr><td><code>confirmee</code></td><td>Nouvelle</td><td><code>cree_le</code></td></tr>
+            <tr><td><code>en_attente</code><br><code>confirmee</code></td><td>Nouvelle</td><td><code>cree_le</code></td></tr>
             <tr><td><code>vue</code></td><td>Lue</td><td><code>vue_le</code></td></tr>
             <tr><td><code>en_preparation</code></td><td>En préparation</td><td><code>preparation_le</code></td></tr>
             <tr><td><code>prete</code></td><td>Prête</td><td><code>prete_le</code></td></tr>
           </tbody>
         </table>
       </div>
-      <p>Les horodatages servent à afficher un temps d'attente qui a du sens&nbsp;: au
-         passe, ce qui compte n'est pas l'âge de la commande mais depuis combien de temps
-         elle est au feu, ou <em>prête et non servie</em>. Le compteur passe à l'orange à
-         dix minutes, au rouge à vingt.</p>
+      <p>La première colonne couvre <strong>deux</strong> statuts. Une commande passée
+         par un client — QR de table ou tunnel à emporter — s'enregistre en
+         <code>en_attente</code>, celles saisies par le personnel en
+         <code>confirmee</code>&nbsp;: au piano les deux veulent dire la même chose, et
+         n'en regarder qu'une revenait à ne jamais voir les commandes des clients.</p>
+      <p>Les horodatages servent à afficher un temps d'attente qui a du sens, et les deux
+         circuits ne se mesurent pas pareil. En salle, le temps passé dans l'état en
+         cours — au feu, ou <em>prête et non servie</em>. À emporter, le temps
+         <em>restant avant le retrait</em>&nbsp;: une commande passée le matin pour le
+         soir afficherait sinon plusieurs heures d'ancienneté sans que rien ne presse.
+         Le calcul se fait à l'heure de Paris via <code>Intl</code>, le serveur tournant
+         en UTC.</p>
 
       <h3>Le téléphone comme identité</h3>
       <p>Le numéro est stocké normalisé (chiffres seuls, <code>0</code> initial réécrit en

@@ -1,27 +1,44 @@
 <% if (!tableau.commandes.length) { %>
-  <p class="cuisine-vide">Rien au feu. Les commandes arrivent ici dès qu'elles sont passées.</p>
+  <p class="passe-vide">Rien au feu. Les commandes arrivent ici dès qu'elles sont passées.</p>
 <% } else { %>
-  <div class="cuisine-colonnes">
+  <div class="passe-colonnes">
     <% ETATS.forEach(etat => { %>
-      <section class="cuisine-col cuisine-col--<%= etat.replace('_','') %>">
-        <h2 class="cuisine-col__titre">
+      <section class="passe-col passe-col--<%= etat.replace('_','') %>" data-colonne="<%= etat %>">
+        <h2 class="passe-col__titre">
           <%= LIBELLES[etat] %>
-          <span class="cuisine-col__compte"><%= tableau.parEtat[etat].length %></span>
+          <span class="passe-col__compte" data-colonne-compte="<%= etat %>"><%= tableau.parEtat[etat].length %></span>
         </h2>
 
-        <% if (!tableau.parEtat[etat].length) { %>
-          <p class="cuisine-col__vide">—</p>
-        <% } %>
+        <p class="passe-col__vide" data-vide="<%= etat %>"<%- tableau.parEtat[etat].length ? ' hidden' : '' %>>—</p>
 
         <% tableau.parEtat[etat].forEach(cmd => { %>
-          <article class="ticket<%= cmd.minutes >= 20 ? ' est-tardif' : (cmd.minutes >= 10 ? ' est-long' : '') %>">
+          <article class="ticket ticket--<%= cmd.type === 'sur_place' ? 'salle' : 'emporter' %><%= cmd.urgence === 'tardif' ? ' est-tardif' : (cmd.urgence === 'long' ? ' est-long' : '') %>"
+                   data-type="<%= cmd.type %>" data-id="<%= cmd.id %>">
             <header class="ticket__tete">
-              <b><%= cmd.type === 'sur_place' ? nomTable(cmd.table_nom) : 'À emporter' %></b>
-              <span class="ticket__minutes"><%= cmd.minutes %> min</span>
+              <% if (cmd.type === 'sur_place') { %>
+                <b class="ticket__origine"><%= nomTable(cmd.table_nom) %></b>
+                <span class="ticket__minutes"><%= cmd.minutes %> min</span>
+              <% } else { %>
+                <b class="ticket__origine ticket__origine--emporter">À emporter</b>
+                <span class="ticket__minutes">
+                  <% if (cmd.avantRetrait === null) { %>
+                    <%= cmd.heure %>
+                  <% } else if (cmd.avantRetrait <= 0) { %>
+                    retard <%= -cmd.avantRetrait %> min
+                  <% } else if (cmd.avantRetrait < 60) { %>
+                    dans <%= cmd.avantRetrait %> min
+                  <% } else { %>
+                    dans <%= Math.floor(cmd.avantRetrait / 60) %> h<%= String(cmd.avantRetrait % 60).padStart(2,'0') %>
+                  <% } %>
+                </span>
+              <% } %>
             </header>
+
             <p class="ticket__qui">
               <%= cmd.prenom %>
-              <% if (cmd.type === 'emporter') { %> · retrait <%= cmd.heure %><% } %>
+              <% if (cmd.type === 'emporter') { %>
+                <span class="ticket__retrait">Retrait <b><%= cmd.heure %></b></span>
+              <% } %>
             </p>
 
             <ul class="ticket__lignes">

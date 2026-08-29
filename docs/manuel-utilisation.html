@@ -196,7 +196,7 @@ tbody tr:last-child td{border-bottom:0}
           <tbody>
             <tr><td><code>/salon</code></td><td>Le back-office complet</td><td>La direction, avec son e-mail</td></tr>
             <tr><td><code>/service</code></td><td>Prise de commande et caisse</td><td>La salle, avec un identifiant court</td></tr>
-            <tr><td><code>/cuisine</code></td><td>Le passe</td><td>La cuisine, même identifiant</td></tr>
+            <tr><td><code>/cuisine</code></td><td>Le passe, écran autonome</td><td>La cuisine, même identifiant</td></tr>
           </tbody>
         </table>
       </div>
@@ -355,7 +355,8 @@ tbody tr:last-child td{border-bottom:0}
       <h2>Prendre une commande</h2>
       <span class="pour-qui">Salle</span>
       <p>Trois onglets, tenus d'une main&nbsp;: <strong>Salle</strong>,
-         <strong>À emporter</strong>, <strong>Caisse</strong>.</p>
+         <strong>À emporter</strong>, <strong>Caisse</strong>. Un quatrième lien mène
+         à la cuisine, qui a son propre écran.</p>
 
       <h3>Lire le plan</h3>
       <p>Chaque table est une tuile. Un liseré <span style="color:var(--ok)">vert</span> et
@@ -440,8 +441,26 @@ tbody tr:last-child td{border-bottom:0}
     <section id="cuisine">
       <h2>L'écran de cuisine</h2>
       <span class="pour-qui">Cuisine</span>
-      <p>Quatre colonnes, dans l'ordre du service. Une commande avance de gauche à droite,
-         un bouton à la fois.</p>
+      <p>Un écran à part, pensé pour être laissé allumé au-dessus du piano. Quatre
+         colonnes, dans l'ordre du service&nbsp;; une commande avance de gauche à
+         droite, un bouton à la fois. L'heure est rappelée en haut, au milieu.</p>
+
+      <h3>Les deux circuits</h3>
+      <p>En haut, trois boutons&nbsp;: <strong>Tout</strong>, <strong>En salle</strong>,
+         <strong>À emporter</strong>, chacun avec son compte. Ils n'affichent que le
+         circuit choisi, mais les compteurs portent toujours sur l'ensemble&nbsp;: on
+         voit qu'il reste des commandes dans celui qu'on a masqué. Le choix est retenu
+         d'une ouverture à l'autre.</p>
+      <p>Un ticket se reconnaît à son liseré&nbsp;: <strong>marine</strong> pour une
+         table, <strong>doré</strong> pour un retrait. Ils ne se travaillent pas
+         pareil, et le compteur en haut à droite le dit&nbsp;:</p>
+      <ul class="simple">
+        <li><strong>En salle</strong>&nbsp;: depuis combien de temps la commande attend
+            dans son état actuel.</li>
+        <li><strong>À emporter</strong>&nbsp;: combien de temps il reste
+            <em>avant le retrait</em>. Une commande passée le matin pour le soir n'est
+            pas en retard, elle attend son heure.</li>
+      </ul>
 
       <div class="etats">
         <div class="etat etat--nouvelle"><i></i><div><b>Nouvelle</b><span>Elle vient de tomber. Personne ne l'a encore vue.</span></div></div>
@@ -456,17 +475,17 @@ tbody tr:last-child td{border-bottom:0}
          <strong>temps d'attente</strong>.</p>
       <div class="tableau">
         <table>
-          <thead><tr><th>Couleur du compteur</th><th>Signification</th></tr></thead>
+          <thead><tr><th>Couleur</th><th>En salle</th><th>À emporter</th></tr></thead>
           <tbody>
-            <tr><td>Gris</td><td>Moins de dix minutes.</td></tr>
-            <tr><td style="color:var(--or)">Orange</td><td>Dix minutes ou plus.</td></tr>
-            <tr><td style="color:var(--alerte)">Rouge</td><td>Vingt minutes ou plus. À traiter.</td></tr>
+            <tr><td>Gris</td><td>Moins de dix minutes.</td><td>Plus de vingt minutes avant le retrait.</td></tr>
+            <tr><td style="color:var(--or)">Orange</td><td>Dix minutes ou plus.</td><td>Le retrait est dans moins de vingt minutes.</td></tr>
+            <tr><td style="color:var(--alerte)">Rouge</td><td>Vingt minutes ou plus.</td><td>L'heure de retrait est passée.</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Le compteur ne mesure pas l'âge de la commande mais le temps passé dans l'état
-         en cours. Un plat <em>prêt depuis vingt minutes</em> et non servi se signale donc
-         tout seul.</p>
+      <p>En salle, le compteur ne mesure pas l'âge de la commande mais le temps passé
+         dans l'état en cours&nbsp;: un plat <em>prêt depuis vingt minutes</em> et non
+         servi se signale donc tout seul.</p>
 
       <h3>Un plat retombé</h3>
       <p>Sur une commande prête, <strong>Remettre au feu</strong> la renvoie en préparation
@@ -476,7 +495,8 @@ tbody tr:last-child td{border-bottom:0}
         <span class="encart__quoi">L'écran se tient à jour seul</span>
         <p>Il se rafraîchit toutes les quinze secondes sans qu'on y touche. Inutile de
            recharger la page&nbsp;— et inutile de toucher l'écran avec les mains sales pour
-           savoir si une commande est tombée.</p>
+           savoir si une commande est tombée. Un ticket qui vient d'arriver se signale
+           par un halo, le temps qu'on le remarque.</p>
         <p>Une commande ne recule jamais toute seule&nbsp;: si deux personnes touchent le
            même ticket en même temps, seule la première action compte.</p>
       </div>

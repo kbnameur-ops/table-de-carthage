@@ -1,5 +1,5 @@
 import { creerSessionInvite, obtenirSession } from './lib/auth.js';
-import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied, teteApp, epingler } from './lib/layout.js';
+import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied, cuisineEntete, cuisinePied, teteApp, epingler } from './lib/layout.js';
 import { ESPACES, espaceDe } from './lib/epinglage.js';
 import { nomTable } from './lib/jours.js';
 import { cssApp } from './lib/version-actifs.js';
@@ -154,7 +154,16 @@ export function injecterMiseEnPage(req, res, next) {
       donnees.actif ??= defauts.actif ?? '';
     }
     if (donnees.entete === undefined) {
-      if (vue.startsWith('service/')) {
+      if (vue === 'cuisine') {
+        donnees.cuisineEntete = cuisineEntete({
+          sousTitre: donnees.sousTitre ?? '', qui: donnees.qui ?? '',
+          retourService: donnees.retourService ?? false,
+          teteApp: donnees.teteApp,
+        });
+        donnees.cuisinePied = cuisinePied({
+          csrfToken: donnees.csrfToken ?? res.locals.csrfToken, epingler: donnees.epingler,
+        });
+      } else if (vue.startsWith('service/')) {
         donnees.serviceEntete = serviceEntete({
           titre: donnees.titre, sousTitre: donnees.sousTitre ?? '',
           actif: donnees.actif ?? '', qui: donnees.qui ?? '',

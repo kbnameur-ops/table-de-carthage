@@ -18,6 +18,9 @@ function donnees(req, res, tableau) {
   return {
     titre: 'Cuisine', sousTitre: 'Service du jour', actif: 'cuisine',
     qui: req.session.role === 'admin' ? 'Salon' : (res.locals.employe?.prenom || 'Cuisine'),
+    // Le lien vers la salle n'a de sens que pour qui y a droit : un commis
+    // n'a rien à faire sur un plan de table.
+    retourService: req.session.role === 'admin' || !!res.locals.droits?.service,
     tableau, ETATS, LIBELLES, nomTable,
     csrfToken: res.locals.csrfToken,
   };
@@ -26,7 +29,7 @@ function donnees(req, res, tableau) {
 cuisineRouter.get('/cuisine', exigerCuisine, async (req, res, next) => {
   try {
     const d = donnees(req, res, await tableauDuJour(aujourdHui()));
-    res.render('service/cuisine', { ...d, tableauHtml: cuisineTableau(d) });
+    res.render('cuisine', { ...d, tableauHtml: cuisineTableau(d) });
   } catch (err) { next(err); }
 });
 
