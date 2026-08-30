@@ -8,6 +8,7 @@ import { euros } from '../lib/money.js';
 import { verifierCsrf } from '../middleware.js';
 import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
 import { notifier, quand } from '../lib/notifications.js';
+import { paiementDisponible } from '../lib/paiement.js';
 import { clientDeSession, connecterDepuisTunnel, quitterIdentite } from '../lib/tunnel-identite.js';
 
 const MAX_SOUMISSIONS_15MIN = 20;
@@ -140,11 +141,17 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
     }
 
     const reference = genererReference('CMD');
+    // Tant que le paiement en ligne n'est pas activé, rien ne change : la
+    // commande part directement en cuisine comme avant. Une fois les clés
+    // Stripe posées, elle attend son empreinte en 'a_payer' — statut que la
+    // cuisine ignore — et n'en sort qu'une fois la carte enregistrée.
+    const aRegler = paiementDisponible();
     await transaction(async (t) => {
       const commande = await t.une(
-        `INSERT INTO commandes (reference, client_id, date, heure, total_cents, message)
-         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-        [reference, client.id, b.date, b.heure, panier.total, (b.message || '').trim()]
+        `INSERT INTO commandes (reference, client_id, date, heure, total_cents, message, statut)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+        [reference, client.id, b.date, b.heure, panier.total, (b.message || '').trim(),
+         aRegler ? 'a_payer' : 'en_attente']
       );
       for (const l of panier.lignes) {
         await t.executer(
@@ -154,15 +161,22 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
       }
     });
 
-    const nbPlats = panier.lignes.reduce((n, l) => n + l.quantite, 0);
-    await notifier({
-      type: 'commande',
-      titre: `Nouvelle commande — ${euros(panier.total)}`,
-      detail: `${client.prenom} ${client.nom} · retrait ${quand(b.date, b.heure)} · ${nbPlats} article${nbPlats > 1 ? 's' : ''} · ${client.telephone_saisi}`,
-      lien: `/salon/commandes?date=${b.date}`,
-    });
+    // Une commande pas encore payée ne réveille personne au salon : la
+    // notification part du webhook, quand l'empreinte est prise. Sans quoi
+    // chaque panier abandonné à l'écran de paiement sonnerait en cuisine.
+    if (!aRegler) {
+      const nbPlats = panier.lignes.reduce((n, l) => n + l.quantite, 0);
+      await notifier({
+        type: 'commande',
+        titre: `Nouvelle commande — ${euros(panier.total)}`,
+        detail: `${client.prenom} ${client.nom} · retrait ${quand(b.date, b.heure)} · ${nbPlats} article${nbPlats > 1 ? 's' : ''} · ${client.telephone_saisi}`,
+        lien: `/salon/commandes?date=${b.date}`,
+      });
+    }
 
-    res.redirect(`/commander/confirmation?ref=${encodeURIComponent(reference)}`);
+    res.redirect(aRegler
+      ? `/paiement/${encodeURIComponent(reference)}`
+      : `/commander/confirmation?ref=${encodeURIComponent(reference)}`);
   } catch (err) { next(err); }
 });
 

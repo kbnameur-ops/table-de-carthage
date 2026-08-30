@@ -574,6 +574,32 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
   .identifie .btn{flex:1 1 100%}
 }
 
+/* Sur un téléphone, deux boutons côte à côte dans une cellule poussent la
+   colonne hors de l'écran : le client doit alors deviner qu'il faut faire
+   défiler le tableau pour trouver « Régler ». Ils s'empilent donc. */
+@media (max-width:600px){
+  td .btn-row--serree{flex-direction:column;align-items:stretch;gap:.3rem}
+  td .btn-row--serree .btn{width:100%}
+  /* Et on resserre le tableau lui-même : sans ça, la colonne d'actions
+     part au-delà du bord et « Régler » n'existe que pour qui pense à faire
+     défiler de côté. */
+  .table-scroll table{font-size:.82rem}
+  .table-scroll th,.table-scroll td{padding:.55rem .4rem}
+  .table-scroll td:first-child{word-break:break-all}
+}
+
+/* ── Paiement en ligne ────────────────────────────────────── */
+.montant-du{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin:0;
+}
+.montant-du span{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.montant-du b{
+  font-family:var(--ff-display);font-weight:600;font-size:1.6rem;color:var(--navy-800);
+  font-variant-numeric:tabular-nums;
+}
+/* Le cadre que Stripe injecte doit respirer comme nos propres champs. */
+#carte{margin-bottom:.4rem}
+
 /* ═══════════════════════════════════════════════════════════
    Analyse (chiffre d'affaires, plats vendus, prévision)
    ═══════════════════════════════════════════════════════════ */

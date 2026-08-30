@@ -5,6 +5,8 @@ import { dateValide } from '../lib/validate.js';
 import { euros, versCents } from '../lib/money.js';
 import { encaisserCommande } from '../lib/encaissement.js';
 import { jourVoisin, aujourdHui, libelleJour } from '../lib/jours.js';
+import { capturerEtEncaisser, libererPaiement } from '../lib/reglement.js';
+import { paiementDisponible } from '../lib/paiement.js';
 
 export const salonCommandesRouter = Router();
 
@@ -13,6 +15,9 @@ export const salonCommandesRouter = Router();
 // cagnotte. Le laisser sélectionnable créerait des commandes payées sans
 // gain de fidélité.
 const STATUTS = ['en_attente', 'confirmee', 'prete', 'retiree', 'annulee'];
+// 'a_payer' n'y figure pas non plus : on n'y entre pas depuis un menu, et
+// on n'en sort qu'en réglant. Le forcer à la main enverrait en cuisine une
+// commande dont personne n'a la carte.
 
 salonCommandesRouter.get('/salon/commandes', exigerAdmin, async (req, res, next) => {
   try {
@@ -44,12 +49,29 @@ salonCommandesRouter.get('/salon/commandes', exigerAdmin, async (req, res, next)
     const parCommande = new Map(ids.map(id => [id, []]));
     for (const l of lignes) parCommande.get(l.commande_id)?.push(l);
 
-    const commandes = commandesBrutes.map(c => ({ ...c, lignes: parCommande.get(c.id) || [] }));
-    const total = commandes.filter(c => c.statut !== 'annulee').reduce((s, c) => s + c.total_cents, 0);
+    // Le paiement en face de chaque commande : c'est ce qui permet à la
+    // caisse de savoir si une empreinte attend d'être débitée ou libérée.
+    const paiements = ids.length
+      ? await query(
+          `SELECT * FROM paiements WHERE commande_id = ANY($1::int[])
+            AND statut IN ('a_confirmer','autorise','capture')`, [ids])
+      : [];
+    const parPaiement = new Map(paiements.map(p => [p.commande_id, p]));
+
+    const commandes = commandesBrutes.map(c => ({
+      ...c, lignes: parCommande.get(c.id) || [], paiement: parPaiement.get(c.id) || null,
+    }));
+    // 'a_payer' est exclu comme 'annulee' : une commande dont la carte n'a
+    // jamais été validée est un panier abandonné, l'additionner ferait
+    // afficher au salon un chiffre d'affaires qui n'existe pas.
+    const total = commandes
+      .filter(c => c.statut !== 'annulee' && c.statut !== 'a_payer')
+      .reduce((s, c) => s + c.total_cents, 0);
 
     res.render('salon/commandes', {
       titre: 'Commandes à emporter', actif: 'commandes',
       commandes, date, aVenir, statut, total, statuts: STATUTS, euros,
+      paiementActif: paiementDisponible(),
       veille: date ? jourVoisin(date, -1) : null,
       lendemain: date ? jourVoisin(date, 1) : null,
       aujourdHui: aujourdHui(),
@@ -79,5 +101,32 @@ salonCommandesRouter.post('/salon/commandes/:id/encaisser', exigerAdmin, verifie
       return redirigerRetour(req, res, '/salon/commandes?erreur=' + encodeURIComponent(r.erreur));
     }
     redirigerRetour(req, res, '/salon/commandes');
+  } catch (err) { next(err); }
+});
+
+/** Débiter l'empreinte d'une commande retirée. La cagnotte se déduit ici
+ *  comme au comptoir : on capture le montant autorisé moins ce que les
+ *  points couvrent, et Stripe rend la différence au client. */
+salonCommandesRouter.post('/salon/paiements/:id/capturer', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const remise = req.body.cagnotte ? (versCents(req.body.cagnotte) ?? 0) : 0;
+    const r = await capturerEtEncaisser(req.params.id, { remiseCents: remise });
+    if (r.erreur) {
+      return redirigerRetour(req, res, '/salon/commandes?erreur=' + encodeURIComponent(r.erreur));
+    }
+    redirigerRetour(req, res, '/salon/commandes?info=' + encodeURIComponent('Empreinte débitée.'));
+  } catch (err) { next(err); }
+});
+
+/** Rendre l'empreinte sans rien débiter : le geste commercial sur une
+ *  commande que personne n'est venu chercher. La commande est annulée dans
+ *  la foulée — elle n'a été ni retirée, ni payée. */
+salonCommandesRouter.post('/salon/paiements/:id/liberer', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const r = await libererPaiement(req.params.id);
+    if (r.erreur) {
+      return redirigerRetour(req, res, '/salon/commandes?erreur=' + encodeURIComponent(r.erreur));
+    }
+    redirigerRetour(req, res, '/salon/commandes?info=' + encodeURIComponent('Empreinte libérée, rien n\'a été débité.'));
   } catch (err) { next(err); }
 });

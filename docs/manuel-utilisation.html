@@ -182,6 +182,7 @@ tbody tr:last-child td{border-bottom:0}
       <li><a href="#caisse"><b>Encaisser</b> <i>salle, caisse</i></a></li>
       <li><a href="#cuisine"><b>L'écran de cuisine</b> <i>cuisine</i></a></li>
       <li><a href="#fidelite"><b>La cagnotte</b> <i>tout le monde</i></a></li>
+      <li><a href="#paiement"><b>Le paiement en ligne</b> <i>direction, caisse</i></a></li>
       <li><a href="#analyse"><b>L'analyse</b> <i>direction</i></a></li>
       <li><a href="#client"><b>Ce que voit le client</b> <i>pour information</i></a></li>
       <li><a href="#questions"><b>Que faire si…</b></a></li>
@@ -565,6 +566,63 @@ tbody tr:last-child td{border-bottom:0}
       <h3>Changer le taux</h3>
       <p>Les 10&nbsp;% sont un réglage, pas une valeur figée dans le programme. Demandez la
          modification&nbsp;: elle se fait en base, sans nouvelle mise en ligne.</p>
+    </section>
+
+    <section id="paiement">
+      <h2>Le paiement en ligne</h2>
+      <span class="pour-qui">Direction, caisse</span>
+      <p>Une commande à emporter passée sur le site demande désormais une carte
+         <strong>avant</strong> de partir en cuisine. Rien n'est débité à ce
+         moment-là&nbsp;: le montant est simplement réservé sur le compte du client,
+         comme le fait un hôtel. C'est l'<strong>empreinte</strong>.</p>
+
+      <div class="encart">
+        <span class="encart__quoi">Tant que Stripe n'est pas branché</span>
+        <p>Rien ne change. Les commandes continuent d'arriver et se règlent au
+           comptoir comme aujourd'hui. Le paiement ne s'allume que le jour où les clés
+           du compte Stripe sont posées.</p>
+      </div>
+
+      <h3>Ce que voit le client</h3>
+      <ol class="marches">
+        <li>Il compose sa commande et valide comme avant.</li>
+        <li>Un écran lui demande sa carte, en précisant que rien ne sera débité avant
+            le retrait.</li>
+        <li>Une fois la carte acceptée, la commande part en cuisine et vous êtes
+            prévenu.</li>
+      </ol>
+      <p>S'il abandonne à cet écran, la commande reste en attente de sa carte&nbsp;:
+         elle n'arrive pas en cuisine, ne compte dans aucun chiffre, et il peut la
+         reprendre depuis son espace sans tout ressaisir.</p>
+
+      <h3>Au retrait</h3>
+      <p>Sur l'écran <strong>Commandes</strong>, une commande dont l'empreinte est prise
+         affiche «&nbsp;Empreinte de X&nbsp;€ prise&nbsp;» et deux boutons&nbsp;:</p>
+      <ul class="simple">
+        <li><strong>Débiter</strong> quand le client vient chercher sa commande. Si vous
+            renseignez un montant de cagnotte, il est déduit&nbsp;: on ne prend sur la
+            carte que la différence, et le reste lui est rendu automatiquement.</li>
+        <li><strong>Libérer</strong> si personne n'est venu et que vous ne souhaitez
+            rien facturer. L'argent est rendu, la commande est annulée.</li>
+      </ul>
+      <div class="encart encart--attention">
+        <span class="encart__quoi">Une empreinte ne dure pas indéfiniment</span>
+        <p>Au bout d'environ <strong>sept jours</strong>, une empreinte tombe d'elle-même
+           et l'argent n'est plus réservé. Passé ce délai, il n'y a plus rien à débiter
+           — tranchez avant.</p>
+      </div>
+      <p>Une fois débitée, l'empreinte ne se libère plus&nbsp;: rendre l'argent après
+         l'avoir pris passe par un remboursement, à faire depuis le tableau de bord
+         Stripe.</p>
+
+      <h3>Régler depuis son téléphone</h3>
+      <p>Dans son espace, le client peut aussi régler lui-même&nbsp;: une commande à
+         emporter en attente, ou <strong>l'addition de la table où il est
+         installé</strong>, sans attendre que quelqu'un passe avec le terminal. Le
+         débit est immédiat dans ce cas, et l'addition se ferme toute seule — la table
+         se libère sans que vous ayez à intervenir.</p>
+      <p>La cagnotte reste utilisable au comptoir, comme avant. Elle ne s'applique pas
+         encore au règlement en ligne.</p>
     </section>
 
     <section id="analyse">
