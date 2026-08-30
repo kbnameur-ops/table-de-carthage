@@ -181,7 +181,7 @@ td code{font-size:.8rem;white-space:nowrap}
       <span>Node <b>≥ 20</b></span>
       <span>Environ <b>5 400</b> lignes de JavaScript</span>
       <span><b>20</b> tables Postgres</span>
-      <span><b>55</b> tests</span>
+      <span><b>71</b> tests</span>
     </div>
   </header>
 
@@ -251,6 +251,8 @@ server/views/*.ejs    gabarits</code></pre>
         <div class="fichier"><b>lib/fidelite.js</b><span>Cagnotte&nbsp;: gains, dépenses, transferts entre clients, ajustements.</span></div>
         <div class="fichier"><b>lib/encaissement.js</b><span>Le seul endroit où de l'argent change de main.</span></div>
         <div class="fichier"><b>lib/cuisine.js</b><span>File du passe et transitions d'état d'une commande.</span></div>
+        <div class="fichier"><b>lib/paiement.js</b><span>L'adaptateur Stripe : intentions, empreintes, capture, libération, vérification des webhooks.</span></div>
+        <div class="fichier"><b>lib/reglement.js</b><span>La charnière entre un paiement Stripe et l'encaissement : c'est le seul chemin entre « la carte est débitée » et « la commande est encaissée ».</span></div>
         <div class="fichier"><b>lib/tables.js</b><span>Tables de la salle : création avec code QR, et la règle qui autorise ou refuse une suppression selon les additions portées.</span></div>
         <div class="fichier"><b>lib/personnel.js</b><span>Connexion du personnel, partagée par la salle et le passe, et choix de l'écran d'arrivée selon les droits.</span></div>
         <div class="fichier"><b>lib/analyse.js</b><span>Chiffre d'affaires, volume et plats vendus par jour, serveur, jour de semaine, mois et saison.</span></div>
@@ -290,8 +292,8 @@ server/views/*.ejs    gabarits</code></pre>
 
     <section id="donnees">
       <h2><em>04</em>Modèle de données</h2>
-      <p>Vingt tables. Le schéma vit dans un seul fichier, <code>server/schema.sql</code>,
-         organisé en blocs versionnés (v2 à v6) tous idempotents&nbsp;: le même fichier
+      <p>Vingt-deux tables. Le schéma vit dans un seul fichier, <code>server/schema.sql</code>,
+         organisé en blocs versionnés (v2 à v7) tous idempotents&nbsp;: le même fichier
          s'applique à une base neuve comme à une base en service.</p>
 
       <h3>Carte et salle</h3>
@@ -320,6 +322,8 @@ server/views/*.ejs    gabarits</code></pre>
             <tr><td><code>commandes</code></td><td>À emporter ou sur place. Porte le statut de cuisine, les horodatages, et qui l'a prise (<code>pris_par_id</code>/<code>pris_par_nom</code>, nul si le client se sert lui-même).</td></tr>
             <tr><td><code>commande_lignes</code></td><td>Nom et prix <em>recopiés</em>&nbsp;: une commande passée reste lisible si le plat change.</td></tr>
             <tr><td><code>fidelite_mouvements</code></td><td>Journal signé de la cagnotte.</td></tr>
+            <tr><td><code>paiements</code></td><td>Une ligne par intention Stripe. <code>montant_cents</code> = autorisé, <code>capture_cents</code> = réellement débité.</td></tr>
+            <tr><td><code>paiement_evenements</code></td><td>Les webhooks déjà traités, pour qu'un événement rejoué ne crédite pas deux fois.</td></tr>
           </tbody>
         </table>
       </div>
@@ -520,6 +524,72 @@ server/views/*.ejs    gabarits</code></pre>
          Le calcul se fait à l'heure de Paris via <code>Intl</code>, le serveur tournant
          en UTC.</p>
 
+      <h3>Le paiement en ligne</h3>
+      <div class="note note--attention">
+        <span class="note__quoi">Dormant par défaut</span>
+        <p>Sans <code>STRIPE_SECRET_KEY</code>, <code>paiementActif()</code> répond
+           <code>false</code> et le site se comporte exactement comme avant&nbsp;: les
+           tunnels acceptent une commande sans carte, aucun écran de paiement
+           n'apparaît. Déployer ce code ne change donc rien&nbsp;; c'est poser les clés
+           qui l'allume.</p>
+      </div>
+      <p>Deux gestes distincts, deux modes Stripe&nbsp;:</p>
+      <ul>
+        <li><strong>L'empreinte</strong> (<code>capture_method: manual</code>) sur une
+            commande à emporter&nbsp;: le montant est autorisé, donc bloqué sur la
+            carte, mais rien n'est débité. La commande naît en <code>a_payer</code> —
+            un statut que la cuisine ignore — et n'en sort que lorsque l'autorisation
+            arrive. Sans ce statut, un panier abandonné à l'écran de paiement ferait
+            travailler le piano pour rien.</li>
+        <li><strong>Le débit immédiat</strong> depuis l'espace client, pour régler une
+            commande déjà passée ou l'addition de la table où l'on est installé. Il n'y
+            a rien à arbitrer plus tard&nbsp;: l'encaissement suit dans la foulée.</li>
+      </ul>
+      <p>Une autorisation Stripe vit environ <strong>sept jours</strong>. Passé ce
+         délai elle tombe d'elle-même, et la commande reste impayée&nbsp;— d'où
+         <code>empreintesQuiExpirent()</code>, qui permet de les signaler avant.</p>
+
+      <h3>Capturer moins que ce qui a été autorisé</h3>
+      <p>Stripe accepte de ne débiter qu'une partie du montant autorisé, et c'est ce
+         qui réconcilie l'empreinte avec la cagnotte&nbsp;: on bloque 40&nbsp;€ à la
+         commande, le client règle 5&nbsp;€ en points au comptoir, on ne capture que
+         35&nbsp;€ et Stripe rend la différence. Le gain de fidélité porte alors sur les
+         35&nbsp;€ réellement payés, comme pour tout autre encaissement — la règle
+         « on gagne sur ce qui a été payé » vaut aussi quand une carte est dans la
+         boucle.</p>
+      <p>Si la cagnotte couvre la totalité, l'empreinte est <em>libérée</em> plutôt que
+         capturée à zéro, ce que Stripe refuserait.</p>
+
+      <h3>Ce qui protège l'argent</h3>
+      <ul>
+        <li><strong>Le montant ne vient jamais du navigateur.</strong> Chaque intention
+            est créée à partir des lignes relues en base. Un montant posté serait un
+            moyen de payer une commande de 40&nbsp;€ avec un centime.</li>
+        <li><strong>Un seul paiement vivant par commande</strong>, garanti par un index
+            unique partiel. Deux onglets ouverts créeraient sinon deux empreintes, et le
+            client verrait deux fois le montant bloqué sur son relevé.</li>
+        <li><strong>Les webhooks sont idempotents.</strong> Stripe réémet jusqu'à
+            recevoir un 2xx, et peut livrer deux fois même ensuite&nbsp;;
+            <code>paiement_evenements</code> retient les identifiants déjà traités,
+            sans quoi un même paiement créditerait deux fois la cagnotte.</li>
+        <li><strong>Le webhook est monté avant les analyseurs de corps.</strong> La
+            signature de Stripe porte sur les octets bruts&nbsp;: un corps analysé puis
+            re-sérialisé par <code>express.json()</code> ne redonne pas la même chaîne,
+            et la vérification échouerait. L'ordre dans
+            <code>server/index.js</code> n'est donc pas cosmétique.</li>
+        <li><strong>Rien n'est cru sans signature.</strong> Sans
+            <code>STRIPE_WEBHOOK_SECRET</code>, le webhook répond 400&nbsp;: n'importe
+            qui connaissant l'adresse pourrait sinon déclarer une commande payée.</li>
+        <li><strong>Stripe d'abord, la base ensuite.</strong> Si l'encaissement échouait
+            après un débit réussi, le paiement reste en <code>capture</code> sans que la
+            commande soit marquée encaissée — la caisse voit « payé, à encaisser » et
+            peut réessayer. L'inverse (encaissée sans avoir pris l'argent) serait bien
+            pire.</li>
+        <li><strong>Aucun numéro de carte ne touche ce serveur</strong>&nbsp;: la saisie
+            se fait dans un cadre servi par Stripe, et seule la clé publique — qui ne
+            peut rien débiter — est envoyée au navigateur.</li>
+      </ul>
+
       <h3>L'analyse&nbsp;: deux nombres qui ne veulent pas dire la même chose</h3>
       <p><code>lib/analyse.js</code> distingue systématiquement deux grandeurs, et les
          confondre fausserait toute décision prise dessus&nbsp;:</p>
@@ -617,6 +687,10 @@ server/views/*.ejs    gabarits</code></pre>
           <tbody>
             <tr><td><code>POSTGRES_URL</code><br><code>DATABASE_URL</code></td><td>Chaîne de connexion. La première l'emporte. À défaut, un Postgres local.</td></tr>
             <tr><td><code>BLOB_READ_WRITE_TOKEN</code></td><td>Stockage des photos. Absent&nbsp;: repli sur le disque local.</td></tr>
+            <tr><td><code>STRIPE_SECRET_KEY</code></td><td>Allume le paiement en ligne. <strong>Absente&nbsp;: tout le paiement reste éteint</strong> et le site fonctionne comme avant.</td></tr>
+            <tr><td><code>STRIPE_PUBLIC_KEY</code></td><td>Envoyée au navigateur pour afficher le formulaire de carte. Ne peut rien débiter.</td></tr>
+            <tr><td><code>STRIPE_WEBHOOK_SECRET</code></td><td>Vérifie la signature des webhooks. Absente&nbsp;: le webhook refuse tout, et aucune commande ne sera jamais confirmée.</td></tr>
+            <tr><td><code>PAIEMENT_SIMULE</code></td><td><code>1</code> pour parcourir le circuit sans compte Stripe, en développement. Sans effet dès qu'une clé Stripe est posée.</td></tr>
             <tr><td><code>NODE_ENV</code></td><td><code>production</code> ajoute <code>Secure</code> aux cookies.</td></tr>
             <tr><td><code>VERCEL</code></td><td>Posée par la plateforme. Limite le pool à une connexion et désactive <code>listen</code> et les tâches périodiques.</td></tr>
             <tr><td><code>PORT</code></td><td>Hors Vercel seulement. Par défaut&nbsp;3000.</td></tr>
@@ -655,7 +729,7 @@ server/views/*.ejs    gabarits</code></pre>
             <tr><td><code>npm run migrate</code></td><td>Applique <code>schema.sql</code>. Idempotent, rejouable.</td></tr>
             <tr><td><code>npm run seed</code></td><td>Peuple la carte depuis <code>assets/js/menu-data.js</code> et copie les photos. Sans effet si la carte existe, sauf <code>-- --force</code>.</td></tr>
             <tr><td><code>npm run admin</code></td><td>Crée ou met à jour un compte du salon. Mot de passe de 10 caractères minimum.</td></tr>
-            <tr><td><code>npm test</code></td><td>55 tests. Ceux qui touchent la base se sautent d'eux-mêmes si elle est injoignable.</td></tr>
+            <tr><td><code>npm test</code></td><td>71 tests. Ceux qui touchent la base se sautent d'eux-mêmes si elle est injoignable.</td></tr>
             <tr><td><code>npm run dev</code></td><td>Serveur local avec rechargement.</td></tr>
           </tbody>
         </table>

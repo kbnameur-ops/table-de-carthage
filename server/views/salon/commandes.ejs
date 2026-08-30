@@ -69,6 +69,11 @@
         <td>
           <% if (c.statut === 'encaissee') { %>
             <span class="badge badge--honoree">encaissée</span>
+          <% } else if (c.statut === 'a_payer') { %>
+            <%# Pas de menu ici : la commande attend sa carte, et la forcer
+                l'enverrait en cuisine sans que personne ne puisse la faire
+                payer. Elle en sort quand le paiement aboutit. %>
+            <span class="badge badge--attente">à régler</span>
           <% } else { %>
             <form method="post" action="/salon/commandes/<%= c.id %>/statut">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -85,6 +90,30 @@
             <small style="color:var(--muted)">
               <% if (c.remise_cagnotte_cents) { %>dont <%= euros(c.remise_cagnotte_cents) %> de cagnotte<% } else { %>payée<% } %>
             </small>
+          <% } else if (c.paiement && c.paiement.statut === 'autorise') { %>
+            <%# Une empreinte attend : soit on la débite (la commande a été
+                retirée), soit on la rend (personne n'est venu). Rien ne se
+                décide tout seul — c'est un arbitrage, pas une mécanique. %>
+            <p class="aide" style="margin:0 0 .4rem">
+              Empreinte de <%= euros(c.paiement.montant_cents) %> prise
+            </p>
+            <form method="post" action="/salon/paiements/<%= c.paiement.id %>/capturer">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <% if (c.cagnotte_cents > 0) { %>
+                <input type="text" name="cagnotte" inputmode="decimal" placeholder="cagnotte"
+                       title="Cagnotte disponible : <%= euros(c.cagnotte_cents) %> — déduite du montant débité"
+                       style="width:6.5rem;margin-bottom:.35rem" autocomplete="off">
+              <% } %>
+              <button type="submit" class="btn btn--sm">Débiter</button>
+            </form>
+            <form method="post" action="/salon/paiements/<%= c.paiement.id %>/liberer"
+                  onsubmit="return confirm('Libérer l\'empreinte sans rien débiter ? La commande sera annulée.')"
+                  style="margin-top:.35rem">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="btn btn--ghost btn--sm">Libérer</button>
+            </form>
+          <% } else if (c.statut === 'a_payer') { %>
+            <small style="color:var(--muted)">carte en attente</small>
           <% } else if (c.statut !== 'annulee') { %>
             <form method="post" action="/salon/commandes/<%= c.id %>/encaisser">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">

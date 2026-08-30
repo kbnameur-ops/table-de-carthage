@@ -9,6 +9,7 @@ import { apiCarteRouter } from './routes/api_carte.js';
 import { manifesteRouter } from './routes/manifeste.js';
 import { reservationRouter } from './routes/reservation.js';
 import { commandeRouter } from './routes/commande.js';
+import { paiementRouter, paiementWebhookRouter } from './routes/paiement.js';
 import { compteRouter } from './routes/compte.js';
 import { tableRouter } from './routes/table.js';
 import { serviceRouter } from './routes/service.js';
@@ -53,6 +54,13 @@ app.use('/css', express.static(join(__dirname, 'public', 'css'), { maxAge: '7d' 
 app.use('/uploads', express.static(join(__dirname, 'public', 'uploads'), { maxAge: '1d' }));
 app.get('/', (req, res) => res.sendFile(join(racine, 'index.html')));
 
+// ── Le webhook Stripe, avant tout analyseur de corps ────────
+// Sa signature porte sur les octets bruts de la requête : passer après
+// express.json() la rendrait invalide, puisqu'un corps analysé puis
+// re-sérialisé ne redonne pas la même chaîne. Ce montage précoce n'est pas
+// une préférence de style, c'est la condition pour que Stripe soit cru.
+app.use(paiementWebhookRouter);
+
 // ── Analyse du corps des requêtes ───────────────────────────
 app.use(express.urlencoded({ extended: false, limit: '200kb' }));
 app.use(express.json({ limit: '200kb' }));
@@ -72,6 +80,7 @@ app.use(apiCarteRouter);
 app.use(manifesteRouter);
 app.use(reservationRouter);
 app.use(commandeRouter);
+app.use(paiementRouter);
 app.use(compteRouter);
 app.use(tableRouter);
 app.use(serviceRouter);

@@ -1,0 +1,30 @@
+<%- entete %>
+<div class="wrap">
+  <p class="fil">Commande <%= commande.reference %></p>
+  <h1>Paiement</h1>
+
+  <div class="alerte <%= typeof enAttente !== 'undefined' && enAttente ? 'alerte--info' : 'alerte--ok' %>">
+    <%= message %>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>Référence</th><td><%= commande.reference %></td></tr>
+      <tr><th>Total</th><td><%= euros(commande.total_cents) %></td></tr>
+      <tr><th>Retrait</th><td><%= commande.date %> à <%= commande.heure %></td></tr>
+    </table>
+  </div>
+
+  <div class="btn-row">
+    <a class="btn" href="/compte">Mon espace</a>
+    <a class="btn btn--ghost" href="/">Retour à l'accueil</a>
+  </div>
+</div>
+
+<% if (typeof enAttente !== 'undefined' && enAttente) { %>
+  <%# Une authentification bancaire peut prendre quelques secondes, et c'est
+      le webhook qui fait foi, pas ce retour de navigateur. On relit la page
+      plutôt que de laisser le client sur une information périmée. %>
+  <script>setTimeout(function () { location.reload(); }, 4000);</script>
+<% } %>
+<%- pied %>

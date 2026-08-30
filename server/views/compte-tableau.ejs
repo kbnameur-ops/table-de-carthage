@@ -94,7 +94,15 @@
           <span>Total de la table</span><strong><%= euros(addition.total) %></strong>
         </div>
       <% } %>
-      <a class="btn" href="/table/<%= tablee.code_qr %>">Commander à ma table</a>
+      <div class="btn-row" style="margin-top:0">
+        <a class="btn" href="/table/<%= tablee.code_qr %>">Commander à ma table</a>
+        <% if (paiementActif && addition.total) { %>
+          <form method="post" action="/compte/table/payer">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn--ghost">Régler l'addition (<%= euros(addition.total) %>)</button>
+          </form>
+        <% } %>
+      </div>
     </div>
   <% } %>
 
@@ -141,12 +149,22 @@
             <td><%= euros(c.total_cents) %></td>
             <td><span class="badge badge--<%= c.statut.replace('_','') %>"><%= libellesStatutCmd[c.statut] %></span></td>
             <td>
-              <% if (c.annulable) { %>
-                <form method="post" action="/compte/commandes/<%= c.id %>/annuler" onsubmit="return confirm('Annuler cette commande ?')">
-                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                  <button type="submit" class="btn btn--danger btn--sm">Annuler</button>
-                </form>
-              <% } %>
+              <div class="btn-row btn-row--serree" style="margin:0">
+                <% if (paiementActif && c.aRegler) { %>
+                  <%# La commande existe mais attend sa carte : le client
+                      reprend là où il s'était arrêté, sans tout ressaisir. %>
+                  <form method="post" action="/compte/commandes/<%= c.id %>/payer">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn--sm">Régler</button>
+                  </form>
+                <% } %>
+                <% if (c.annulable) { %>
+                  <form method="post" action="/compte/commandes/<%= c.id %>/annuler" onsubmit="return confirm('Annuler cette commande ?')">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <button type="submit" class="btn btn--danger btn--sm">Annuler</button>
+                  </form>
+                <% } %>
+              </div>
             </td>
           </tr>
         <% }) %>

@@ -6,9 +6,12 @@
  *  toute décision prise dessus :
  *   - le CHIFFRE D'AFFAIRES ne compte que les commandes 'encaissee' : c'est
  *     de l'argent réellement encaissé, net de ce que la cagnotte a couvert.
- *   - le VOLUME (commandes, plats) compte tout sauf 'annulee' : une
- *     commande pas encore payée reflète quand même une vraie demande, et
- *     c'est la demande qu'une prévision cherche à anticiper, pas la caisse.
+ *   - le VOLUME (commandes, plats) compte tout sauf 'annulee' et
+ *     'a_payer' : une commande confirmée mais pas encore encaissée reflète
+ *     une vraie demande, et c'est la demande qu'une prévision cherche à
+ *     anticiper. Une commande restée 'a_payer', elle, est un panier
+ *     abandonné à l'écran de paiement : la compter gonflerait la demande
+ *     d'achats qui n'ont jamais eu lieu.
  *
  *  Le climat et la météo ne sont pas dans cette base : les rapprocher
  *  d'un chiffre de vente demande une source externe, à joindre après coup
@@ -78,9 +81,9 @@ export function saisonDe(date) {
 export async function indicateurs(debut, fin) {
   const c = await une(
     `SELECT
-       COUNT(*) FILTER (WHERE statut != 'annulee')::int                              AS nb_commandes,
-       COUNT(*) FILTER (WHERE statut != 'annulee' AND type = 'emporter')::int        AS nb_emporter,
-       COUNT(*) FILTER (WHERE statut != 'annulee' AND type = 'sur_place')::int       AS nb_sur_place,
+       COUNT(*) FILTER (WHERE statut NOT IN ('annulee','a_payer'))::int                              AS nb_commandes,
+       COUNT(*) FILTER (WHERE statut NOT IN ('annulee','a_payer') AND type = 'emporter')::int        AS nb_emporter,
+       COUNT(*) FILTER (WHERE statut NOT IN ('annulee','a_payer') AND type = 'sur_place')::int       AS nb_sur_place,
        COUNT(*) FILTER (WHERE statut = 'encaissee')::int                             AS nb_encaissees,
        COALESCE(SUM(total_cents - remise_cagnotte_cents)
                 FILTER (WHERE statut = 'encaissee'), 0)::int                         AS ca_cents,
@@ -91,7 +94,7 @@ export async function indicateurs(debut, fin) {
   const p = await une(
     `SELECT COALESCE(SUM(cl.quantite), 0)::int AS nb_plats
        FROM commande_lignes cl JOIN commandes c ON c.id = cl.commande_id
-      WHERE c.date BETWEEN $1 AND $2 AND c.statut != 'annulee'`,
+      WHERE c.date BETWEEN $1 AND $2 AND c.statut NOT IN ('annulee','a_payer')`,
     [debut, fin]
   );
   return {
@@ -106,7 +109,7 @@ export async function indicateurs(debut, fin) {
 export async function caParJour(debut, fin) {
   const lignes = await query(
     `SELECT date,
-            COUNT(*) FILTER (WHERE statut != 'annulee')::int                   AS nb_commandes,
+            COUNT(*) FILTER (WHERE statut NOT IN ('annulee','a_payer'))::int                   AS nb_commandes,
             COALESCE(SUM(total_cents - remise_cagnotte_cents)
                      FILTER (WHERE statut = 'encaissee'), 0)::int              AS ca_cents
        FROM commandes WHERE date BETWEEN $1 AND $2
@@ -133,7 +136,7 @@ export async function platsVendus(debut, fin, limite = 20) {
             SUM(cl.quantite)::int               AS quantite,
             SUM(cl.quantite * cl.prix_cents)::int AS ca_cents
        FROM commande_lignes cl JOIN commandes c ON c.id = cl.commande_id
-      WHERE c.date BETWEEN $1 AND $2 AND c.statut != 'annulee'
+      WHERE c.date BETWEEN $1 AND $2 AND c.statut NOT IN ('annulee','a_payer')
       GROUP BY cl.nom
       ORDER BY quantite DESC, ca_cents DESC
       LIMIT $3`,
@@ -154,7 +157,7 @@ export async function caParServeurEtJour(debut, fin) {
             COALESCE(SUM(total_cents - remise_cagnotte_cents)
                      FILTER (WHERE statut = 'encaissee'), 0)::int             AS ca_cents
        FROM commandes
-      WHERE date BETWEEN $1 AND $2 AND statut != 'annulee'
+      WHERE date BETWEEN $1 AND $2 AND statut NOT IN ('annulee','a_payer')
       GROUP BY date, serveur
       ORDER BY date, serveur`,
     [debut, fin, SANS_SERVEUR]
@@ -203,7 +206,7 @@ export function pivoterServeurEtJour(lignes, jours) {
 export async function caParJourSemaine(debut, fin) {
   const lignes = await query(
     `SELECT EXTRACT(ISODOW FROM date::date)::int                              AS jour_semaine,
-            COUNT(*) FILTER (WHERE statut != 'annulee')::int                  AS nb_commandes,
+            COUNT(*) FILTER (WHERE statut NOT IN ('annulee','a_payer'))::int                  AS nb_commandes,
             COALESCE(SUM(total_cents - remise_cagnotte_cents)
                      FILTER (WHERE statut = 'encaissee'), 0)::int             AS ca_cents
        FROM commandes WHERE date BETWEEN $1 AND $2
@@ -232,7 +235,7 @@ export async function caParJourSemaine(debut, fin) {
 export async function caParMois(debut, fin) {
   const lignes = await query(
     `SELECT LEFT(date, 7)                                                     AS mois,
-            COUNT(*) FILTER (WHERE statut != 'annulee')::int                  AS nb_commandes,
+            COUNT(*) FILTER (WHERE statut NOT IN ('annulee','a_payer'))::int                  AS nb_commandes,
             COALESCE(SUM(total_cents - remise_cagnotte_cents)
                      FILTER (WHERE statut = 'encaissee'), 0)::int             AS ca_cents
        FROM commandes WHERE date BETWEEN $1 AND $2

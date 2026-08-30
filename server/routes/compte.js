@@ -3,6 +3,7 @@ import { une, executer, query } from '../db.js';
 import { normaliserTelephone } from '../lib/phone.js';
 import { dateValide } from '../lib/validate.js';
 import { euros } from '../lib/money.js';
+import { paiementDisponible } from '../lib/paiement.js';
 import {
   elargirSession, detruireSession,
   enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
@@ -20,7 +21,8 @@ const LIBELLES_RESA = {
   annulee: 'Annulée', absente: 'Non présenté',
 };
 const LIBELLES_CMD = {
-  en_attente: 'En attente', confirmee: 'Confirmée', prete: 'Prête',
+  a_payer: 'À régler', en_attente: 'En attente', confirmee: 'Confirmée',
+  vue: 'En cuisine', en_preparation: 'En préparation', prete: 'Prête',
   retiree: 'Retirée', encaissee: 'Payée', annulee: 'Annulée',
 };
 
@@ -90,6 +92,10 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
       .map(c => ({
         ...c,
         annulable: !CMD_TERMINEE.includes(c.statut) && c.date >= aujourdHui,
+        // Une commande restée 'a_payer' n'est pas partie en cuisine : elle
+        // attend sa carte, et c'est ici que le client peut reprendre là où
+        // il s'était arrêté plutôt que de tout ressaisir.
+        aRegler: c.statut === 'a_payer',
       }));
 
     // Si le client est attablé, son addition en cours passe devant tout le
@@ -99,6 +105,7 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
 
     res.render('compte-tableau', {
       client, reservations, commandes, tablee, addition, euros,
+      paiementActif: paiementDisponible(),
       mouvements: await mouvementsDe(client.id), taux: await tauxFidelite(),
       erreurCagnotte: req.query.err || null, valeursEnvoi: {},
       libellesStatutResa: LIBELLES_RESA, libellesStatutCmd: LIBELLES_CMD,

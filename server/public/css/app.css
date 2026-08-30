@@ -574,6 +574,73 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
   .identifie .btn{flex:1 1 100%}
 }
 
+/* Sur un téléphone, deux boutons côte à côte dans une cellule poussent la
+   colonne hors de l'écran : le client doit alors deviner qu'il faut faire
+   défiler le tableau pour trouver « Régler ». Ils s'empilent donc. */
+@media (max-width:600px){
+  td .btn-row--serree{flex-direction:column;align-items:stretch;gap:.3rem}
+  td .btn-row--serree .btn{width:100%}
+  /* Et on resserre le tableau lui-même : sans ça, la colonne d'actions
+     part au-delà du bord et « Régler » n'existe que pour qui pense à faire
+     défiler de côté. */
+  .table-scroll table{font-size:.82rem}
+  .table-scroll th,.table-scroll td{padding:.55rem .4rem}
+  .table-scroll td:first-child{word-break:break-all}
+}
+
+/* ── Paiement en ligne ────────────────────────────────────── */
+.montant-du{
+  display:flex;align-items:baseline;justify-content:space-between;gap:1rem;margin:0;
+}
+.montant-du span{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.montant-du b{
+  font-family:var(--ff-display);font-weight:600;font-size:1.6rem;color:var(--navy-800);
+  font-variant-numeric:tabular-nums;
+}
+/* Le cadre que Stripe injecte doit respirer comme nos propres champs. */
+#carte{margin-bottom:.4rem}
+
+/* ═══════════════════════════════════════════════════════════
+   Analyse (chiffre d'affaires, plats vendus, prévision)
+   ═══════════════════════════════════════════════════════════ */
+.graph-jours{width:100%;height:146px;display:block}
+.graph-jours__barre{fill:var(--gold-500);transition:fill .15s}
+.graph-jours__barre:hover{fill:var(--navy-800)}
+.graph-jours__barre.est-vide{fill:rgba(14,42,78,.08)}
+.graph-jours__etiquette{
+  font-size:9px;fill:var(--muted);font-family:var(--ff-body);text-anchor:start;
+}
+
+details > summary{
+  cursor:pointer;color:var(--navy-800);font-size:.85rem;padding:.4rem 0;
+  list-style:none;display:flex;align-items:center;gap:.4rem;
+}
+details > summary::-webkit-details-marker{display:none}
+details > summary::before{content:'▸';color:var(--gold-500);transition:transform .2s}
+details[open] > summary::before{transform:rotate(90deg)}
+details[open] > summary{margin-bottom:.8rem}
+
+/* Une jauge horizontale par ligne : le plat le plus vendu donne l'échelle,
+   les autres s'y comparent d'un coup d'œil sans qu'un graphique séparé soit
+   nécessaire. */
+.barres-plats{display:grid;gap:.55rem}
+.barre-plat{
+  display:grid;grid-template-columns:11rem 1fr 4.2rem 6rem;gap:.8rem;align-items:center;
+  font-size:.87rem;
+}
+.barre-plat__nom{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barre-plat__jauge{background:var(--cream-2);border-radius:3px;height:.6rem;overflow:hidden}
+.barre-plat__jauge i{display:block;height:100%;background:var(--gold-500);border-radius:3px}
+.barre-plat__nombre{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.barre-plat__ca{text-align:right;font-weight:500;color:var(--navy-800);font-variant-numeric:tabular-nums}
+@media (max-width:640px){
+  .barre-plat{grid-template-columns:7rem 1fr 2.4rem;gap:.5rem}
+  .barre-plat__ca{display:none}
+}
+
+.grid-analyse{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.8rem}
+.grid-analyse h3{margin-top:0}
+
 /* ═══════════════════════════════════════════════════════════
    Analyse (chiffre d'affaires, plats vendus, prévision)
    ═══════════════════════════════════════════════════════════ */

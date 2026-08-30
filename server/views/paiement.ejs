@@ -1,0 +1,111 @@
+<%- entete %>
+<div class="wrap">
+  <% if (commande) { %>
+    <p class="fil">Commande <%= commande.reference %></p>
+    <h1>Régler votre commande</h1>
+    <p class="lead">
+      Votre carte est enregistrée maintenant, mais <strong>rien n'est débité avant
+      le retrait</strong>. Le montant est simplement réservé sur votre compte, le
+      temps que nous préparions votre commande.
+    </p>
+  <% } else { %>
+    <h1>Régler l'addition</h1>
+    <p class="lead">Le montant est débité tout de suite. Vous pouvez partir sans attendre.</p>
+  <% } %>
+
+  <div class="card">
+    <% if (lignes.length) { %>
+      <table>
+        <% lignes.forEach(l => { %>
+          <tr>
+            <td><%= l.quantite %> × <%= l.nom %></td>
+            <td style="text-align:right"><%= euros(l.prix_cents * l.quantite) %></td>
+          </tr>
+        <% }) %>
+      </table>
+      <hr style="border:0;border-top:1px solid rgba(14,42,78,.12);margin:1rem 0">
+    <% } %>
+    <p class="montant-du">
+      <span><%= commande ? 'Montant réservé' : 'À régler' %></span>
+      <b><%= euros(montantCents) %></b>
+    </p>
+  </div>
+
+  <% if (simule) { %>
+    <%# Sans compte Stripe, on rejoue à la main ce que le webhook ferait :
+        c'est ce qui permet de parcourir et de tester tout le circuit en
+        développement. Ces boutons n'existent pas dès qu'une clé Stripe est
+        configurée. %>
+    <div class="alerte alerte--info">
+      <strong>Mode simulation.</strong> Aucune vraie carte n'est demandée : Stripe
+      n'est pas configuré. Les boutons ci-dessous rejouent ce que la banque
+      répondrait.
+    </div>
+    <div class="btn-row">
+      <form method="post" action="/paiement/simuler/<%= commande ? 'autoriser' : 'payer' %>">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="paiementId" value="<%= paiementId %>">
+        <input type="hidden" name="retour" value="<%= retour %>">
+        <button type="submit" class="btn">Simuler un paiement accepté</button>
+      </form>
+      <form method="post" action="/paiement/simuler/echouer">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="paiementId" value="<%= paiementId %>">
+        <input type="hidden" name="retour" value="<%= retour %>">
+        <button type="submit" class="btn btn--ghost">Simuler un refus</button>
+      </form>
+    </div>
+  <% } else { %>
+    <div class="card" style="margin-top:1.5rem">
+      <div id="carte"></div>
+      <p id="erreurPaiement" class="alerte alerte--erreur" hidden></p>
+      <button id="payer" class="btn" style="width:100%;margin-top:1.2rem">
+        <%= commande ? 'Enregistrer ma carte' : 'Payer ' + euros(montantCents) %>
+      </button>
+      <p class="aide" style="text-align:center">
+        Paiement sécurisé par Stripe. Nous ne voyons jamais votre numéro de carte.
+      </p>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+    (function () {
+      // La clé publique ne permet que de créer un moyen de paiement : elle
+      // ne peut rien débiter, et n'a donc rien à cacher.
+      var stripe = Stripe(<%- JSON.stringify(clePublique) %>);
+      var elements = stripe.elements({
+        clientSecret: <%- JSON.stringify(secretClient) %>,
+        appearance: {
+          theme: 'flat',
+          variables: {
+            colorPrimary: '#C9A961', colorBackground: '#ffffff', colorText: '#12212F',
+            fontFamily: 'Jost, -apple-system, Helvetica Neue, Arial, sans-serif',
+            borderRadius: '3px',
+          },
+        },
+      });
+      elements.create('payment').mount('#carte');
+
+      var bouton = document.getElementById('payer');
+      var erreur = document.getElementById('erreurPaiement');
+
+      bouton.addEventListener('click', async function () {
+        bouton.disabled = true;
+        erreur.hidden = true;
+        var r = await stripe.confirmPayment({
+          elements: elements,
+          confirmParams: { return_url: window.location.origin + <%- JSON.stringify(retour) %> },
+        });
+        // On n'arrive ici que si la confirmation a échoué avant toute
+        // redirection : en cas de succès, Stripe a déjà quitté la page.
+        if (r.error) {
+          erreur.textContent = r.error.message || 'Le paiement n’a pas abouti.';
+          erreur.hidden = false;
+          bouton.disabled = false;
+        }
+      });
+    })();
+    </script>
+  <% } %>
+</div>
+<%- pied %>

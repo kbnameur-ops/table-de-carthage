@@ -440,3 +440,78 @@ ALTER TABLE employes ADD COLUMN IF NOT EXISTS acces_cuisine BOOLEAN NOT NULL DEF
 ALTER TABLE commandes ADD COLUMN IF NOT EXISTS pris_par_id  INTEGER REFERENCES employes(id) ON DELETE SET NULL;
 ALTER TABLE commandes ADD COLUMN IF NOT EXISTS pris_par_nom TEXT;
 CREATE INDEX IF NOT EXISTS idx_commandes_pris_par ON commandes(pris_par_id);
+
+-- ═══════════════════════════════════════════════════════════
+-- v7 — Paiement en ligne (Stripe) : empreinte à emporter, règlement
+--      depuis l'espace client
+-- ═══════════════════════════════════════════════════════════
+
+-- Un statut de plus, avant tous les autres : la commande existe (rien n'est
+-- perdu si le client abandonne au moment de payer) mais n'est pas encore
+-- payée, donc pas encore envoyée en cuisine. Sans lui, une commande non
+-- réglée tomberait au passe dès son enregistrement — 'en_attente' est déjà
+-- lu par la cuisine depuis la v5.
+DO $$ BEGIN
+  ALTER TABLE commandes DROP CONSTRAINT IF EXISTS commandes_statut_check;
+  ALTER TABLE commandes ADD CONSTRAINT commandes_statut_check CHECK (statut IN (
+    'a_payer','en_attente','confirmee','vue','en_preparation','prete',
+    'retiree','encaissee','annulee'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Le journal des paiements. Une ligne par intention Stripe, qu'elle
+-- aboutisse ou non : une empreinte refusée est une information, et
+-- l'effacer priverait la caisse de toute explication.
+--
+-- `montant_cents` est ce qui a été AUTORISÉ, `capture_cents` ce qui a été
+-- réellement débité. Les deux diffèrent dès qu'une empreinte est capturée
+-- pour moins que son montant — c'est précisément ce qui permet de déduire
+-- la cagnotte au comptoir sur une commande déjà pré-autorisée en ligne.
+CREATE TABLE IF NOT EXISTS paiements (
+  id             INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  client_id      INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  commande_id    INTEGER REFERENCES commandes(id) ON DELETE CASCADE,
+  tablee_id      INTEGER REFERENCES tablees(id) ON DELETE CASCADE,
+  montant_cents  INTEGER NOT NULL CHECK (montant_cents > 0),
+  capture_cents  INTEGER NOT NULL DEFAULT 0 CHECK (capture_cents >= 0),
+  -- 'empreinte' : autorisée maintenant, débitée au retrait (capture
+  -- manuelle Stripe). 'immediat' : débitée tout de suite.
+  mode           TEXT NOT NULL CHECK (mode IN ('empreinte','immediat')),
+  statut         TEXT NOT NULL DEFAULT 'a_confirmer'
+                 CHECK (statut IN ('a_confirmer','autorise','capture','libere','echoue')),
+  intention_id   TEXT UNIQUE,
+  echec_motif    TEXT NOT NULL DEFAULT '',
+  cree_le        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  autorise_le    TIMESTAMPTZ,
+  capture_le     TIMESTAMPTZ,
+  libere_le      TIMESTAMPTZ,
+
+  -- Un paiement règle une commande à emporter ou une addition de table,
+  -- jamais les deux ni aucune des deux.
+  CONSTRAINT paiements_cible_unique CHECK (
+    (commande_id IS NOT NULL AND tablee_id IS NULL) OR
+    (commande_id IS NULL AND tablee_id IS NOT NULL)
+  ),
+  -- On ne débite jamais plus que ce qui a été autorisé.
+  CONSTRAINT paiements_capture_bornee CHECK (capture_cents <= montant_cents)
+);
+CREATE INDEX IF NOT EXISTS idx_paiements_commande ON paiements(commande_id);
+CREATE INDEX IF NOT EXISTS idx_paiements_tablee   ON paiements(tablee_id);
+CREATE INDEX IF NOT EXISTS idx_paiements_client   ON paiements(client_id, cree_le DESC);
+
+-- Une commande, une addition : un seul paiement vivant à la fois. Deux
+-- onglets ouverts sur la même commande créeraient sinon deux empreintes,
+-- et le client verrait deux fois le montant bloqué sur son relevé.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_paiement_commande_vivant
+  ON paiements(commande_id) WHERE commande_id IS NOT NULL AND statut IN ('a_confirmer','autorise','capture');
+CREATE UNIQUE INDEX IF NOT EXISTS idx_paiement_tablee_vivant
+  ON paiements(tablee_id) WHERE tablee_id IS NOT NULL AND statut IN ('a_confirmer','autorise','capture');
+
+-- Les événements Stripe déjà traités. Stripe réémet un webhook jusqu'à ce
+-- qu'il reçoive un 2xx, et peut le livrer deux fois même après : sans ce
+-- garde-fou, un même paiement créditerait deux fois la cagnotte.
+CREATE TABLE IF NOT EXISTS paiement_evenements (
+  id        TEXT PRIMARY KEY,
+  type      TEXT NOT NULL,
+  recu_le   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
