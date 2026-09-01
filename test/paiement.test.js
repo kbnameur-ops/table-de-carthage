@@ -14,7 +14,8 @@ import assert from 'node:assert/strict';
 process.env.PAIEMENT_SIMULE = '1';
 delete process.env.STRIPE_SECRET_KEY;
 
-const { paiementActif, paiementSimule, paiementDisponible, creerIntention } =
+const { paiementActif, paiementSimule, paiementDisponible, creerIntention,
+        cleSecreteInvalide, modeStripe } =
   await import('../server/lib/paiement.js');
 
 test('la fonctionnalité dort tant qu\'aucune clé Stripe n\'est posée', () => {
@@ -35,6 +36,35 @@ test('la simulation exige l\'absence de clé Stripe', async () => {
   assert.equal(paiementActif(), true);
   delete process.env.STRIPE_SECRET_KEY;
   assert.equal(paiementSimule(), true);
+});
+
+test('une clé mal collée éteint le paiement au lieu de bloquer les commandes', async () => {
+  // Le cas vécu : une valeur qui n'est pas une clé Stripe avait allumé le
+  // paiement — donc exigé une carte à chaque commande — tout en le rendant
+  // incapable de fonctionner. Le tunnel devenait un cul-de-sac : plus
+  // personne ne pouvait commander. Une configuration douteuse doit rendre
+  // la fonctionnalité inerte, jamais bloquante.
+  const mauvaises = [
+    'sogzoh-tABCDEFGHsri0',            // ce qui était réellement posé
+    'STRIPE_SECRET_KEY=sk_live_abc',   // le nom de la variable dans sa valeur
+    'whsec_abc',                       // le secret du webhook à la place
+    'pk_live_abc',                     // la clé publique à la place
+  ];
+  for (const cle of mauvaises) {
+    process.env.STRIPE_SECRET_KEY = cle;
+    assert.equal(paiementActif(), false, `« ${cle} » ne doit pas allumer le paiement`);
+    assert.equal(cleSecreteInvalide(), true, `« ${cle} » doit être signalée`);
+    assert.equal(modeStripe(), null);
+  }
+
+  for (const cle of ['sk_test_51abc', 'sk_live_51abc', 'rk_live_51abc']) {
+    process.env.STRIPE_SECRET_KEY = cle;
+    assert.equal(paiementActif(), true, `« ${cle} » est une clé valable`);
+    assert.equal(cleSecreteInvalide(), false);
+  }
+
+  delete process.env.STRIPE_SECRET_KEY;
+  assert.equal(cleSecreteInvalide(), false, 'aucune clé posée n\'est pas une erreur');
 });
 
 test('creerIntention() refuse un montant ou un mode aberrant', async () => {

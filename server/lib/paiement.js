@@ -28,11 +28,30 @@ import { randomBytes } from 'node:crypto';
 
 const DEVISE = 'eur';
 
-/** Vrai seulement si une clé secrète est configurée. Tout le reste du code
- *  s'y réfère plutôt qu'à `process.env` directement : un seul endroit
- *  décide si la fonctionnalité est allumée. */
+// Forme d'une clé secrète Stripe : `sk_` pour une clé standard, `rk_` pour
+// une clé restreinte, puis le mode. Tout le reste n'en est pas une.
+const FORME_CLE_SECRETE = /^(sk|rk)_(test|live)_[A-Za-z0-9]/;
+
+/** Une valeur a été posée dans STRIPE_SECRET_KEY, mais ce n'est pas une clé
+ *  Stripe — une valeur collée de travers, le nom de la variable inclus dans
+ *  sa propre valeur, un secret d'un autre service. */
+export function cleSecreteInvalide() {
+  const cle = process.env.STRIPE_SECRET_KEY || '';
+  return cle !== '' && !FORME_CLE_SECRETE.test(cle);
+}
+
+/** Vrai seulement si une clé secrète PLAUSIBLE est configurée. Tout le reste
+ *  du code s'y réfère plutôt qu'à `process.env` directement : un seul
+ *  endroit décide si la fonctionnalité est allumée.
+ *
+ *  La vérification de forme n'est pas un luxe. Sans elle, une clé mal
+ *  copiée suffisait à allumer le paiement — donc à exiger une carte à
+ *  chaque commande — tout en le rendant incapable de fonctionner : les
+ *  clients ne pouvaient plus commander du tout, et le tunnel devenait un
+ *  cul-de-sac. Une configuration douteuse doit rendre la fonctionnalité
+ *  inerte, jamais bloquante. */
 export function paiementActif() {
-  return Boolean(process.env.STRIPE_SECRET_KEY);
+  return FORME_CLE_SECRETE.test(process.env.STRIPE_SECRET_KEY || '');
 }
 
 /** La clé publique, à passer au navigateur. Publique par nature : elle ne

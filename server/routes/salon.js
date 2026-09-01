@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { une } from '../db.js';
 import { emailValide } from '../lib/validate.js';
-import { modeStripe, manquePourPaiement } from '../lib/paiement.js';
+import { modeStripe, manquePourPaiement, cleSecreteInvalide } from '../lib/paiement.js';
 import {
   verifierMotDePasse, elargirSession, detruireSession,
   enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
@@ -75,6 +75,7 @@ salonRouter.get('/salon', exigerAdmin, async (req, res, next) => {
       // ligne, « les cartes de mes clients sont refusées » et « je suis
       // encore en mode test » se ressemblent trop.
       modePaiement: modeStripe(), manquePaiement: manquePourPaiement(),
+      clePaiementInvalide: cleSecreteInvalide(),
       csrfToken: res.locals.csrfToken,
     });
   } catch (err) { next(err); }

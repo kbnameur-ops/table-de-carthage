@@ -30,6 +30,18 @@
 <%# L'état du paiement en ligne, en une ligne. C'est la seule chose qui
     distingue « les cartes de mes clients passent » de « je suis encore en
     mode test » — et ça ne se devine nulle part ailleurs. %>
+<%# Une clé posée mais illisible ne doit pas passer inaperçue : le paiement
+    reste éteint (les clients commandent normalement), mais personne ne le
+    saurait sans cette ligne. %>
+<% if (clePaiementInvalide) { %>
+  <div class="alerte alerte--erreur">
+    <strong>Clé Stripe invalide.</strong> La valeur de <code>STRIPE_SECRET_KEY</code>
+    ne ressemble pas à une clé Stripe — elles commencent par <code>sk_test_</code> ou
+    <code>sk_live_</code>. Le paiement en ligne reste <strong>désactivé</strong> :
+    vos clients commandent normalement et règlent au comptoir, comme avant.
+  </div>
+<% } %>
+
 <% if (modePaiement) { %>
   <div class="alerte alerte--<%= modePaiement === 'reel' ? 'ok' : 'info' %>" style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:baseline">
     <strong>Paiement en ligne actif</strong>
