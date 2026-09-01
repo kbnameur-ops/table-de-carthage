@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { une } from '../db.js';
 import { emailValide } from '../lib/validate.js';
+import { modeStripe, manquePourPaiement } from '../lib/paiement.js';
 import {
   verifierMotDePasse, elargirSession, detruireSession,
   enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
@@ -60,7 +61,7 @@ salonRouter.get('/salon', exigerAdmin, async (req, res, next) => {
     );
     const cmdAujourdhui = await une(
       `SELECT COUNT(*)::int AS n, COALESCE(SUM(total_cents),0)::int AS total FROM commandes
-       WHERE date = $1 AND statut != 'annulee'`, [aujourdHui]
+       WHERE date = $1 AND statut NOT IN ('annulee','a_payer')`, [aujourdHui]
     );
     const cmdAttente = await une(
       `SELECT COUNT(*)::int AS n FROM commandes WHERE statut = 'en_attente' AND date >= $1`, [aujourdHui]
@@ -70,6 +71,10 @@ salonRouter.get('/salon', exigerAdmin, async (req, res, next) => {
       titre: 'Tableau de bord', actif: 'dashboard',
       resaAujourdhui, resaAttente, cmdAujourdhui, cmdAttente,
       aujourdHui, euros,
+      // Savoir si les cartes sont acceptées, et dans quel mode : sans cette
+      // ligne, « les cartes de mes clients sont refusées » et « je suis
+      // encore en mode test » se ressemblent trop.
+      modePaiement: modeStripe(), manquePaiement: manquePourPaiement(),
       csrfToken: res.locals.csrfToken,
     });
   } catch (err) { next(err); }
