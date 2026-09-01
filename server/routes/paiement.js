@@ -3,6 +3,7 @@ import express from 'express';
 import { une, query } from '../db.js';
 import { verifierCsrf, exigerClient } from '../middleware.js';
 import { euros } from '../lib/money.js';
+import { libelleJour } from '../lib/jours.js';
 import { notifier } from '../lib/notifications.js';
 import {
   paiementDisponible, paiementSimule, clePublique, evenementDepuisWebhook,
@@ -159,7 +160,7 @@ paiementRouter.get('/paiement/:reference', async (req, res, next) => {
 
 function pageFaite(req, res, commande, message) {
   return {
-    titre: 'Paiement', actif: 'commander', commande, message, euros,
+    titre: 'Paiement', actif: 'commander', commande, message, euros, libelleJour,
     session: req.session, csrfToken: res.locals.csrfToken,
   };
 }

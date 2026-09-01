@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { euros, versCents } from '../server/lib/money.js';
 import { normaliserTelephone, telephoneValide } from '../server/lib/phone.js';
 import { emailValide, dateValide, heureValide, dateNaissanceValide } from '../server/lib/validate.js';
+import { aujourdHui, jourVoisin, libelleJourCourt } from '../server/lib/jours.js';
 
 test('euros() formate en français', () => {
   assert.equal(euros(2000), '20 €');
@@ -58,4 +59,22 @@ test('dateNaissanceValide() exige au moins 13 ans et une année plausible', () =
   assert.equal(dateNaissanceValide(ilYA5Ans.toISOString().slice(0, 10)), false);
   assert.equal(dateNaissanceValide(ilYA30Ans.toISOString().slice(0, 10)), true);
   assert.equal(dateNaissanceValide('1850-01-01'), false);
+});
+
+test('libelleJourCourt() dit le jour comme un client le lirait', () => {
+  const ajd = aujourdHui();
+  assert.equal(libelleJourCourt(ajd), "aujourd'hui");
+  assert.equal(libelleJourCourt(jourVoisin(ajd, 1)), 'demain');
+  assert.equal(libelleJourCourt(jourVoisin(ajd, -1)), 'hier');
+
+  // Une date lointaine de l'année en cours : jour et mois abrégé, sans
+  // l'année — la répéter à chaque ligne n'apprendrait rien.
+  const annee = ajd.slice(0, 4);
+  const loin = libelleJourCourt(`${annee}-01-15`) === "aujourd'hui" ? null : libelleJourCourt(`${annee}-01-15`);
+  if (loin) {
+    assert.match(loin, /^15 janv\.?$/);
+  }
+
+  // Une autre année, en revanche, doit être datée : « 15 janv. 2019 ».
+  assert.match(libelleJourCourt('2019-01-15'), /2019/);
 });
