@@ -3,6 +3,7 @@ import { une, executer, query } from '../db.js';
 import { normaliserTelephone } from '../lib/phone.js';
 import { dateValide } from '../lib/validate.js';
 import { euros } from '../lib/money.js';
+import { libelleJourCourt } from '../lib/jours.js';
 import { paiementDisponible } from '../lib/paiement.js';
 import {
   elargirSession, detruireSession,
@@ -104,7 +105,7 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
     const addition = tablee ? await additionDeTablee(tablee.id) : null;
 
     res.render('compte-tableau', {
-      client, reservations, commandes, tablee, addition, euros,
+      client, reservations, commandes, tablee, addition, euros, libelleJourCourt,
       paiementActif: paiementDisponible(),
       mouvements: await mouvementsDe(client.id), taux: await tauxFidelite(),
       erreurCagnotte: req.query.err || null, valeursEnvoi: {},

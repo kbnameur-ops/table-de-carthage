@@ -23,6 +23,24 @@ export function libelleJour(date) {
   });
 }
 
+/** Comme `libelleJour`, mais assez court pour tenir dans une colonne de
+ *  tableau sur un téléphone : « aujourd'hui », « demain », sinon
+ *  « 1 sept. ». L'année n'apparaît que si ce n'est pas l'année en cours —
+ *  la préciser tous les jours de l'année ne renseigne personne, l'omettre
+ *  sur une commande de l'an dernier induirait en erreur.
+ *
+ *  Une date ISO brute (« 2026-09-01 ») n'a rien à faire sous les yeux d'un
+ *  client : c'est notre format de stockage, pas sa façon de lire un jour. */
+export function libelleJourCourt(date) {
+  const ajd = aujourdHui();
+  if (date === ajd) return "aujourd'hui";
+  if (date === jourVoisin(ajd, 1)) return 'demain';
+  if (date === jourVoisin(ajd, -1)) return 'hier';
+  const options = { day: 'numeric', month: 'short' };
+  if (date.slice(0, 4) !== ajd.slice(0, 4)) options.year = 'numeric';
+  return new Date(date + 'T00:00').toLocaleDateString('fr-FR', options);
+}
+
 /** Préfixe « Table » seulement si le nom ne le porte pas déjà : le salon
  *  nomme ses tables comme il veut (« Duo 1 », « Table 3 », « Terrasse A »),
  *  et « Table Table 3 » ferait négligé sur un QR collé en salle. */

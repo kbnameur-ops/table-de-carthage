@@ -134,6 +134,15 @@ tbody tr:hover{background:var(--cream-2)}
 .badge--annulee,.badge--absente{background:#F3DCD8;color:var(--err)}
 .badge--veg{background:#E4EFE0;color:#4B7A3B}
 .badge--signature{background:var(--gold-500);color:var(--navy-900)}
+/* Les classes ci-dessus viennent de `statut.replace('_','')` : un statut à
+   rallonge donne « enattente », « enpreparation », « apayer ». Sans ces
+   règles, la pastille perdait sa couleur et le statut se lisait comme du
+   texte ordinaire — visible dans l'espace client, où c'est pourtant la
+   seule indication de ce qu'il reste à faire. */
+.badge--enattente{background:#FCF3D9;color:#8A6D1D}
+.badge--apayer{background:#F6E4C0;color:#8A5A1D}
+.badge--vue,.badge--enpreparation{background:#DCE8F5;color:#2A5C8A}
+.badge--encaissee{background:#DCEAE0;color:var(--ok)}
 
 .creneaux{display:flex;flex-wrap:wrap;gap:.6rem;margin:1rem 0}
 .creneau{
@@ -586,6 +595,45 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
   .table-scroll table{font-size:.82rem}
   .table-scroll th,.table-scroll td{padding:.55rem .4rem}
   .table-scroll td:first-child{word-break:break-all}
+}
+
+/* Resserrer ne suffisait pas : à cinq colonnes sur 390 px, la dernière —
+   celle qui porte « Régler » — tombait quand même au-delà du bord droit.
+   Un bouton qui règle une commande ne doit pas dépendre d'un défilement
+   latéral que rien n'annonce. Sur téléphone, chaque ligne devient donc une
+   fiche : l'en-tête de colonne passe en étiquette devant la valeur, et
+   l'action prend toute la largeur.
+
+   Les intitulés viennent de `data-l` sur chaque cellule. C'est une
+   duplication du `<thead>`, assumée : le tableau reste un vrai tableau
+   pour un lecteur d'écran comme pour une impression, et seule la mise en
+   forme change. */
+@media (max-width:600px){
+  .table-empilee thead{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;
+  }
+  .table-empilee,.table-empilee tbody,.table-empilee tr,.table-empilee td{display:block;width:100%}
+  .table-empilee tr{
+    background:#fff;border:1px solid rgba(14,42,78,.12);border-radius:12px;
+    padding:.6rem .85rem;margin-bottom:.7rem;
+  }
+  .table-empilee tbody tr:hover{background:#fff}
+  .table-empilee td{
+    border:0;padding:.3rem 0;display:flex;align-items:baseline;
+    justify-content:space-between;gap:1rem;
+  }
+  .table-empilee td::before{
+    content:attr(data-l);flex:0 0 auto;
+    font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  }
+  .table-empilee td:first-child{word-break:normal}
+  /* La cellule d'action n'a pas d'étiquette : elle se déplie sur toute la
+     largeur, sous les informations qu'elle concerne. */
+  .table-empilee td.cellule-action{display:block;padding-top:.5rem}
+  .table-empilee td.cellule-action::before{content:none}
+  .table-empilee td.cellule-action:empty,
+  .table-empilee td.cellule-action .btn-row--serree:empty{display:none}
 }
 
 /* ── Paiement en ligne ────────────────────────────────────── */

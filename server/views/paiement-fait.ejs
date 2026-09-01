@@ -11,7 +11,7 @@
     <table>
       <tr><th>Référence</th><td><%= commande.reference %></td></tr>
       <tr><th>Total</th><td><%= euros(commande.total_cents) %></td></tr>
-      <tr><th>Retrait</th><td><%= commande.date %> à <%= commande.heure %></td></tr>
+      <tr><th>Retrait</th><td><%= libelleJour(commande.date) %> à <%= commande.heure %></td></tr>
     </table>
   </div>
 
