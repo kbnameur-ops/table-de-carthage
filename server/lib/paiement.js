@@ -58,6 +58,34 @@ export function paiementDisponible() {
   return paiementActif() || paiementSimule();
 }
 
+/** Le mode dans lequel Stripe est branché, déduit de la clé publique :
+ *  `test` (aucun argent réel ne bouge) ou `reel`. Rien de secret ici — une
+ *  clé publique est faite pour circuler — mais c'est une information que le
+ *  salon doit pouvoir lire d'un coup d'œil. Sans elle, personne ne peut
+ *  distinguer « les cartes de mes clients sont refusées » de « je suis
+ *  encore en mode test », et c'est précisément le genre de doute qui coûte
+ *  un service. */
+export function modeStripe() {
+  if (paiementSimule()) return 'simulation';
+  const cle = process.env.STRIPE_PUBLIC_KEY || process.env.STRIPE_SECRET_KEY || '';
+  if (!paiementActif()) return null;
+  if (cle.startsWith('pk_test_') || cle.startsWith('sk_test_')) return 'test';
+  if (cle.startsWith('pk_live_') || cle.startsWith('sk_live_')) return 'reel';
+  return 'inconnu';
+}
+
+/** Ce qu'il manque pour que le paiement fonctionne vraiment. Poser la clé
+ *  secrète sans le secret du webhook laisse les clients payer sans qu'aucune
+ *  commande ne soit jamais confirmée : mieux vaut le dire que le découvrir
+ *  un soir de service. */
+export function manquePourPaiement() {
+  if (!paiementActif()) return [];
+  const manques = [];
+  if (!process.env.STRIPE_PUBLIC_KEY) manques.push('STRIPE_PUBLIC_KEY');
+  if (!process.env.STRIPE_WEBHOOK_SECRET) manques.push('STRIPE_WEBHOOK_SECRET');
+  return manques;
+}
+
 let clientStripe = null;
 async function stripe() {
   if (!clientStripe) {
