@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { query, une, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf } from '../middleware.js';
 import { heureValide, dateValide, texteNonVide } from '../lib/validate.js';
-import { creerTables, supprimerTable, additionsParTable } from '../lib/tables.js';
+import { creerTables, supprimerTable, additionsParTable, nomsEnDoublon } from '../lib/tables.js';
 
 export const salonServicesRouter = Router();
 
@@ -137,6 +137,10 @@ salonServicesRouter.get('/salon/services/:id/tables', exigerAdmin, async (req, r
       // Combien d'additions chaque table porte : une table qui a servi ne
       // se supprime pas, et l'écran doit le dire avant le clic, pas après.
       additions: await additionsParTable(service.id),
+      // Deux tables du même nom rendent le plan de salle et les QR
+      // indéchiffrables. La numérotation ne les crée plus, mais celles
+      // déjà en base ne se corrigeront que si on les signale.
+      doublons: await nomsEnDoublon(service.id),
       erreur: req.query.erreur || null, info: req.query.info || null,
       csrfToken: res.locals.csrfToken,
     });

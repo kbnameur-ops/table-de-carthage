@@ -86,6 +86,48 @@ test('créer un lot numérote les tables et donne un QR distinct à chacune', as
   assert.deepEqual(p, [p[0], p[0] + 1, p[0] + 2]);
 });
 
+test('un second lot continue la numérotation au lieu de repartir de 1', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  // Le cas exact qui a produit deux « Table 1 » en production : trois
+  // tables ajoutées, puis dix. Deux QR identiques collés sur deux tables
+  // différentes ne se rattrapent qu'en les décollant.
+  const premier = await tables.creerTables(service.id, { nom: 'Salle', couverts: 4, nombre: 3 });
+  const second = await tables.creerTables(service.id, { nom: 'Salle', couverts: 4, nombre: 10 });
+  assert.deepEqual(premier.map(x => x.nom), ['Salle 1', 'Salle 2', 'Salle 3']);
+  assert.deepEqual(second.map(x => x.nom),
+    ['Salle 4', 'Salle 5', 'Salle 6', 'Salle 7', 'Salle 8', 'Salle 9',
+     'Salle 10', 'Salle 11', 'Salle 12', 'Salle 13']);
+  assert.equal(new Set([...premier, ...second].map(x => x.nom)).size, 13);
+});
+
+test('une table seule prend un numéro si son nom est déjà pris', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const [a] = await tables.creerTables(service.id, { nom: 'Véranda', couverts: 2 });
+  const [b] = await tables.creerTables(service.id, { nom: 'Véranda', couverts: 2 });
+  const [c] = await tables.creerTables(service.id, { nom: 'Véranda', couverts: 2 });
+  // La première garde son nom : « Véranda » ne doit pas devenir
+  // « Véranda 1 » quand elle est seule de son espèce.
+  assert.equal(a.nom, 'Véranda');
+  assert.equal(b.nom, 'Véranda 1');
+  assert.equal(c.nom, 'Véranda 2');
+});
+
+test('les doublons déjà en base sont signalés', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const avant = await tables.nomsEnDoublon(service.id);
+  // Un doublon posé de force, comme ceux que l'ancienne numérotation
+  // laissait : la correction du code ne les efface pas rétroactivement.
+  await db.executer(
+    `INSERT INTO tables_resto (service_id, nom, couverts, position, code_qr)
+     VALUES ($1, 'Jumelle', 2, 900, $2), ($1, 'Jumelle', 2, 901, $3)`,
+    [service.id, tables.codeQr(), tables.codeQr()]);
+  const apres = await tables.nomsEnDoublon(service.id);
+  const trouve = apres.find(d => d.nom === 'Jumelle');
+  assert.ok(trouve, 'le doublon doit être remonté');
+  assert.equal(trouve.n, 2);
+  assert.equal(apres.length, avant.length + 1);
+});
+
 test('une table qui n\'a jamais servi se supprime', async (t) => {
   if (!baseDispo) return t.skip('pas de base de données joignable');
   const [neuve] = await tables.creerTables(service.id, { nom: 'Éphémère', couverts: 2 });
