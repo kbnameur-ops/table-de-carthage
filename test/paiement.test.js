@@ -15,7 +15,7 @@ process.env.PAIEMENT_SIMULE = '1';
 delete process.env.STRIPE_SECRET_KEY;
 
 const { paiementActif, paiementSimule, paiementDisponible, creerIntention,
-        cleSecreteInvalide, modeStripe } =
+        cleSecreteInvalide, modeStripe, definirEnregistrement } =
   await import('../server/lib/paiement.js');
 
 test('la fonctionnalité dort tant qu\'aucune clé Stripe n\'est posée', () => {
@@ -351,4 +351,52 @@ test('une commande « à régler » ne compte ni en demande ni en chiffre d\'aff
 
   assert.equal(k2.nb_commandes, k.nb_commandes + 1, 'confirmée, elle compte');
   assert.equal(compte2, compte + 1, 'et ses plats aussi');
+});
+
+test('creerIntention rattache la fiche client quand il y en a une', async (t) => {
+  // En simulation, aucune requête ne part chez Stripe : ce test vérifie que
+  // la signature accepte la fiche sans rien casser, et que le paiement
+  // reste possible sans elle — une panne de création de fiche ne doit
+  // jamais empêcher de payer.
+  const avec = await creerIntention({
+    montantCents: 1000, mode: 'empreinte', cle: 'k-avec', clientStripeId: 'cus_test',
+  });
+  const sans = await creerIntention({ montantCents: 1000, mode: 'empreinte', cle: 'k-sans' });
+  assert.match(avec.id, /^pi_sim_/);
+  assert.match(sans.id, /^pi_sim_/);
+});
+
+test('definirEnregistrement dit oui ou non, sans rien supposer', async () => {
+  assert.deepEqual(await definirEnregistrement('pi_x', true), { enregistrer: true });
+  assert.deepEqual(await definirEnregistrement('pi_x', false), { enregistrer: false });
+  // Une valeur absente vaut « non » : l'enregistrement ne s'obtient que
+  // par un oui explicite.
+  assert.deepEqual(await definirEnregistrement('pi_x', undefined), { enregistrer: false });
+});
+
+test('choisirEnregistrementCarte n\'accepte que le paiement du bon client', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const { client, cmd } = await commandeAPayer(3000);
+  const r = await reg.ouvrirPaiementCommande(cmd.id);
+  assert.ok(r.paiement, r.erreur);
+
+  // Un autre client ne peut pas décider de l'enregistrement de cette carte.
+  const vole = await reg.choisirEnregistrementCarte(r.paiement.id, true, { clientId: -1 });
+  assert.ok(vole.erreur, 'un client étranger doit être refusé');
+
+  const ok = await reg.choisirEnregistrementCarte(r.paiement.id, true, { clientId: client.id });
+  assert.equal(ok.enregistrer, true);
+  let relu = await db.une(`SELECT carte_enregistree FROM paiements WHERE id = $1`, [r.paiement.id]);
+  assert.equal(relu.carte_enregistree, true);
+
+  // Décocher doit défaire : sinon une case cochée puis décochée laisserait
+  // la carte enregistrée contre l'avis du client.
+  await reg.choisirEnregistrementCarte(r.paiement.id, false, { clientId: client.id });
+  relu = await db.une(`SELECT carte_enregistree FROM paiements WHERE id = $1`, [r.paiement.id]);
+  assert.equal(relu.carte_enregistree, false);
+
+  // Une fois autorisé, le choix n'est plus modifiable.
+  await reg.marquerAutorise(r.paiement.intention_id);
+  const tard = await reg.choisirEnregistrementCarte(r.paiement.id, true, { clientId: client.id });
+  assert.ok(tard.erreur, 'un paiement déjà traité ne se modifie plus');
 });

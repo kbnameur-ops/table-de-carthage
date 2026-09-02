@@ -11,6 +11,7 @@ import {
 import {
   ouvrirPaiementCommande, ouvrirPaiementTablee, paiementVivantCommande,
   marquerAutorise, marquerEchoue, marquerPayeEtEncaisser, evenementDejaVu,
+  choisirEnregistrementCarte,
 } from '../lib/reglement.js';
 
 /** Le paiement en ligne, côté écrans.
@@ -138,7 +139,7 @@ paiementRouter.get('/paiement/:reference', async (req, res, next) => {
     }
     if (r.dejaRegle) {
       return res.render('paiement-fait', pageFaite(req, res, commande,
-        'Votre carte a bien été enregistrée pour cette commande.'));
+        'Le montant est déjà réservé sur votre carte pour cette commande.'));
     }
 
     const lignes = await query(
@@ -179,7 +180,7 @@ paiementRouter.get('/paiement/:reference/retour', async (req, res, next) => {
       ? "Le paiement n'a pas abouti. Vous pouvez réessayer depuis votre espace."
       : paiement.statut === 'a_confirmer'
         ? 'Paiement en cours de confirmation par votre banque. Cette page se met à jour toute seule.'
-        : 'Votre carte est enregistrée. La commande part en cuisine.';
+        : 'Le montant est réservé sur votre carte. La commande part en cuisine.';
 
     res.render('paiement-fait', {
       ...pageFaite(req, res, commande, message),
@@ -228,6 +229,35 @@ paiementRouter.post('/compte/table/payer', exigerClient, verifierCsrf, async (re
   } catch (err) { next(err); }
 });
 
+/** Le client coche — ou décoche — « garder ma carte pour la prochaine
+ *  fois », juste avant de confirmer.
+ *
+ *  Rien n'est déduit d'un paiement précédent : la case repart décochée à
+ *  chaque fois, et c'est ce que le navigateur envoie ici qui décide, pour
+ *  ce paiement-là seulement. La décision est appliquée côté serveur sur
+ *  l'intention Stripe : le navigateur dit ce qui est coché, il ne fait pas
+ *  la conservation lui-même.
+ *
+ *  Répond en JSON parce que la page ne se recharge pas : le formulaire de
+ *  carte de Stripe est déjà rempli à cet instant, le perdre obligerait à
+ *  tout ressaisir. */
+paiementRouter.post('/paiement/carte-enregistree', verifierCsrf, async (req, res, next) => {
+  try {
+    const paiementId = parseInt(req.body.paiementId, 10);
+    if (!Number.isInteger(paiementId)) return res.status(400).json({ erreur: 'Paiement inconnu.' });
+
+    // Un client connecté ne peut agir que sur ses propres paiements. Dans
+    // le tunnel à emporter, la commande vient d'être passée sous cette
+    // session : c'est la même personne, et le paiement porte déjà son
+    // identifiant.
+    const r = await choisirEnregistrementCarte(paiementId, req.body.enregistrer === '1', {
+      clientId: req.session.role === 'client' ? req.session.sujetId : null,
+    });
+    if (r.erreur) return res.status(400).json({ erreur: r.erreur });
+    res.json({ enregistrer: r.enregistrer });
+  } catch (err) { next(err); }
+});
+
 /** ── Simulation, en développement seulement ──────────────────
  *
  *  Sans compte Stripe, ces routes rejouent ce que le webhook ferait, pour
@@ -239,6 +269,12 @@ paiementRouter.post('/paiement/simuler/:action', verifierCsrf, async (req, res, 
     if (!paiementSimule()) return res.status(404).send('Introuvable');
     const p = await une(`SELECT * FROM paiements WHERE id = $1`, [req.body.paiementId]);
     if (!p) return res.status(404).send('Paiement introuvable');
+
+    // Le choix du client sur l'enregistrement de sa carte se rejoue lui
+    // aussi : sinon la case cochée en simulation ne prouverait rien.
+    if (req.params.action !== 'echouer') {
+      await choisirEnregistrementCarte(p.id, req.body.enregistrer === '1');
+    }
 
     if (req.params.action === 'autoriser') await surAutorisation(p.intention_id);
     else if (req.params.action === 'payer') await surPaiement(p.intention_id);

@@ -1,5 +1,8 @@
 import { une, query, executer, transaction } from '../db.js';
-import { creerIntention, recupererSecret, capturer, liberer, paiementDisponible } from './paiement.js';
+import {
+  creerIntention, recupererSecret, capturer, liberer, paiementDisponible,
+  creerClientStripe, definirEnregistrement,
+} from './paiement.js';
 import { encaisserCommande, encaisserTablee } from './encaissement.js';
 import { additionDeTablee } from './tablees.js';
 
@@ -12,6 +15,62 @@ import { additionDeTablee } from './tablees.js';
  *  deux se rencontrent — pour qu'il n'existe qu'un seul chemin entre « la
  *  carte a été débitée » et « la commande est encaissée ».
  */
+
+/** L'identifiant de la fiche Stripe du client, créée à la première
+ *  tentative de paiement puis réutilisée.
+ *
+ *  Sans elle, la case « enregistrer ma carte » ne peut pas être honorée :
+ *  Stripe ne conserve un moyen de paiement que rattaché à un client. En
+ *  recréer une à chaque commande éparpillerait les cartes enregistrées
+ *  entre plusieurs fiches, et le client ne retrouverait jamais la sienne.
+ *
+ *  Une panne de ce côté ne doit pas empêcher de payer : on rend `null`, le
+ *  paiement se fait sans fiche, et la carte n'est simplement pas
+ *  enregistrable cette fois-ci. */
+export async function ficheStripeDuClient(clientId) {
+  if (!clientId) return null;
+  const client = await une(`SELECT * FROM clients WHERE id = $1`, [clientId]);
+  if (!client) return null;
+  if (client.stripe_client_id) return client.stripe_client_id;
+
+  try {
+    const id = await creerClientStripe({
+      prenom: client.prenom, nom: client.nom, email: client.email,
+      telephone: client.telephone_saisi || client.telephone, clientId: client.id,
+    });
+    // Une écriture concurrente a pu poser la sienne entre-temps : la
+    // condition garde la première et jette la seconde plutôt que de violer
+    // l'index unique.
+    const pose = await une(
+      `UPDATE clients SET stripe_client_id = $1
+        WHERE id = $2 AND stripe_client_id IS NULL RETURNING stripe_client_id`,
+      [id, client.id]
+    );
+    if (pose) return pose.stripe_client_id;
+    const relu = await une(`SELECT stripe_client_id FROM clients WHERE id = $1`, [client.id]);
+    return relu?.stripe_client_id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Le client demande (ou ne demande plus) que sa carte soit gardée pour la
+ *  prochaine fois. Appelé juste avant la confirmation, avec ce qui est
+ *  coché à l'écran à cet instant.
+ *
+ *  Seul un paiement encore en attente de confirmation se laisse modifier :
+ *  une fois la carte débitée, la question ne se pose plus. */
+export async function choisirEnregistrementCarte(paiementId, enregistrer, { clientId = null } = {}) {
+  const p = await une(`SELECT * FROM paiements WHERE id = $1`, [paiementId]);
+  if (!p) return { erreur: 'Paiement introuvable.' };
+  if (clientId !== null && p.client_id !== clientId) return { erreur: 'Paiement introuvable.' };
+  if (p.statut !== 'a_confirmer') return { erreur: 'Ce paiement est déjà traité.' };
+
+  await definirEnregistrement(p.intention_id, enregistrer);
+  await executer(`UPDATE paiements SET carte_enregistree = $1 WHERE id = $2`,
+    [!!enregistrer, paiementId]);
+  return { enregistrer: !!enregistrer };
+}
 
 /** Ce qu'une commande à emporter réclame encore. Recalculé depuis les
  *  lignes, jamais lu depuis le navigateur. */
@@ -73,6 +132,7 @@ export async function ouvrirPaiementCommande(commandeId, { mode = 'empreinte' } 
     cle: `cmd-${commandeId}-${reste.montantCents}-${mode}`,
     description: `Commande ${reste.commande.reference} — La Table de Carthage`,
     metadonnees: { commande_id: String(commandeId), reference: reste.commande.reference },
+    clientStripeId: await ficheStripeDuClient(reste.commande.client_id),
   });
 
   const paiement = await une(
@@ -114,6 +174,7 @@ export async function ouvrirPaiementTablee(tableeId) {
     cle: `tab-${tableeId}-${addition.total}`,
     description: `Addition table — La Table de Carthage`,
     metadonnees: { tablee_id: String(tableeId) },
+    clientStripeId: await ficheStripeDuClient(tablee.client_id),
   });
 
   const paiement = await une(
