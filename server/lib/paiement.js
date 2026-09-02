@@ -129,7 +129,7 @@ const faux = (prefixe) => `${prefixe}_sim_${randomBytes(9).toString('hex')}`;
  *  qu'une seule intention chez Stripe. On y met notre propre référence de
  *  commande, si bien qu'un double clic sur « Payer », ou un navigateur qui
  *  réémet la requête, ne bloque pas deux fois le montant sur la carte. */
-export async function creerIntention({ montantCents, mode, cle, description, metadonnees = {} }) {
+export async function creerIntention({ montantCents, mode, cle, description, metadonnees = {}, clientStripeId = null }) {
   if (!Number.isInteger(montantCents) || montantCents <= 0) {
     throw new Error(`montant invalide : ${montantCents}`);
   }
@@ -146,12 +146,55 @@ export async function creerIntention({ montantCents, mode, cle, description, met
     amount: montantCents,
     currency: DEVISE,
     capture_method: mode === 'empreinte' ? 'manual' : 'automatic',
+    // Laisse Stripe proposer ce que le navigateur et le compte permettent :
+    // Apple Pay sur iPhone, Google Pay sur Android et Chrome, la carte
+    // partout. Énumérer les moyens à la main reviendrait à en priver les
+    // clients dès que Stripe en active un nouveau.
     automatic_payment_methods: { enabled: true },
+    // La fiche client est rattachée dès la création, même si le client ne
+    // demande rien : sans elle, la case « enregistrer ma carte » ne pourrait
+    // plus être honorée une fois la carte saisie, et il faudrait tout
+    // recommencer.
+    ...(clientStripeId ? { customer: clientStripeId } : {}),
     description,
     metadata: metadonnees,
   }, { idempotencyKey: cle });
 
   return { id: intention.id, secretClient: intention.client_secret };
+}
+
+/** La fiche Stripe d'un client, créée à la volée.
+ *
+ *  Elle ne contient que de quoi le reconnaître sur un relevé Stripe et
+ *  porter ses cartes enregistrées. Aucune carte n'y est attachée tant que
+ *  le client ne l'a pas demandé. */
+export async function creerClientStripe({ prenom, nom, email, telephone, clientId }) {
+  if (paiementSimule()) return faux('cus');
+  const fiche = await (await stripe()).customers.create({
+    name: `${prenom || ''} ${nom || ''}`.trim() || undefined,
+    email: email || undefined,
+    phone: telephone || undefined,
+    metadata: { client_id: String(clientId) },
+  }, { idempotencyKey: `client-${clientId}` });
+  return fiche.id;
+}
+
+/** Enregistrer — ou non — la carte pour les prochaines fois.
+ *
+ *  `setup_future_usage` est posé sur l'intention, donc côté serveur : c'est
+ *  ce qui autorise Stripe à conserver le moyen de paiement une fois le
+ *  paiement abouti. Le navigateur ne fait que dire ce que le client a
+ *  coché ; il ne décide de rien, et surtout pas à la place d'un autre.
+ *
+ *  Décocher doit défaire : on remet explicitement la valeur à null plutôt
+ *  que de ne rien faire, sinon une case cochée puis décochée laisserait la
+ *  carte enregistrée contre l'avis du client. */
+export async function definirEnregistrement(intentionId, enregistrer) {
+  if (paiementSimule()) return { enregistrer: !!enregistrer };
+  await (await stripe()).paymentIntents.update(intentionId, {
+    setup_future_usage: enregistrer ? 'off_session' : null,
+  });
+  return { enregistrer: !!enregistrer };
 }
 
 /** Le secret d'une intention déjà créée, pour rouvrir le formulaire.

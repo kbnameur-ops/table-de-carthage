@@ -4,9 +4,9 @@
     <p class="fil">Commande <%= commande.reference %></p>
     <h1>Régler votre commande</h1>
     <p class="lead">
-      Votre carte est enregistrée maintenant, mais <strong>rien n'est débité avant
-      le retrait</strong>. Le montant est simplement réservé sur votre compte, le
-      temps que nous préparions votre commande.
+      Le montant est <strong>réservé</strong> sur votre carte maintenant, mais
+      <strong>rien n'est débité avant le retrait</strong> — le temps que nous
+      préparions votre commande.
     </p>
   <% } else { %>
     <h1>Régler l'addition</h1>
@@ -39,13 +39,24 @@
     <div class="alerte alerte--info">
       <strong>Mode simulation.</strong> Aucune vraie carte n'est demandée : Stripe
       n'est pas configuré. Les boutons ci-dessous rejouent ce que la banque
-      répondrait.
+      répondrait. Une fois les clés posées, cet encadré laisse place aux
+      boutons Apple&nbsp;Pay et Google&nbsp;Pay puis au formulaire de carte.
     </div>
     <div class="btn-row">
       <form method="post" action="/paiement/simuler/<%= commande ? 'autoriser' : 'payer' %>">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <input type="hidden" name="paiementId" value="<%= paiementId %>">
         <input type="hidden" name="retour" value="<%= retour %>">
+        <%# La case apparaît aussi en simulation : ce mode existe pour
+            parcourir le circuit tel qu'il sera, et une case qu'on ne peut
+            pas essayer ne se vérifie pas. %>
+        <label class="case-garder" style="margin-bottom:1rem">
+          <input type="checkbox" name="enregistrer" value="1">
+          <span>
+            <b>Enregistrer ma carte</b>
+            <small>Pour ne plus la ressaisir la prochaine fois. Vous pourrez la retirer à tout moment.</small>
+          </span>
+        </label>
         <button type="submit" class="btn">Simuler un paiement accepté</button>
       </form>
       <form method="post" action="/paiement/simuler/echouer">
@@ -56,11 +67,33 @@
       </form>
     </div>
   <% } else { %>
+    <%# Les portefeuilles d'abord : sur un téléphone, Apple Pay ou Google Pay
+        règlent en une empreinte digitale, sans rien saisir. Le bloc
+        disparaît entièrement si le navigateur n'en propose aucun — un
+        cadre vide intitulé « paiement rapide » ne ferait que semer le
+        doute. %>
+    <div id="blocExpress" hidden style="margin-top:1.5rem">
+      <div id="express"></div>
+      <p class="separateur-ou"><span>ou payer par carte</span></p>
+    </div>
+
     <div class="card" style="margin-top:1.5rem">
       <div id="carte"></div>
+
+      <%# Enregistrer sa carte n'est jamais imposé : la case part décochée,
+          et un paiement se conclut très bien sans y toucher. Elle est
+          placée après la saisie, là où la question se pose réellement. %>
+      <label class="case-garder">
+        <input type="checkbox" id="garderCarte">
+        <span>
+          <b>Enregistrer ma carte</b>
+          <small>Pour ne plus la ressaisir la prochaine fois. Vous pourrez la retirer à tout moment.</small>
+        </span>
+      </label>
+
       <p id="erreurPaiement" class="alerte alerte--erreur" hidden></p>
       <button id="payer" class="btn" style="width:100%;margin-top:1.2rem">
-        <%= commande ? 'Enregistrer ma carte' : 'Payer ' + euros(montantCents) %>
+        <%= commande ? 'Réserver ' + euros(montantCents) : 'Payer ' + euros(montantCents) %>
       </button>
       <p class="aide" style="text-align:center">
         Paiement sécurisé par Stripe. Nous ne voyons jamais votre numéro de carte.
@@ -84,25 +117,69 @@
           },
         },
       });
-      elements.create('payment').mount('#carte');
 
-      var bouton = document.getElementById('payer');
+      var retour = window.location.origin + <%- JSON.stringify(retour) %>;
       var erreur = document.getElementById('erreurPaiement');
+      var bouton = document.getElementById('payer');
+      var garder = document.getElementById('garderCarte');
+
+      function direErreur(message) {
+        erreur.textContent = message || 'Le paiement n\u2019a pas abouti.';
+        erreur.hidden = false;
+        bouton.disabled = false;
+      }
+
+      // Ce que le client a coché est appliqué côté serveur sur l'intention,
+      // juste avant la confirmation. Le navigateur ne fait que le dire.
+      // Un échec ici ne doit pas bloquer le paiement : on paie sans
+      // enregistrer la carte, ce qui est le comportement par défaut.
+      async function transmettreChoix() {
+        try {
+          await fetch('/paiement/carte-enregistree', {
+            method: 'POST',
+            headers: { 'content-type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              _csrf: <%- JSON.stringify(csrfToken) %>,
+              paiementId: <%- JSON.stringify(String(paiementId)) %>,
+              enregistrer: garder && garder.checked ? '1' : '0',
+            }),
+          });
+        } catch (e) { /* sans effet sur le paiement lui-même */ }
+      }
+
+      // ── Apple Pay, Google Pay ──────────────────────────────────
+      var express = elements.create('expressCheckout');
+      express.on('ready', function (e) {
+        // `availablePaymentMethods` est absent quand aucun portefeuille
+        // n'est utilisable sur cet appareil.
+        if (e && e.availablePaymentMethods) {
+          document.getElementById('blocExpress').hidden = false;
+        }
+      });
+      express.on('confirm', async function () {
+        await transmettreChoix();
+        var r = await stripe.confirmPayment({
+          elements: elements,
+          confirmParams: { return_url: retour },
+        });
+        if (r.error) direErreur(r.error.message);
+      });
+      express.mount('#express');
+
+      // ── Carte bancaire ────────────────────────────────────────
+      elements.create('payment').mount('#carte');
 
       bouton.addEventListener('click', async function () {
         bouton.disabled = true;
         erreur.hidden = true;
+        await transmettreChoix();
         var r = await stripe.confirmPayment({
           elements: elements,
-          confirmParams: { return_url: window.location.origin + <%- JSON.stringify(retour) %> },
+          confirmParams: { return_url: retour },
         });
         // On n'arrive ici que si la confirmation a échoué avant toute
         // redirection : en cas de succès, Stripe a déjà quitté la page.
-        if (r.error) {
-          erreur.textContent = r.error.message || 'Le paiement n’a pas abouti.';
-          erreur.hidden = false;
-          bouton.disabled = false;
-        }
+        if (r.error) direErreur(r.error.message);
       });
     })();
     </script>

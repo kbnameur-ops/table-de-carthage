@@ -645,6 +645,30 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
   font-family:var(--ff-display);font-weight:600;font-size:1.6rem;color:var(--navy-800);
   font-variant-numeric:tabular-nums;
 }
+/* Le trait qui sépare « payer en un geste » de « saisir sa carte ». Sans
+   lui, les boutons Apple Pay / Google Pay et le formulaire de carte se
+   lisent comme une seule suite d'étapes à franchir, alors que ce sont deux
+   chemins au choix. */
+.separateur-ou{
+  display:flex;align-items:center;gap:.9rem;margin:1.2rem 0 0;
+  color:var(--muted);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;
+}
+.separateur-ou::before,.separateur-ou::after{
+  content:"";flex:1;height:1px;background:rgba(14,42,78,.14);
+}
+
+/* La case « enregistrer ma carte ». Toute la ligne est cliquable : viser
+   une case de 13 px au pouce, sur un téléphone, rate une fois sur deux. */
+.case-garder{
+  display:flex;align-items:flex-start;gap:.7rem;margin-top:1.1rem;
+  padding:.75rem .85rem;border:1px solid rgba(14,42,78,.14);border-radius:8px;
+  cursor:pointer;
+}
+.case-garder:hover{background:var(--cream)}
+.case-garder input{margin-top:.15rem;width:1.05rem;height:1.05rem;flex:0 0 auto;accent-color:var(--navy-800)}
+.case-garder b{display:block;font-weight:500;font-size:.94rem}
+.case-garder small{display:block;color:var(--muted);font-size:.8rem;line-height:1.45;margin-top:.15rem}
+
 /* Le cadre que Stripe injecte doit respirer comme nos propres champs. */
 #carte{margin-bottom:.4rem}
 

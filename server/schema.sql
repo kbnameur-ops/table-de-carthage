@@ -515,3 +515,27 @@ CREATE TABLE IF NOT EXISTS paiement_evenements (
   type      TEXT NOT NULL,
   recu_le   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- v8 — Moyens de paiement : portefeuilles (Apple Pay, Google Pay) et carte
+-- enregistrée sur demande du client.
+--
+-- Stripe ne peut garder une carte pour plus tard que si elle est rattachée
+-- à un « customer » : c'est l'objet qui porte les moyens de paiement d'une
+-- personne. On en crée un par client, à sa première tentative de paiement,
+-- et on garde son identifiant ici pour ne pas en fabriquer un nouveau à
+-- chaque commande — ce qui éparpillerait ses cartes enregistrées entre
+-- plusieurs fiches et les rendrait introuvables.
+-- ─────────────────────────────────────────────────────────────────────────
+
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS stripe_client_id TEXT;
+
+-- Deux clients ne peuvent pas partager la même fiche Stripe : ce serait
+-- proposer à l'un la carte enregistrée de l'autre.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_stripe
+  ON clients(stripe_client_id) WHERE stripe_client_id IS NOT NULL;
+
+-- Ce que le client a demandé pour CE paiement. Rien n'est déduit d'un
+-- paiement précédent : cocher la case une fois ne vaut pas consentement
+-- pour toujours, et la trace de ce qui a été coché doit rester lisible.
+ALTER TABLE paiements ADD COLUMN IF NOT EXISTS carte_enregistree BOOLEAN NOT NULL DEFAULT false;
