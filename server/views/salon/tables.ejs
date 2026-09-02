@@ -14,6 +14,19 @@
 <% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
 <% if (info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
 
+<%# Un nom porté par deux tables ne se voit pas en lisant la liste : les
+    lignes se ressemblent toutes. Or le serveur qui lit « Table 1 » sur son
+    écran ne saura pas de laquelle il s'agit, et les deux QR imprimés sont
+    identiques une fois collés. %>
+<% if (doublons.length) { %>
+  <div class="alerte alerte--erreur">
+    <strong>Deux tables portent le même nom.</strong>
+    <%= doublons.map(d => `« ${d.nom} » (${d.n} fois)`).join(', ') %>.
+    Sur le plan de salle comme sur les QR imprimés, rien ne les distingue :
+    renommez-en une ci-dessous, puis réimprimez sa planche.
+  </div>
+<% } %>
+
 <div class="btn-row" style="margin-top:0;margin-bottom:1.5rem">
   <a class="btn btn--ghost" href="/salon/services/<%= service.id %>/qr">QR codes à imprimer</a>
 </div>
