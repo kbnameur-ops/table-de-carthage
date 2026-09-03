@@ -84,19 +84,19 @@ export async function resteAPayerCommande(commandeId) {
 
 /** Le paiement encore vivant sur une commande, s'il y en a un. */
 export async function paiementVivantCommande(commandeId) {
-  return une(
+  return (await une(
     `SELECT * FROM paiements
       WHERE commande_id = $1 AND statut IN ('a_confirmer','autorise','capture')`,
     [commandeId]
-  ) ?? null;
+  )) ?? null;
 }
 
 export async function paiementVivantTablee(tableeId) {
-  return une(
+  return (await une(
     `SELECT * FROM paiements
       WHERE tablee_id = $1 AND statut IN ('a_confirmer','autorise','capture')`,
     [tableeId]
-  ) ?? null;
+  )) ?? null;
 }
 
 /** Ouvre — ou retrouve — le paiement d'une commande à emporter.
@@ -217,6 +217,58 @@ export async function marquerEchoue(intentionId, motif = '') {
     [intentionId, String(motif).slice(0, 300)]
   );
   return p ? { paiement: p } : { ignore: true };
+}
+
+/** Sort une commande restée en 'a_payer' quand le paiement n'aboutira
+ *  jamais : carte refusée, client parti de l'écran de paiement, Stripe mal
+ *  configuré au moment de la commande.
+ *
+ *  Sans cette porte, une telle commande était bloquée à vie : la cuisine
+ *  ignore 'a_payer', le salon n'avait aucune action dessus, et le client ne
+ *  peut plus la régler dès que le paiement en ligne s'éteint. Retirer le
+ *  menu déroulant sur ces lignes évitait bien d'envoyer en cuisine une
+ *  commande impayée — mais ne laissait aucune issue.
+ *
+ *  Deux issues, et rien entre les deux :
+ *
+ *  `abandonner` — personne ne viendra : la commande est annulée.
+ *
+ *  `au_comptoir` — le client se présente malgré l'échec : la commande
+ *  rejoint le circuit ordinaire en 'en_attente'. Elle part en cuisine et
+ *  se règle au comptoir, comme une commande passée par téléphone. Aucune
+ *  carte n'a été débitée, et c'est précisément ce que le salon doit avoir
+ *  en tête en cliquant.
+ *
+ *  Dans les deux cas l'intention de paiement en attente est close : la
+ *  laisser vivante empêcherait toute nouvelle tentative sur cette commande
+ *  (l'index unique n'accepte qu'un paiement vivant à la fois). */
+export async function denouerCommandeAPayer(commandeId, action) {
+  if (action !== 'abandonner' && action !== 'au_comptoir') {
+    return { erreur: 'Action inconnue.' };
+  }
+  const c = await une(`SELECT * FROM commandes WHERE id = $1`, [commandeId]);
+  if (!c) return { erreur: 'Commande introuvable.' };
+  if (c.statut !== 'a_payer') {
+    return { erreur: "Cette commande n'attend plus de paiement." };
+  }
+
+  const vivant = await paiementVivantCommande(commandeId);
+  if (vivant) {
+    // Une empreinte DÉJÀ autorisée ne se dénoue pas ici : il y a de
+    // l'argent bloqué sur la carte du client, et le rendre ou le prendre
+    // est l'arbitrage « Débiter / Libérer », pas ce bouton-ci.
+    if (vivant.statut !== 'a_confirmer') {
+      return { erreur: 'Une empreinte est déjà prise : utilisez Débiter ou Libérer.' };
+    }
+    await executer(
+      `UPDATE paiements SET statut = 'echoue', echec_motif = $2 WHERE id = $1`,
+      [vivant.id, action === 'abandonner' ? 'commande abandonnée' : 'repris au comptoir']
+    );
+  }
+
+  const statut = action === 'abandonner' ? 'annulee' : 'en_attente';
+  await executer(`UPDATE commandes SET statut = $1 WHERE id = $2`, [statut, commandeId]);
+  return { commande: { ...c, statut }, statut };
 }
 
 /** Débite (tout ou partie de) l'empreinte, puis encaisse.

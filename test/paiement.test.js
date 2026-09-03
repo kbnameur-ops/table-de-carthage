@@ -400,3 +400,60 @@ test('choisirEnregistrementCarte n\'accepte que le paiement du bon client', asyn
   const tard = await reg.choisirEnregistrementCarte(r.paiement.id, true, { clientId: client.id });
   assert.ok(tard.erreur, 'un paiement déjà traité ne se modifie plus');
 });
+
+test('une commande bloquée « à régler » se dénoue en deux issues seulement', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+
+  // Abandonner : personne ne viendra.
+  const a = await commandeAPayer(2000);
+  const ra = await reg.denouerCommandeAPayer(a.cmd.id, 'abandonner');
+  assert.equal(ra.statut, 'annulee', ra.erreur);
+  let relu = await db.une(`SELECT statut FROM commandes WHERE id = $1`, [a.cmd.id]);
+  assert.equal(relu.statut, 'annulee');
+
+  // Reprendre au comptoir : la commande rejoint le circuit ordinaire et
+  // part en cuisine. Aucune carte n'a été débitée.
+  const b = await commandeAPayer(2500);
+  const rb = await reg.denouerCommandeAPayer(b.cmd.id, 'au_comptoir');
+  assert.equal(rb.statut, 'en_attente', rb.erreur);
+  relu = await db.une(`SELECT statut FROM commandes WHERE id = $1`, [b.cmd.id]);
+  assert.equal(relu.statut, 'en_attente');
+
+  // Une action inventée ne fait rien.
+  const c = await commandeAPayer(1500);
+  assert.ok((await reg.denouerCommandeAPayer(c.cmd.id, 'encaisser')).erreur);
+  relu = await db.une(`SELECT statut FROM commandes WHERE id = $1`, [c.cmd.id]);
+  assert.equal(relu.statut, 'a_payer', 'la commande ne doit pas avoir bougé');
+
+  // Une commande qui n'attend plus de paiement ne se dénoue pas.
+  assert.ok((await reg.denouerCommandeAPayer(b.cmd.id, 'abandonner')).erreur);
+});
+
+test('dénouer ferme l\'intention en attente, sinon plus rien n\'est payable', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const { cmd } = await commandeAPayer(3000);
+  const ouvert = await reg.ouvrirPaiementCommande(cmd.id);
+  assert.ok(ouvert.paiement, ouvert.erreur);
+
+  await reg.denouerCommandeAPayer(cmd.id, 'au_comptoir');
+  const p = await db.une(`SELECT statut, echec_motif FROM paiements WHERE id = $1`, [ouvert.paiement.id]);
+  assert.equal(p.statut, 'echoue');
+  assert.match(p.echec_motif, /comptoir/);
+  // L'index unique n'accepte qu'un paiement vivant : laisser celui-ci
+  // debout interdirait toute nouvelle tentative sur cette commande.
+  assert.equal(await reg.paiementVivantCommande(cmd.id), null);
+});
+
+test('une empreinte déjà autorisée ne se dénoue pas : c\'est un arbitrage', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const { cmd } = await commandeAPayer(4000);
+  const ouvert = await reg.ouvrirPaiementCommande(cmd.id);
+  await reg.marquerAutorise(ouvert.paiement.intention_id);
+  // marquerAutorise fait déjà sortir la commande de 'a_payer' : le refus
+  // vient de là, et c'est bien ce qu'on veut vérifier — de l'argent est
+  // bloqué sur la carte, seul Débiter ou Libérer doit y toucher.
+  const r = await reg.denouerCommandeAPayer(cmd.id, 'abandonner');
+  assert.ok(r.erreur, 'une commande avec empreinte prise ne se dénoue pas');
+  const p = await db.une(`SELECT statut FROM paiements WHERE id = $1`, [ouvert.paiement.id]);
+  assert.equal(p.statut, 'autorise', 'l\'empreinte doit rester intacte');
+});
