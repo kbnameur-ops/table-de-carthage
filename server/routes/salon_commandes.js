@@ -5,7 +5,7 @@ import { dateValide } from '../lib/validate.js';
 import { euros, versCents } from '../lib/money.js';
 import { encaisserCommande } from '../lib/encaissement.js';
 import { jourVoisin, aujourdHui, libelleJour } from '../lib/jours.js';
-import { capturerEtEncaisser, libererPaiement } from '../lib/reglement.js';
+import { capturerEtEncaisser, libererPaiement, denouerCommandeAPayer } from '../lib/reglement.js';
 import { paiementDisponible } from '../lib/paiement.js';
 
 export const salonCommandesRouter = Router();
@@ -86,6 +86,18 @@ salonCommandesRouter.post('/salon/commandes/:id/statut', exigerAdmin, verifierCs
   try {
     if (STATUTS.includes(req.body.statut)) {
       await executer(`UPDATE commandes SET statut = $1 WHERE id = $2`, [req.body.statut, req.params.id]);
+    }
+    redirigerRetour(req, res, '/salon/commandes');
+  } catch (err) { next(err); }
+});
+
+/** Dénouer une commande restée « à régler ». Deux issues seulement :
+ *  l'abandonner, ou la reprendre au comptoir. Voir `denouerCommandeAPayer`. */
+salonCommandesRouter.post('/salon/commandes/:id/denouer', exigerAdmin, verifierCsrf, async (req, res, next) => {
+  try {
+    const r = await denouerCommandeAPayer(req.params.id, req.body.action);
+    if (r.erreur) {
+      return redirigerRetour(req, res, '/salon/commandes?erreur=' + encodeURIComponent(r.erreur));
     }
     redirigerRetour(req, res, '/salon/commandes');
   } catch (err) { next(err); }

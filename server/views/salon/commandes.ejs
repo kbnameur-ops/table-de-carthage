@@ -70,10 +70,11 @@
           <% if (c.statut === 'encaissee') { %>
             <span class="badge badge--honoree">encaissée</span>
           <% } else if (c.statut === 'a_payer') { %>
-            <%# Pas de menu ici : la commande attend sa carte, et la forcer
-                l'enverrait en cuisine sans que personne ne puisse la faire
-                payer. Elle en sort quand le paiement aboutit. %>
-            <span class="badge badge--attente">à régler</span>
+            <%# Pas de menu déroulant ici : la commande attend sa carte, et
+                la faire glisser vers « prête » l'enverrait en cuisine sans
+                que personne ne puisse la faire payer. Les deux issues
+                possibles sont des boutons nommés, dans la colonne caisse. %>
+            <span class="badge badge--apayer">à régler</span>
           <% } else { %>
             <form method="post" action="/salon/commandes/<%= c.id %>/statut">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -113,7 +114,24 @@
               <button type="submit" class="btn btn--ghost btn--sm">Libérer</button>
             </form>
           <% } else if (c.statut === 'a_payer') { %>
-            <small style="color:var(--muted)">carte en attente</small>
+            <%# Le paiement peut ne jamais aboutir : carte refusée, client
+                parti de l'écran, Stripe éteint depuis. Sans ces deux
+                boutons la commande restait bloquée à vie — la cuisine
+                ignore « à régler », et le client ne peut plus la payer. %>
+            <p class="aide" style="margin:0 0 .4rem">Carte en attente</p>
+            <form method="post" action="/salon/commandes/<%= c.id %>/denouer"
+                  onsubmit="return confirm('Aucune carte n\'a été débitée. La commande part en cuisine et se règle au comptoir. Continuer ?')">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="action" value="au_comptoir">
+              <button type="submit" class="btn btn--sm">Régler au comptoir</button>
+            </form>
+            <form method="post" action="/salon/commandes/<%= c.id %>/denouer"
+                  onsubmit="return confirm('Annuler cette commande ? Elle n\'a jamais été payée ni envoyée en cuisine.')"
+                  style="margin-top:.35rem">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="hidden" name="action" value="abandonner">
+              <button type="submit" class="btn btn--ghost btn--sm">Abandonner</button>
+            </form>
           <% } else if (c.statut !== 'annulee') { %>
             <form method="post" action="/salon/commandes/<%= c.id %>/encaisser">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
