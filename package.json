@@ -14,7 +14,8 @@
     "seed": "node server/seed.js",
     "admin": "node server/create-admin.js",
     "test": "node --test test/**/*.test.js",
-    "pdf": "node outils/manuel-pdf.mjs"
+    "pdf": "node outils/manuel-pdf.mjs",
+    "vercel-build": "node outils/migrer-au-deploiement.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",
