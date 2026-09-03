@@ -407,12 +407,26 @@ END $$;
 -- au feu. Sans ces deux-là, une commande restait « confirmée » de son
 -- enregistrement jusqu'à sa sortie, et personne en salle ne savait où elle
 -- en était.
+--
+-- Ce bloc n'agit que si la contrainte est absente, et c'est la règle pour
+-- toute contrainte redéfinie plus bas : seule sa DERNIÈRE version a le
+-- droit de remplacer les précédentes.
+--
+-- Un `DROP ... IF EXISTS` suivi d'un `ADD` réimpose la liste de cette
+-- version-ci à chaque passage. Tant que le schéma n'était appliqué qu'à la
+-- main, ça ne se voyait pas. Depuis qu'il est rejoué à chaque déploiement,
+-- ce bloc redonnait la liste d'avant la v7 — sans 'a_payer' — et le
+-- déploiement échouait dès qu'une seule commande portait ce statut.
 DO $$ BEGIN
-  ALTER TABLE commandes DROP CONSTRAINT IF EXISTS commandes_statut_check;
-  ALTER TABLE commandes ADD CONSTRAINT commandes_statut_check CHECK (statut IN (
-    'en_attente','confirmee','vue','en_preparation','prete',
-    'retiree','encaissee','annulee'));
-EXCEPTION WHEN duplicate_object THEN NULL;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+     WHERE conname = 'commandes_statut_check'
+       AND conrelid = 'commandes'::regclass
+  ) THEN
+    ALTER TABLE commandes ADD CONSTRAINT commandes_statut_check CHECK (statut IN (
+      'en_attente','confirmee','vue','en_preparation','prete',
+      'retiree','encaissee','annulee'));
+  END IF;
 END $$;
 
 -- L'horodatage de chaque passage, pour afficher un temps d'attente réel
@@ -451,6 +465,9 @@ CREATE INDEX IF NOT EXISTS idx_commandes_pris_par ON commandes(pris_par_id);
 -- payée, donc pas encore envoyée en cuisine. Sans lui, une commande non
 -- réglée tomberait au passe dès son enregistrement — 'en_attente' est déjà
 -- lu par la cuisine depuis la v5.
+-- Dernière version de cette contrainte : c'est donc ce bloc-ci, et lui
+-- seul, qui la remplace sans condition. Le jour où un statut s'ajoute, le
+-- nouveau bloc prend ce rôle et celui-ci passe sous condition d'absence.
 DO $$ BEGIN
   ALTER TABLE commandes DROP CONSTRAINT IF EXISTS commandes_statut_check;
   ALTER TABLE commandes ADD CONSTRAINT commandes_statut_check CHECK (statut IN (
