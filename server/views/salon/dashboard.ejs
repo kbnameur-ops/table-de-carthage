@@ -35,10 +35,36 @@
     saurait sans cette ligne. %>
 <% if (clePaiementInvalide) { %>
   <div class="alerte alerte--erreur">
-    <strong>Clé Stripe invalide.</strong> La valeur de <code>STRIPE_SECRET_KEY</code>
-    ne ressemble pas à une clé Stripe — elles commencent par <code>sk_test_</code> ou
-    <code>sk_live_</code>. Le paiement en ligne reste <strong>désactivé</strong> :
-    vos clients commandent normalement et règlent au comptoir, comme avant.
+    <strong>Clé Stripe invalide.</strong> Le paiement en ligne reste
+    <strong>désactivé</strong> : vos clients commandent normalement et règlent
+    au comptoir, comme avant.
+    <%# Dire « invalide » sans dire quoi laisse deviner : on recolle la même
+        chose et on recommence. La valeur elle-même n'est jamais affichée —
+        c'est un secret, même quand ce n'est pas le bon. %>
+    <% if (diagnosticCle) { %>
+      <span style="display:block;margin-top:.4rem">
+        <code>STRIPE_SECRET_KEY</code> — <%= diagnosticCle %>
+      </span>
+    <% } %>
+    <span style="display:block;margin-top:.4rem;color:var(--muted);font-size:.86rem">
+      Les deux clés se prennent chez Stripe, dans Développeurs → Clés d'API.
+      Après les avoir enregistrées sur Vercel, il faut <strong>redéployer</strong> :
+      une variable ne s'applique qu'aux déploiements créés après son enregistrement.
+    </span>
+  </div>
+<% } %>
+
+<%# Une clé secrète posée dans la variable publique est le pire des deux
+    cas : elle serait écrite en clair dans le HTML de chaque page de
+    paiement. Le code refuse de la livrer, mais il faut le dire. %>
+<% if (clePubliqueEstSecrete) { %>
+  <div class="alerte alerte--erreur">
+    <strong>Danger : une clé secrète est posée dans <code>STRIPE_PUBLIC_KEY</code>.</strong>
+    Cette variable est envoyée au navigateur de vos clients. Le site refuse de
+    la transmettre, donc rien n'a fuité par cette page — mais remplacez-la par
+    la clé <em>publiable</em> (<code>pk_test_</code> ou <code>pk_live_</code>),
+    et par précaution <strong>révoquez la clé secrète</strong> chez Stripe pour
+    en générer une nouvelle.
   </div>
 <% } %>
 

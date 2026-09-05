@@ -15,7 +15,8 @@ process.env.PAIEMENT_SIMULE = '1';
 delete process.env.STRIPE_SECRET_KEY;
 
 const { paiementActif, paiementSimule, paiementDisponible, creerIntention,
-        cleSecreteInvalide, modeStripe, definirEnregistrement } =
+        cleSecreteInvalide, modeStripe, definirEnregistrement,
+        clePublique, clePubliqueEstSecrete, diagnosticCleSecrete } =
   await import('../server/lib/paiement.js');
 
 test('la fonctionnalité dort tant qu\'aucune clé Stripe n\'est posée', () => {
@@ -456,4 +457,53 @@ test('une empreinte déjà autorisée ne se dénoue pas : c\'est un arbitrage', 
   assert.ok(r.erreur, 'une commande avec empreinte prise ne se dénoue pas');
   const p = await db.une(`SELECT statut FROM paiements WHERE id = $1`, [ouvert.paiement.id]);
   assert.equal(p.statut, 'autorise', 'l\'empreinte doit rester intacte');
+});
+
+test('une clé secrète posée dans la variable publique n\'est jamais livrée au navigateur', async () => {
+  // Le pire des deux cas : cette valeur part dans le HTML de chaque page de
+  // paiement, lisible par le premier client venu — et une clé secrète
+  // permet de débiter n'importe quelle carte.
+  const avant = process.env.STRIPE_PUBLIC_KEY;
+  try {
+    for (const secrete of ['sk_test_51Abc', 'sk_live_51Abc', 'rk_live_51Abc']) {
+      process.env.STRIPE_PUBLIC_KEY = secrete;
+      assert.equal(clePubliqueEstSecrete(), true, secrete);
+      assert.equal(clePublique(), '', `${secrete} ne doit pas sortir`);
+    }
+    // Une vraie clé publiable passe, elle.
+    process.env.STRIPE_PUBLIC_KEY = 'pk_test_51Abc';
+    assert.equal(clePubliqueEstSecrete(), false);
+    assert.equal(clePublique(), 'pk_test_51Abc');
+  } finally {
+    if (avant === undefined) delete process.env.STRIPE_PUBLIC_KEY;
+    else process.env.STRIPE_PUBLIC_KEY = avant;
+  }
+});
+
+test('le diagnostic nomme l\'erreur sans jamais montrer la valeur', async () => {
+  const avant = process.env.STRIPE_SECRET_KEY;
+  const essayer = (valeur) => {
+    process.env.STRIPE_SECRET_KEY = valeur;
+    const d = diagnosticCleSecrete();
+    // Aucune phrase ne doit recracher le secret qu'on vient de poser.
+    if (d) assert.ok(!d.includes(valeur.trim()) || valeur.trim().length < 4,
+      `le diagnostic ne doit pas contenir la valeur : ${d}`);
+    return d;
+  };
+  try {
+    assert.match(essayer(' sk_test_51Abc '), /espace|retour à la ligne/);
+    assert.match(essayer('STRIPE_SECRET_KEY=sk_test_51Abc'), /=/);
+    assert.match(essayer('whsec_9f2b1c'), /webhook/);
+    assert.match(essayer('pk_test_51Abc'), /publiable/);
+    assert.match(essayer('sogzoh-tzzzzzzzzsri0'), /aucun préfixe Stripe connu \(20 caractères\)/);
+
+    // Une clé valide n'a rien à diagnostiquer, et une absence non plus.
+    process.env.STRIPE_SECRET_KEY = 'sk_test_51AbcDef';
+    assert.equal(diagnosticCleSecrete(), null);
+    delete process.env.STRIPE_SECRET_KEY;
+    assert.equal(diagnosticCleSecrete(), null);
+  } finally {
+    if (avant === undefined) delete process.env.STRIPE_SECRET_KEY;
+    else process.env.STRIPE_SECRET_KEY = avant;
+  }
 });

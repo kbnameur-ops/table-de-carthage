@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { une } from '../db.js';
 import { emailValide } from '../lib/validate.js';
-import { modeStripe, manquePourPaiement, cleSecreteInvalide } from '../lib/paiement.js';
+import { modeStripe, manquePourPaiement, cleSecreteInvalide, diagnosticCleSecrete, clePubliqueEstSecrete } from '../lib/paiement.js';
 import {
   verifierMotDePasse, elargirSession, detruireSession,
   enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
@@ -76,6 +76,8 @@ salonRouter.get('/salon', exigerAdmin, async (req, res, next) => {
       // encore en mode test » se ressemblent trop.
       modePaiement: modeStripe(), manquePaiement: manquePourPaiement(),
       clePaiementInvalide: cleSecreteInvalide(),
+      diagnosticCle: diagnosticCleSecrete(),
+      clePubliqueEstSecrete: clePubliqueEstSecrete(),
       csrfToken: res.locals.csrfToken,
     });
   } catch (err) { next(err); }
