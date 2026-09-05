@@ -4,7 +4,9 @@
   <p class="lead"><%= client.email %> · <%= client.telephone_saisi %></p>
 
   <% if (message) { %><div class="alerte alerte--ok"><%= message %></div><% } %>
-  <% if (erreurCagnotte) { %><div class="alerte alerte--erreur"><%= erreurCagnotte %></div><% } %>
+  <%# Une seule bande d'erreur en haut de page : elle porte aussi bien un
+      refus d'envoi de points qu'un refus d'annulation. %>
+  <% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
 
   <div class="card cagnotte">
     <div>

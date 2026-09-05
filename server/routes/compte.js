@@ -5,6 +5,7 @@ import { dateValide } from '../lib/validate.js';
 import { euros } from '../lib/money.js';
 import { libelleJourCourt } from '../lib/jours.js';
 import { paiementDisponible } from '../lib/paiement.js';
+import { annulerCommandeDuClient } from '../lib/reglement.js';
 import {
   elargirSession, detruireSession,
   enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
@@ -92,7 +93,12 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
       .filter(c => c.type !== 'sur_place')
       .map(c => ({
         ...c,
-        annulable: !CMD_TERMINEE.includes(c.statut) && c.date >= aujourdHui,
+        // Tant que la commande n'est ni retirée, ni réglée, ni déjà
+        // annulée, le client peut l'annuler — quelle que soit la date de
+        // retrait. La condition « retrait à venir » qui était ici laissait
+        // sans issue toute commande en attente dont l'heure était passée :
+        // le bouton disparaissait, et il ne restait qu'à appeler.
+        annulable: !CMD_TERMINEE.includes(c.statut),
         // Une commande restée 'a_payer' n'est pas partie en cuisine : elle
         // attend sa carte, et c'est ici que le client peut reprendre là où
         // il s'était arrêté plutôt que de tout ressaisir.
@@ -108,7 +114,7 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
       client, reservations, commandes, tablee, addition, euros, libelleJourCourt,
       paiementActif: paiementDisponible(),
       mouvements: await mouvementsDe(client.id), taux: await tauxFidelite(),
-      erreurCagnotte: req.query.err || null, valeursEnvoi: {},
+      erreur: req.query.err || null, valeursEnvoi: {},
       libellesStatutResa: LIBELLES_RESA, libellesStatutCmd: LIBELLES_CMD,
       message: req.query.msg || null,
       session: req.session, csrfToken: res.locals.csrfToken,
@@ -142,12 +148,9 @@ compteRouter.post('/compte/reservations/:id/annuler', exigerClient, verifierCsrf
 
 compteRouter.post('/compte/commandes/:id/annuler', exigerClient, verifierCsrf, async (req, res, next) => {
   try {
-    const annulee = await une(
-      `UPDATE commandes SET statut = 'annulee'
-        WHERE id = $1 AND client_id = $2 AND statut <> ALL($3::text[])
-        RETURNING reference, date, heure, total_cents`,
-      [req.params.id, req.clientId, CMD_TERMINEE]
-    );
+    const r = await annulerCommandeDuClient(req.params.id, req.clientId);
+    if (r.erreur) return res.redirect('/compte?err=' + encodeURIComponent(r.erreur));
+    const annulee = r.commande;
     if (annulee) {
       const client = await une(`SELECT prenom, nom FROM clients WHERE id = $1`, [req.clientId]);
       await notifier({
@@ -157,7 +160,10 @@ compteRouter.post('/compte/commandes/:id/annuler', exigerClient, verifierCsrf, a
         lien: `/salon/commandes?date=${annulee.date}`,
       });
     }
-    res.redirect('/compte?msg=' + encodeURIComponent('Commande annulée.'));
+    res.redirect('/compte?msg=' + encodeURIComponent(
+      r.empreinteRendue
+        ? 'Commande annulée. Le montant réservé sur votre carte est rendu ; votre banque peut mettre un à deux jours à le faire disparaître de votre relevé.'
+        : 'Commande annulée.'));
   } catch (err) { next(err); }
 });
 
