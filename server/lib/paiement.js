@@ -117,6 +117,15 @@ export function diagnosticCleSecrete() {
     return `Elle est tronquée : elle commence bien par ${cle.slice(0, 8)} mais s’arrête là (${cle.length} caractères, une vraie clé en fait une centaine). Chez Stripe la clé secrète est masquée : cliquez sur « Révéler », ou utilisez le bouton de copie à côté d’elle.`;
   }
 
+  // Le bon préfixe, mais la suite n'est pas alphanumérique : ce sont les
+  // points de masquage que Stripe affiche à la place de la clé, copiés
+  // avec le préfixe en sélectionnant le texte à l'écran. Dire « aucun
+  // préfixe connu » sur cette valeur-là est faux et envoie chercher au
+  // mauvais endroit — c'est pourtant le cas le plus fréquent.
+  if (/^(sk|rk)_(test|live)_/.test(cle)) {
+    return `Elle commence bien par ${cle.slice(0, 8)}, mais la suite n’est pas faite de lettres et de chiffres (${cle.length} caractères en tout) : ce sont les points de masquage affichés par Stripe, copiés avec le préfixe. Ne sélectionnez pas le texte à l’écran — utilisez le bouton « Copier » à droite de la clé.`;
+  }
+
   return `Elle ne commence par aucun préfixe Stripe connu (${cle.length} caractères). Une clé secrète commence par sk_test_ ou sk_live_.`;
 }
 
