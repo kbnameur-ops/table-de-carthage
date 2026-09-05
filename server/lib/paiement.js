@@ -103,6 +103,20 @@ export function diagnosticCleSecrete() {
   if (FORME_CLE_PUBLIQUE.test(cle)) {
     return 'C’est la clé publiable (pk_…), pas la clé secrète. Les deux se prennent au même endroit chez Stripe, mais ce n’est pas la même ligne.';
   }
+
+  // Le cas le plus fréquent, et le plus déroutant : Stripe masque la clé
+  // secrète dans son tableau de bord. Sélectionner ce qui est affiché ne
+  // ramène que le préfixe — « sk_test_ » fait exactement huit caractères.
+  // Dire « aucun préfixe connu » sur cette valeur-là serait faux, et
+  // enverrait chercher au mauvais endroit.
+  // Pas de test de longueur au-delà : une clé bien formée est acceptée telle
+  // quelle, et c'est Stripe qui tranche. Deviner une longueur minimale
+  // reviendrait à refuser un jour une vraie clé sur une supposition.
+  const PREFIXE_SEUL = /^(sk|rk)_(test|live)_$/;
+  if (PREFIXE_SEUL.test(cle)) {
+    return `Elle est tronquée : elle commence bien par ${cle.slice(0, 8)} mais s’arrête là (${cle.length} caractères, une vraie clé en fait une centaine). Chez Stripe la clé secrète est masquée : cliquez sur « Révéler », ou utilisez le bouton de copie à côté d’elle.`;
+  }
+
   return `Elle ne commence par aucun préfixe Stripe connu (${cle.length} caractères). Une clé secrète commence par sk_test_ ou sk_live_.`;
 }
 
