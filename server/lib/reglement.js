@@ -328,6 +328,49 @@ export async function libererPaiement(paiementId, { annulerCommande = true } = {
   return { paiement: await une(`SELECT * FROM paiements WHERE id = $1`, [p.id]) };
 }
 
+/** Le client annule sa commande depuis son espace.
+ *
+ *  Depuis que le paiement est actif, annuler ne peut plus se réduire à
+ *  changer un statut : une commande à emporter en attente a, par
+ *  construction, une empreinte vivante sur la carte du client. La laisser
+ *  debout bloquerait son argent pendant environ sept jours — pour une
+ *  commande qu'il vient lui-même d'annuler. L'empreinte est donc rendue
+ *  d'abord, et c'est Stripe qui fait foi.
+ *
+ *  Un paiement déjà débité ne s'annule pas ici : rendre l'argent est un
+ *  remboursement, pas une annulation, et cela se décide au restaurant. */
+export async function annulerCommandeDuClient(commandeId, clientId) {
+  const c = await une(
+    `SELECT * FROM commandes WHERE id = $1 AND client_id = $2`, [commandeId, clientId]);
+  if (!c) return { erreur: 'Commande introuvable.' };
+  if (c.statut === 'annulee') return { erreur: 'Cette commande est déjà annulée.' };
+  if (c.statut === 'encaissee') return { erreur: 'Cette commande est déjà réglée.' };
+  if (c.statut === 'retiree') return { erreur: 'Cette commande a déjà été retirée.' };
+
+  const p = await paiementVivantCommande(commandeId);
+  if (p && p.statut === 'capture') {
+    return { erreur: 'Cette commande a déjà été débitée. Contactez le restaurant pour un remboursement.' };
+  }
+
+  if (p && p.statut === 'autorise') {
+    // Rend l'empreinte ET annule la commande dans la foulée.
+    const r = await libererPaiement(p.id, { annulerCommande: true });
+    if (r.erreur) return r;
+    return { commande: await une(`SELECT * FROM commandes WHERE id = $1`, [commandeId]), empreinteRendue: true };
+  }
+
+  if (p && p.statut === 'a_confirmer') {
+    // Rien n'a encore été bloqué : l'intention est simplement close, sans
+    // quoi l'index unique interdirait tout futur paiement sur ce numéro.
+    await executer(
+      `UPDATE paiements SET statut = 'echoue', echec_motif = 'commande annulée par le client' WHERE id = $1`,
+      [p.id]);
+  }
+
+  await executer(`UPDATE commandes SET statut = 'annulee' WHERE id = $1`, [commandeId]);
+  return { commande: await une(`SELECT * FROM commandes WHERE id = $1`, [commandeId]), empreinteRendue: false };
+}
+
 /** Un débit immédiat a réussi (règlement depuis l'espace client) : il n'y
  *  a rien à arbitrer, on encaisse dans la foulée. */
 export async function marquerPayeEtEncaisser(intentionId) {

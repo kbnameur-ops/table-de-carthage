@@ -552,3 +552,58 @@ test('une clé copiée depuis l\'affichage masqué de Stripe est reconnue', asyn
     else process.env.STRIPE_SECRET_KEY = avant;
   }
 });
+
+test('annuler depuis l\'espace client rend l\'empreinte au lieu de bloquer l\'argent', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const { client, cmd } = await commandeAPayer(4200);
+  const ouvert = await reg.ouvrirPaiementCommande(cmd.id);
+  await reg.marquerAutorise(ouvert.paiement.intention_id);
+
+  // La commande est en attente, l'argent est bloqué sur la carte.
+  let relu = await db.une(`SELECT statut FROM commandes WHERE id = $1`, [cmd.id]);
+  assert.equal(relu.statut, 'en_attente');
+
+  const r = await reg.annulerCommandeDuClient(cmd.id, client.id);
+  assert.ok(!r.erreur, r.erreur);
+  assert.equal(r.empreinteRendue, true, 'le client doit être prévenu que son argent est rendu');
+
+  relu = await db.une(`SELECT statut FROM commandes WHERE id = $1`, [cmd.id]);
+  assert.equal(relu.statut, 'annulee');
+  const p = await db.une(`SELECT statut FROM paiements WHERE id = $1`, [ouvert.paiement.id]);
+  assert.equal(p.statut, 'libere', 'sans ça, l\'argent reste bloqué environ sept jours');
+});
+
+test('annuler ferme aussi une intention pas encore confirmée', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const { client, cmd } = await commandeAPayer(1800);
+  const ouvert = await reg.ouvrirPaiementCommande(cmd.id);
+
+  const r = await reg.annulerCommandeDuClient(cmd.id, client.id);
+  assert.ok(!r.erreur, r.erreur);
+  assert.equal(r.empreinteRendue, false, 'rien n\'était bloqué : ne rien promettre');
+  const p = await db.une(`SELECT statut FROM paiements WHERE id = $1`, [ouvert.paiement.id]);
+  assert.equal(p.statut, 'echoue');
+  assert.equal(await reg.paiementVivantCommande(cmd.id), null);
+});
+
+test('la commande d\'autrui, et celle déjà réglée, ne s\'annulent pas', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const { client, cmd } = await commandeAPayer(2000);
+  assert.ok((await reg.annulerCommandeDuClient(cmd.id, -1)).erreur, 'un autre client doit être refusé');
+
+  await db.executer(`UPDATE commandes SET statut = 'encaissee' WHERE id = $1`, [cmd.id]);
+  assert.ok((await reg.annulerCommandeDuClient(cmd.id, client.id)).erreur, 'une commande réglée ne s\'annule pas');
+});
+
+test('une commande dont l\'heure de retrait est passée reste annulable', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  // C'est le cas qui laissait le client sans issue : le bouton disparaissait
+  // dès que la date de retrait était dépassée, alors que la commande était
+  // toujours en attente.
+  const { client, cmd } = await commandeAPayer(2600);
+  await db.executer(`UPDATE commandes SET statut = 'en_attente', date = '2020-01-01' WHERE id = $1`, [cmd.id]);
+  const r = await reg.annulerCommandeDuClient(cmd.id, client.id);
+  assert.ok(!r.erreur, r.erreur);
+  const relu = await db.une(`SELECT statut FROM commandes WHERE id = $1`, [cmd.id]);
+  assert.equal(relu.statut, 'annulee');
+});
