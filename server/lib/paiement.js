@@ -54,10 +54,56 @@ export function paiementActif() {
   return FORME_CLE_SECRETE.test(process.env.STRIPE_SECRET_KEY || '');
 }
 
+// Forme d'une clé publiable Stripe. Elle est faite pour circuler.
+const FORME_CLE_PUBLIQUE = /^pk_(test|live)_[A-Za-z0-9]/;
+
+/** Vrai si ce qui est posé dans STRIPE_PUBLIC_KEY est en réalité une clé
+ *  SECRÈTE. C'est la confusion la plus coûteuse des deux : les deux clés se
+ *  ressemblent, se copient au même endroit, et une seule doit jamais
+ *  quitter le serveur. */
+export function clePubliqueEstSecrete() {
+  return FORME_CLE_SECRETE.test(process.env.STRIPE_PUBLIC_KEY || '');
+}
+
 /** La clé publique, à passer au navigateur. Publique par nature : elle ne
- *  permet que de créer un moyen de paiement, jamais de débiter. */
+ *  permet que de créer un moyen de paiement, jamais de débiter.
+ *
+ *  Une clé secrète posée ici par erreur ne sort PAS : cette fonction rend
+ *  une chaîne vide plutôt que de la livrer. Elle est écrite en clair dans
+ *  le HTML de la page de paiement, donc lisible par le premier client
+ *  venu — et une clé secrète permet de débiter n'importe quelle carte et
+ *  de lire tout le compte Stripe. Le paiement ne marchera pas, ce qui est
+ *  visible et réparable ; une clé secrète publiée ne se répare qu'en la
+ *  révoquant. */
 export function clePublique() {
+  if (clePubliqueEstSecrete()) return '';
   return process.env.STRIPE_PUBLIC_KEY || '';
+}
+
+/** Ce qui cloche dans STRIPE_SECRET_KEY, en une phrase lisible par
+ *  quelqu'un qui n'écrit pas de code — et sans jamais montrer la valeur.
+ *
+ *  Dire « clé invalide » sans dire quoi laisse deviner : on recolle la même
+ *  chose, on redéploie, on recommence. Ces quatre cas couvrent à peu près
+ *  toutes les façons de se tromper en copiant une clé. */
+export function diagnosticCleSecrete() {
+  const brute = process.env.STRIPE_SECRET_KEY || '';
+  if (brute === '' || paiementActif()) return null;
+
+  const cle = brute.trim();
+  if (cle !== brute) {
+    return 'Elle comporte un espace ou un retour à la ligne au début ou à la fin.';
+  }
+  if (cle.includes('=')) {
+    return 'Elle contient un « = » : le nom de la variable a sans doute été collé avec sa valeur. Ne collez que la valeur.';
+  }
+  if (cle.startsWith('whsec_')) {
+    return 'C’est le secret du webhook (whsec_…), pas la clé secrète. Il va dans STRIPE_WEBHOOK_SECRET.';
+  }
+  if (FORME_CLE_PUBLIQUE.test(cle)) {
+    return 'C’est la clé publiable (pk_…), pas la clé secrète. Les deux se prennent au même endroit chez Stripe, mais ce n’est pas la même ligne.';
+  }
+  return `Elle ne commence par aucun préfixe Stripe connu (${cle.length} caractères). Une clé secrète commence par sk_test_ ou sk_live_.`;
 }
 
 /** En développement, sans compte Stripe, on veut quand même pouvoir
