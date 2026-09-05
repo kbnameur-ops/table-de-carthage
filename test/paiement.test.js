@@ -528,3 +528,27 @@ test('une clé tronquée au préfixe est reconnue comme telle', async () => {
     else process.env.STRIPE_SECRET_KEY = avant;
   }
 });
+
+test('une clé copiée depuis l\'affichage masqué de Stripe est reconnue', async () => {
+  // Stripe affiche « sk_test_••••••• » : sélectionner ce texte à l'écran
+  // ramène le préfixe ET les points de masquage. C'est le cas le plus
+  // fréquent, et « aucun préfixe connu » serait faux — le préfixe est bon,
+  // c'est la suite qui ne l'est pas.
+  const avant = process.env.STRIPE_SECRET_KEY;
+  try {
+    for (const masquee of ['sk_test_•••••••', 'sk_live_·······', 'rk_test_*******', 'sk_test_' + '•'.repeat(99)]) {
+      process.env.STRIPE_SECRET_KEY = masquee;
+      assert.equal(paiementActif(), false, masquee);
+      const d = diagnosticCleSecrete();
+      assert.match(d, /masquage/, masquee);
+      assert.ok(!d.includes(masquee), 'le diagnostic ne doit pas recracher la valeur');
+    }
+    // Une clé faite de lettres et de chiffres reste acceptée.
+    process.env.STRIPE_SECRET_KEY = 'sk_test_51AbcDef';
+    assert.equal(paiementActif(), true);
+    assert.equal(diagnosticCleSecrete(), null);
+  } finally {
+    if (avant === undefined) delete process.env.STRIPE_SECRET_KEY;
+    else process.env.STRIPE_SECRET_KEY = avant;
+  }
+});
