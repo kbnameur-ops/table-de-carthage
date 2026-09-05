@@ -507,3 +507,24 @@ test('le diagnostic nomme l\'erreur sans jamais montrer la valeur', async () => 
     else process.env.STRIPE_SECRET_KEY = avant;
   }
 });
+
+test('une clé tronquée au préfixe est reconnue comme telle', async () => {
+  // Stripe masque la clé secrète dans son tableau de bord : sélectionner ce
+  // qui est affiché ne ramène que « sk_test_ », soit huit caractères.
+  // C'est l'erreur la plus fréquente, et « aucun préfixe connu » enverrait
+  // chercher au mauvais endroit.
+  const avant = process.env.STRIPE_SECRET_KEY;
+  try {
+    for (const tronquee of ['sk_test_', 'sk_live_', 'rk_test_', 'rk_live_']) {
+      process.env.STRIPE_SECRET_KEY = tronquee;
+      assert.equal(paiementActif(), false, `${tronquee} ne doit pas activer le paiement`);
+      assert.match(diagnosticCleSecrete(), /tronquée/, tronquee);
+    }
+    // Une clé complète n'est pas prise pour une clé tronquée.
+    process.env.STRIPE_SECRET_KEY = 'sk_test_51AbcDefGhiJkl';
+    assert.equal(diagnosticCleSecrete(), null);
+  } finally {
+    if (avant === undefined) delete process.env.STRIPE_SECRET_KEY;
+    else process.env.STRIPE_SECRET_KEY = avant;
+  }
+});
