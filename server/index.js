@@ -33,6 +33,22 @@ app.set('view engine', 'ejs');
 app.set('views', join(__dirname, 'views'));
 app.disable('x-powered-by');
 
+// Derrière le proxy de Vercel, sans ce réglage, Express voit l'adresse du
+// proxy et non celle du visiteur : TOUS les clients partagent alors une
+// seule et même IP. Deux conséquences, toutes deux fâcheuses :
+//
+//   — les limites de débit portent sur l'IP (20 commandes par quart
+//     d'heure). Partagée, la vingt-et-unième commande du service bloque
+//     tout le monde, y compris ceux qui n'ont rien fait ;
+//   — `req.protocol` répond 'http', si bien que les QR imprimés portaient
+//     une adresse en http:// — collée sur une table pour des années, et
+//     qui n'atteint le site qu'au prix d'une redirection.
+//
+// Un seul saut de confiance : celui de Vercel, qui réécrit lui-même
+// l'en-tête. En développement on garde l'adresse de la socket, il n'y a
+// pas de proxy à croire.
+if (process.env.VERCEL) app.set('trust proxy', 1);
+
 // ── Fichiers statiques ──────────────────────────────────────
 // Le site vitrine (page d'accueil, feuille de style, animations) reste tel
 // quel : seuls ses liens de réservation pointent désormais vers les tunnels.
