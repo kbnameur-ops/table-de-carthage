@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { euros, versCents } from '../server/lib/money.js';
 import { normaliserTelephone, telephoneValide } from '../server/lib/phone.js';
 import { emailValide, dateValide, heureValide, dateNaissanceValide } from '../server/lib/validate.js';
@@ -79,11 +80,31 @@ test('libelleJourCourt() dit le jour comme un client le lirait', () => {
   assert.match(libelleJourCourt('2019-01-15'), /2019/);
 });
 
+test("vercel.json envoie « / » à l'application, pas au fichier statique", () => {
+  // Sur Vercel, les fichiers du dépôt sont servis AVANT que les
+  // réécritures ne soient consultées : avec un simple `rewrites`, « / »
+  // renvoyait le index.html brut et la section des soirées n'apparaissait
+  // jamais en ligne, alors qu'elle s'affichait parfaitement en local. Ce
+  // test tient la configuration, parce que la panne est silencieuse — la
+  // page se charge, il n'y manque « que » les soirées.
+  const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.ok(!config.rewrites, "`rewrites` passe après le système de fichiers : « / » y échapperait");
+  const routes = config.routes || [];
+  const filtre = routes.findIndex(r => r.handle === 'filesystem');
+  const accueil = routes.findIndex(r => r.src === '/' && r.dest === '/api/index');
+  assert.ok(accueil >= 0, '« / » doit être routé vers /api/index');
+  assert.ok(filtre === -1 || accueil < filtre, '« / » doit passer AVANT le système de fichiers');
+
+  // Et le repère que cette route vient remplacer doit exister dans la page.
+  const accueilHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.ok(accueilHtml.includes('<!--SOIREES-->'), 'le repère des soirées a disparu de index.html');
+});
+
 test("le bloc d'identité montre tous les champs que le serveur peut reprocher", async () => {
-  // La panne qu'on empêche : les tunnels affichaient « Numéro de téléphone
-  // invalide. Date de naissance invalide. » sous un formulaire qui ne
-  // demandait que le prénom, le nom et l'e-mail. Le visiteur ne pouvait
-  // pas corriger ce qu'on ne lui montrait pas.
+  // La panne qu'on empêche : les quatre tunnels affichaient « Numéro de
+  // téléphone invalide. Date de naissance invalide. » sous un formulaire
+  // qui ne demandait que le prénom, le nom et l'e-mail. Le visiteur ne
+  // pouvait pas corriger ce qu'on ne lui montrait pas.
   const { identiteClient } = await import('../server/lib/layout.js');
   const { validerIdentite } = await import('../server/lib/clients.js');
 
@@ -102,4 +123,48 @@ test("le bloc d'identité montre tous les champs que le serveur peut reprocher",
   });
   assert.ok(!reconnu.includes('name="telephone"'), 'un client reconnu ne resaisit pas ses identifiants');
   assert.match(reconnu, /Ce n'est pas moi/);
+});
+
+test("sans soirée, la page d'accueil n'a pas de zone soirées du tout", async () => {
+  const { sectionSoirees } = await import('../server/lib/layout.js');
+  const { dateLongue } = await import('../server/lib/jours.js');
+  const { euros } = await import('../server/lib/money.js');
+  // Pas « une section vide » : rien. Le repère <!--SOIREES--> est remplacé
+  // par cette chaîne, et la page doit reprendre exactement l'allure qu'elle
+  // avait avant que les soirées n'existent.
+  assert.equal(sectionSoirees({ evenements: [], dateLongue, euros }).trim(), '');
+});
+
+test("le nombre de places ne sort jamais du salon", async () => {
+  const { sectionSoirees } = await import('../server/lib/layout.js');
+  const { dateLongue } = await import('../server/lib/jours.js');
+  const { euros } = await import('../server/lib/money.js');
+
+  // La capacité sert au restaurant à dimensionner chaque soirée selon sa
+  // nature. Elle n'a rien à faire sous les yeux du client — ni en toutes
+  // lettres, ni dans un « plus que 7 places » qui la trahirait autant.
+  const html = sectionSoirees({
+    evenements: [{
+      id: 1, slug: 'essai', titre: 'Essai', accroche: '', texte: '',
+      date: '2099-12-31', heure: '20:00', prix_cents: 4200,
+      places: 137, placesRestantes: 7, photos: [],
+    }],
+    dateLongue, euros,
+  });
+  const lu = html.replace(/<svg[\s\S]*?<\/svg>/g, ' ').replace(/<[^>]+>/g, ' ');
+  assert.ok(!/\b137\b/.test(lu), 'la capacité est affichée');
+  assert.ok(!/\b7\b/.test(lu), 'le nombre de places restantes est affiché');
+  assert.match(lu, /42\s*€/, 'le prix, lui, doit bien être annoncé');
+
+  // Complet reste public : sans ça, on laisserait quelqu'un remplir tout un
+  // formulaire pour une soirée déjà pleine.
+  const complet = sectionSoirees({
+    evenements: [{
+      id: 1, slug: 'essai', titre: 'Essai', accroche: '', texte: '',
+      date: '2099-12-31', heure: '20:00', prix_cents: 4200,
+      places: 137, placesRestantes: 0, photos: [],
+    }],
+    dateLongue, euros,
+  });
+  assert.match(complet, /Complet/);
 });

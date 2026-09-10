@@ -7,8 +7,8 @@ data/*.db-wal
 data/*.db-shm
 # Les photos téléversées depuis le salon appartiennent à l'exploitation,
 # pas au dépôt. La règle porte sur tous les rayons et non sur une liste
-# d'extensions dans « plats » : c'est cette liste qui a laissé passer des
-# photos d'essai le jour où un second rayon est apparu.
+# d'extensions dans « plats » : c'est cette liste qui a laissé passer huit
+# photos de soirées le jour où « evenements » est apparu.
 server/public/uploads/*/*
 !server/public/uploads/*/.gitkeep
 

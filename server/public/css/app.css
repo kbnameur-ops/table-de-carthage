@@ -1212,3 +1212,31 @@ body.cuisine{background:var(--cream-2)}
 .etat-plat--vue{background:rgba(201,169,97,.2);color:#8A6A1E}
 .etat-plat--enpreparation{background:rgba(20,52,95,.12);color:var(--navy-700)}
 .etat-plat--prete{background:rgba(62,122,76,.16);color:var(--ok)}
+
+/* ── La page d'une soirée ──────────────────────────────────
+   Ici les photos ne défilent pas : on les regarde. Le ruban animé de la
+   page d'accueil est fait pour attirer l'œil, pas pour être consulté. */
+.galerie-soiree{
+  display:grid;gap:.7rem;margin:1.5rem 0 2rem;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+}
+.galerie-soiree figure{margin:0;position:relative;border-radius:10px;overflow:hidden}
+.galerie-soiree img{width:100%;height:190px;object-fit:cover;display:block}
+.galerie-soiree figcaption{
+  position:absolute;left:0;right:0;bottom:0;padding:1.6rem .8rem .6rem;
+  font-size:.76rem;letter-spacing:.05em;color:#fff;
+  background:linear-gradient(to top,rgba(7,26,49,.86),rgba(7,26,49,0));
+}
+
+.soiree-detail{display:grid;gap:1.6rem;grid-template-columns:1fr;margin-bottom:2rem}
+@media (min-width:820px){.soiree-detail{grid-template-columns:1fr 20rem;align-items:start}}
+.soiree-detail__accroche{
+  font-family:var(--ff-display);font-size:1.25rem;line-height:1.5;
+  color:var(--navy-800);margin:0 0 1rem;
+}
+.soiree-detail__recit p{line-height:1.7}
+
+/* Les photos d'une soirée, au salon : la vignette d'abord, puis de quoi la
+   légender et l'ordonner sous les yeux. */
+.grille-photos{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));margin-bottom:1.5rem}
+.photo-fiche img{width:100%;height:160px;object-fit:cover;border-radius:8px;margin-bottom:.8rem;display:block}

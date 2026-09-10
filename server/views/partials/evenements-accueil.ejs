@@ -1,0 +1,87 @@
+<%
+/* La section des soirées, insérée dans la page d'accueil juste avant la
+   carte. Rendue côté serveur : elle est en haut de page, et un contenu qui
+   apparaîtrait après coup y ferait sauter la mise en page sous les yeux du
+   visiteur.
+
+   Rien n'est écrit ici si aucune soirée n'est visible : pas de titre
+   orphelin, pas de cadre vide — la section n'existe simplement pas. */
+%>
+<% if (evenements.length) { %>
+<!-- ══════════════ SOIRÉES ══════════════ -->
+<section class="soirees" id="soirees">
+  <div class="wrap">
+    <header class="section-head">
+      <p class="eyebrow reveal-up">Nos soirées</p>
+      <h2 class="h2 reveal-up">Des nuits qui ne<br>ressemblent à aucune autre</h2>
+      <p class="section-head__sub reveal-up">
+        Quelques dates dans l'année, un lieu transformé, un nombre de places limité.
+        La réservation se règle en ligne.
+      </p>
+    </header>
+  </div>
+
+  <% evenements.forEach((e, i) => { %>
+    <article class="soiree reveal-up<%= i % 2 ? ' soiree--alt' : '' %>">
+      <%
+        /* Le bandeau ne défile que s'il y a de quoi défiler. Avec une seule
+           photo, une animation ne ferait que faire trembler l'image. */
+        const photos = e.photos || [];
+        const defile = photos.length > 1;
+        /* Le ruban est écrit deux fois : l'animation translate de la moitié
+           exacte, et le raccord est invisible parce que la seconde moitié
+           reprend là où la première s'arrête. */
+        const ruban = defile ? photos.concat(photos) : photos;
+        const duree = Math.max(18, photos.length * 7);
+      %>
+      <% if (photos.length) { %>
+        <div class="soiree__ruban" aria-hidden="true">
+          <div class="soiree__piste<%= defile ? ' soiree__piste--defile' : '' %>"
+               style="--defilement:<%= duree %>s">
+            <% ruban.forEach(p => { %>
+              <%# Pas de légende dans la bande : sur une photo claire qui
+                  défile, elle se lit mal et encombre. Elles sont gardées en
+                  base et servies sur la page de la soirée, où elles ont la
+                  place de respirer. %>
+              <div class="soiree__vue"><img src="<%= p.url %>" alt="" loading="lazy" decoding="async"></div>
+            <% }) %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="soiree__voile"></div>
+
+      <div class="wrap soiree__mots">
+        <p class="soiree__quand">
+          <time datetime="<%= e.date %>"><%= dateLongue(e.date) %></time>
+          <span aria-hidden="true">·</span>
+          <%= e.heure %>
+        </p>
+        <h3 class="soiree__titre"><%= e.titre %></h3>
+        <% if (e.accroche) { %>
+          <p class="soiree__accroche"><%= e.accroche %></p>
+        <% } %>
+
+        <p class="soiree__prix">
+          <b><%= euros(e.prix_cents) %></b>
+          <span>par personne</span>
+        </p>
+
+        <%# Le nombre de places est une donnée d'exploitation : elle sert au
+            restaurant à dimensionner chaque soirée selon sa nature, elle
+            n'a rien à faire sous les yeux du client. Seul l'état complet /
+            pas complet est public — sans lui, on laisserait quelqu'un
+            remplir tout un formulaire pour une soirée déjà pleine. %>
+        <div class="soiree__actions">
+          <% if (e.placesRestantes > 0) { %>
+            <a class="btn btn--gold" href="/evenements/<%= e.slug %>">Réserver ma place</a>
+          <% } else { %>
+            <span class="soiree__complet">Complet</span>
+            <a class="btn btn--ligne" href="/evenements/<%= e.slug %>">Voir la soirée</a>
+          <% } %>
+        </div>
+      </div>
+    </article>
+  <% }) %>
+</section>
+<% } %>

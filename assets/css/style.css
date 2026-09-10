@@ -840,3 +840,119 @@ button{font:inherit;color:inherit}
 .tunnel-card__cta{font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-500)}
 .book__tunnels-note{grid-column:1/-1;text-align:center;color:var(--muted);font-size:.85rem;margin:.3rem 0 0}
 .book__tunnels-note a{border-bottom:1px solid var(--gold-500)}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LES SOIRÉES
+   Une activité à part, annoncée avant la carte : on n'y commande pas un
+   plat, on y prend une place. D'où un traitement plein cadre, plus proche
+   de l'affiche que de la fiche produit.
+   ══════════════════════════════════════════════════════════════════════ */
+.soirees{padding:clamp(4rem,9vw,7.5rem) 0 clamp(3rem,6vw,5rem);background:var(--navy-900);color:var(--cream)}
+.soirees .eyebrow{color:var(--gold-400)}
+.soirees .h2{color:var(--cream)}
+.soirees .section-head__sub{color:rgba(250,246,236,.62)}
+
+.soiree{
+  position:relative;isolation:isolate;overflow:hidden;
+  margin-bottom:clamp(1.5rem,3vw,2.5rem);
+  min-height:clamp(360px,52vw,520px);
+  display:flex;align-items:flex-end;
+}
+.soiree:last-child{margin-bottom:0}
+
+/* ── Le ruban de photos ───────────────────────────────────────────────
+   La piste contient les photos DEUX fois, et l'animation la translate
+   d'exactement la moitié de sa largeur. Au moment où elle revient à zéro,
+   la seconde moitié occupe déjà la place de la première : le raccord est
+   invisible, et le défilement paraît sans fin. */
+.soiree__ruban{position:absolute;inset:0;z-index:0;overflow:hidden}
+.soiree__piste{display:flex;height:100%;width:max-content}
+.soiree__piste--defile{animation:soiree-defile var(--defilement,28s) linear infinite}
+.soiree:hover .soiree__piste--defile{animation-play-state:paused}
+
+@keyframes soiree-defile{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+
+.soiree__vue{margin:0;position:relative;flex:0 0 auto;height:100%}
+/* Largeur fixe, et non le ratio d'origine : une photo de plat en paysage
+   occuperait sinon presque toute la bande, et on lirait un fond plutôt
+   qu'un ruban. Recadrées à la même largeur, les photos se lisent comme une
+   suite — ce qu'elles sont. */
+.soiree__vue img{
+  height:100%;width:clamp(220px,26vw,360px);
+  object-fit:cover;display:block;filter:saturate(.92)
+}
+
+/* Le voile : c'est lui qui rend le texte lisible quelle que soit la photo
+   qui passe dessous. Sans lui, un cliché clair effacerait le titre à
+   l'instant précis où il défile derrière. */
+.soiree__voile{
+  position:absolute;inset:0;z-index:1;
+  background:
+    linear-gradient(to top, rgba(7,26,49,.94) 0%, rgba(7,26,49,.78) 38%, rgba(7,26,49,.30) 70%, rgba(7,26,49,.42) 100%),
+    linear-gradient(to right, rgba(7,26,49,.72) 0%, rgba(7,26,49,0) 62%);
+}
+.soiree--alt .soiree__voile{
+  background:
+    linear-gradient(to top, rgba(7,26,49,.94) 0%, rgba(7,26,49,.78) 38%, rgba(7,26,49,.30) 70%, rgba(7,26,49,.42) 100%),
+    linear-gradient(to left, rgba(7,26,49,.72) 0%, rgba(7,26,49,0) 62%);
+}
+
+/* ── Le texte ─────────────────────────────────────────────────────── */
+.soiree__mots{position:relative;z-index:2;padding-top:clamp(3rem,8vw,6rem);padding-bottom:clamp(1.8rem,4vw,3rem);max-width:min(var(--wrap),100%)}
+.soiree--alt .soiree__mots{text-align:right;margin-left:auto}
+
+.soiree__quand{
+  display:flex;align-items:center;gap:.6rem;margin:0 0 .5rem;
+  font-size:.76rem;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-400)
+}
+.soiree--alt .soiree__quand{justify-content:flex-end}
+
+.soiree__titre{
+  font-family:var(--ff-title);font-weight:400;line-height:1.04;
+  font-size:clamp(2rem,5.2vw,3.6rem);margin:0 0 .6rem;color:var(--cream);
+  max-width:16ch;text-wrap:balance;
+}
+.soiree--alt .soiree__titre{margin-left:auto}
+
+.soiree__accroche{
+  font-family:var(--ff-display);font-size:clamp(1.05rem,2vw,1.4rem);
+  line-height:1.5;color:rgba(250,246,236,.86);max-width:44ch;margin:0 0 1.2rem;
+}
+.soiree--alt .soiree__accroche{margin-left:auto}
+
+.soiree__prix{display:flex;align-items:baseline;gap:.5rem;margin:0 0 1.4rem}
+.soiree--alt .soiree__prix{justify-content:flex-end}
+.soiree__prix b{
+  font-family:var(--ff-display);font-size:clamp(1.6rem,3.4vw,2.2rem);
+  font-weight:600;color:var(--gold-400);font-variant-numeric:tabular-nums
+}
+.soiree__prix span{font-size:.82rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(250,246,236,.6)}
+
+.soiree__actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.soiree--alt .soiree__actions{justify-content:flex-end}
+.soiree__complet{
+  padding:.5rem 1rem;border:1px solid rgba(250,246,236,.34);border-radius:999px;
+  font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,246,236,.72)
+}
+
+@media (max-width:760px){
+  .soiree{min-height:clamp(400px,86vw,520px)}
+  .soiree--alt .soiree__mots,
+  .soiree--alt .soiree__titre,
+  .soiree--alt .soiree__accroche{text-align:left;margin-left:0}
+  .soiree--alt .soiree__quand,
+  .soiree--alt .soiree__prix,
+  .soiree--alt .soiree__actions{justify-content:flex-start}
+  .soiree__vue img{width:62vw}
+}
+
+/* Un défilement continu peut gêner, voire rendre malade. Quand le système
+   demande moins d'animation, le ruban s'arrête — les photos restent
+   visibles, c'est le mouvement qui disparaît. */
+@media (prefers-reduced-motion:reduce){
+  .soiree__piste--defile{animation:none}
+  .soiree__ruban{overflow-x:auto}
+}

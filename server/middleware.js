@@ -132,7 +132,7 @@ const PAGES = {
 };
 
 /** Les vues qui demandent au visiteur de se faire connaître. */
-const VUES_AVEC_IDENTITE = new Set(['reservation', 'commande', 'table']);
+const VUES_AVEC_IDENTITE = new Set(['reservation', 'commande', 'table', 'evenement']);
 
 /** Calcule l'en-tête et le pied de page une fois pour toutes et les
  *  injecte dans les données de chaque rendu, sans toucher chaque route une

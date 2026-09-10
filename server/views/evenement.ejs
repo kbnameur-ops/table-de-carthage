@@ -1,0 +1,97 @@
+<%- entete %>
+<div class="wrap">
+  <p class="fil"><a href="/#soirees">Nos soirées</a></p>
+  <h1><%= evenement.titre %></h1>
+  <p class="lead">
+    <%= dateLongue(evenement.date) %> · <%= evenement.heure %>
+  </p>
+
+  <% if (!evenement.visible) { %>
+    <div class="alerte alerte--info">
+      <strong>Soirée non publiée.</strong> Vous la voyez parce que vous en avez
+      l'adresse ; elle n'apparaît pas encore sur le site et n'accepte aucune
+      réservation.
+    </div>
+  <% } %>
+
+  <% if (evenement.photos.length) { %>
+    <%# Ici les photos ne défilent pas : on les regarde. Le ruban animé est
+        fait pour attirer l'œil en page d'accueil, pas pour être consulté. %>
+    <div class="galerie-soiree">
+      <% evenement.photos.forEach(p => { %>
+        <figure>
+          <img src="<%= p.url %>" alt="<%= p.legende %>" loading="lazy" decoding="async">
+          <% if (p.legende) { %><figcaption><%= p.legende %></figcaption><% } %>
+        </figure>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <div class="soiree-detail">
+    <div class="soiree-detail__recit">
+      <% if (evenement.accroche) { %>
+        <p class="soiree-detail__accroche"><%= evenement.accroche %></p>
+      <% } %>
+      <% paragraphes.forEach(p => { %>
+        <p><%= p %></p>
+      <% }) %>
+    </div>
+
+    <aside class="soiree-detail__reserver">
+      <div class="card">
+        <p class="montant-du">
+          <span>Par personne</span>
+          <b><%= euros(evenement.prix_cents) %></b>
+        </p>
+        <p class="aide" style="margin-top:.4rem">
+          <% if (evenement.estPasse) { %>
+            Cette soirée a déjà eu lieu.
+          <% } else if (evenement.placesRestantes <= 0) { %>
+            Complet — plus aucune place disponible.
+          <% } else { %>
+            <%# Ni le nombre de places restantes ni la capacité : c'est au
+                restaurant de savoir combien il en reste, pas au client. %>
+            Réservation ouverte, dans la limite des places disponibles.
+          <% } %>
+        </p>
+      </div>
+    </aside>
+  </div>
+
+  <% if (!evenement.estPasse && evenement.placesRestantes > 0 && evenement.visible) { %>
+    <form method="post" action="/evenements/<%= evenement.slug %>/reserver" novalidate>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <% if (erreurGenerale) { %>
+        <div class="alerte alerte--erreur"><%= erreurGenerale %></div>
+      <% } %>
+
+      <h2>Combien de places&nbsp;?</h2>
+      <div class="card">
+        <div class="field <%= erreurs.places ? 'champ-invalide' : '' %>" style="max-width:14rem">
+          <label for="f-places">Nombre de places</label>
+          <%# Plafond fixe, et non le nombre de places restantes : l'écrire
+              ici le publierait dans le HTML. C'est la réservation qui
+              arbitre, dans une transaction — le seul endroit où le
+              décompte est juste de toute façon. %>
+          <input type="number" id="f-places" name="places" min="1" max="20"
+                 value="<%= valeurs.places || 2 %>" required>
+          <% if (erreurs.places) { %><span class="erreur"><%= erreurs.places %></span><% } %>
+        </div>
+      </div>
+
+      <h2>Vos coordonnées</h2>
+
+      <%- blocIdentite %>
+
+      <div class="btn-row">
+        <button type="submit" class="btn">Réserver et payer</button>
+      </div>
+      <p class="aide">
+        Le règlement se fait maintenant, en ligne. C'est ce qui garde votre place :
+        le nombre de couverts est limité.
+      </p>
+    </form>
+  <% } %>
+</div>
+<%- pied %>

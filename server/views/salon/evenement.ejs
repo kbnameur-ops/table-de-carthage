@@ -1,0 +1,172 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <p class="fil"><a href="/salon/evenements">Soirées</a></p>
+  <h1><%= evenement.titre %></h1>
+  <p class="lead">
+    <%= dateLongue(evenement.date) %> · <%= evenement.heure %> —
+    <strong><%= compte.vendues %> place<%= compte.vendues > 1 ? 's' : '' %> vendue<%= compte.vendues > 1 ? 's' : '' %></strong>
+    sur <%= compte.total %>.
+    <a href="/evenements/<%= evenement.slug %>" target="_blank" rel="noopener">Voir la page publique ↗</a>
+  </p>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+<% if (info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
+
+<% if (!evenement.visible) { %>
+  <div class="alerte alerte--info">
+    <strong>Brouillon.</strong> Cette soirée n'apparaît pas encore sur le site et
+    n'accepte aucune réservation. Cochez « Visible » ci-dessous quand elle est prête.
+  </div>
+<% } %>
+
+<h2>La soirée</h2>
+<div class="card">
+  <form method="post" action="/salon/evenements/<%= evenement.id %>">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="e-titre">Titre</label>
+      <input type="text" id="e-titre" name="titre" maxlength="120" required value="<%= evenement.titre %>">
+    </div>
+    <div class="field">
+      <label for="e-accroche">Accroche</label>
+      <input type="text" id="e-accroche" name="accroche" maxlength="200" value="<%= evenement.accroche %>"
+             placeholder="Un oud, une voix, et les mezzés qui circulent jusqu'à minuit.">
+      <span class="aide">Une seule ligne : c'est elle qu'on lit en passant, sur la page d'accueil.</span>
+    </div>
+    <div class="field">
+      <label for="e-texte">Le récit</label>
+      <textarea id="e-texte" name="texte" rows="7"><%= evenement.texte %></textarea>
+      <span class="aide">Laissez une ligne vide entre deux paragraphes. Visible sur la page de la soirée.</span>
+    </div>
+    <div class="field--row">
+      <div class="field">
+        <label for="e-date">Date</label>
+        <input type="date" id="e-date" name="date" required value="<%= evenement.date %>">
+      </div>
+      <div class="field">
+        <label for="e-heure">Heure</label>
+        <input type="time" id="e-heure" name="heure" required value="<%= evenement.heure %>">
+      </div>
+    </div>
+    <div class="field--row">
+      <div class="field">
+        <label for="e-prix">Prix par personne</label>
+        <input type="text" id="e-prix" name="prix" inputmode="decimal" required
+               value="<%= (evenement.prix_cents / 100).toFixed(2).replace('.', ',') %>">
+      </div>
+      <div class="field">
+        <label for="e-places">Places</label>
+        <input type="number" id="e-places" name="places" min="<%= Math.max(1, compte.vendues) %>" max="500" required
+               value="<%= evenement.places %>">
+        <% if (compte.vendues > 0) { %>
+          <span class="aide"><%= compte.vendues %> déjà vendues : la capacité ne peut pas descendre en dessous.</span>
+        <% } %>
+      </div>
+      <div class="field">
+        <label for="e-position">Ordre d'affichage</label>
+        <input type="number" id="e-position" name="position" value="<%= evenement.position %>">
+        <span class="aide">Le plus petit passe en premier.</span>
+      </div>
+    </div>
+    <label class="case-garder">
+      <input type="checkbox" name="visible" value="1" <%= evenement.visible ? 'checked' : '' %>>
+      <span>
+        <b>Visible sur le site</b>
+        <small>Décochée, la soirée disparaît de la page d'accueil et n'accepte plus de réservation.</small>
+      </span>
+    </label>
+    <div class="btn-row" style="margin-top:1.2rem">
+      <button type="submit" class="btn">Enregistrer</button>
+    </div>
+  </form>
+</div>
+
+<h2>Photos</h2>
+<p class="lead" style="margin-bottom:1rem">
+  Elles défilent en continu sur la page d'accueil, dans cet ordre. La première
+  donne le ton — mettez la plus belle devant.
+</p>
+
+<div class="card">
+  <form method="post" action="/salon/evenements/<%= evenement.id %>/photos" enctype="multipart/form-data">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="e-photos">Ajouter des photos</label>
+      <input type="file" id="e-photos" name="photos" accept="image/jpeg,image/png,image/webp" multiple required>
+      <span class="aide">JPEG, PNG ou WebP · 8 Mo maximum par photo · 12 à la fois.</span>
+    </div>
+    <button type="submit" class="btn btn--sm">Envoyer</button>
+  </form>
+</div>
+
+<% if (photos.length) { %>
+  <div class="grille-photos">
+    <% photos.forEach(p => { %>
+      <div class="card photo-fiche">
+        <img src="<%= p.url %>" alt="<%= p.legende %>">
+        <form method="post" action="/salon/photos/<%= p.id %>/legende">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field">
+            <label for="l-<%= p.id %>">Légende</label>
+            <input type="text" id="l-<%= p.id %>" name="legende" maxlength="120" value="<%= p.legende %>">
+          </div>
+          <div class="field">
+            <label for="o-<%= p.id %>">Ordre</label>
+            <input type="number" id="o-<%= p.id %>" name="position" value="<%= p.position %>">
+          </div>
+          <button type="submit" class="btn btn--sm">Enregistrer</button>
+        </form>
+        <form method="post" action="/salon/photos/<%= p.id %>/supprimer"
+              onsubmit="return confirm('Supprimer cette photo ?')" style="margin-top:.5rem">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="btn btn--ghost btn--sm">Supprimer</button>
+        </form>
+      </div>
+    <% }) %>
+  </div>
+<% } else { %>
+  <p class="vide">Aucune photo. La soirée s'affichera sans bandeau.</p>
+<% } %>
+
+<h2>Réservations</h2>
+<% if (!reservations.length) { %>
+  <p class="vide">Aucune réservation pour l'instant.</p>
+<% } else { %>
+  <div class="table-scroll"><table class="table-empilee">
+    <thead><tr><th>Client</th><th>Contact</th><th>Places</th><th>Total</th><th>Statut</th></tr></thead>
+    <tbody>
+      <% reservations.forEach(r => { %>
+        <tr>
+          <td data-l="Client"><%= r.prenom %> <%= r.nom %><br><small style="color:var(--muted)"><%= r.reference %></small></td>
+          <td data-l="Contact">
+            <a href="tel:<%= r.telephone_saisi %>"><%= r.telephone_saisi %></a><br>
+            <small><%= r.email %></small>
+          </td>
+          <td data-l="Places"><%= r.places %></td>
+          <td data-l="Total"><%= euros(r.total_cents) %></td>
+          <td data-l="Statut">
+            <span class="badge badge--<%= r.statut === 'confirmee' || r.statut === 'honoree' ? 'confirmee' : r.statut === 'annulee' ? 'annulee' : 'apayer' %>">
+              <%= r.statut === 'a_payer' ? 'à régler' : r.statut %>
+            </span>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table></div>
+<% } %>
+
+<h2>Supprimer</h2>
+<div class="card">
+  <% if (obstacle) { %>
+    <p class="aide"><%= obstacle %></p>
+  <% } else { %>
+    <form method="post" action="/salon/evenements/<%= evenement.id %>/supprimer"
+          onsubmit="return confirm('Supprimer définitivement cette soirée et ses photos ?')">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn--danger btn--sm">Supprimer cette soirée</button>
+      <p class="aide">Aucune place vendue : rien ne sera perdu.</p>
+    </form>
+  <% } %>
+</div>
+<%- salonPied %>

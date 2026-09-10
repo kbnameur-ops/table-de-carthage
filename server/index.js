@@ -1,12 +1,15 @@
 import express from 'express';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sessionMiddleware, injecterMiseEnPage, chargerNotifications } from './middleware.js';
 import { nettoyerSessionsExpirees, nettoyerTentativesAnciennes } from './db.js';
+import { sectionSoirees } from './lib/layout.js';
 
 import { api } from './routes/api.js';
 import { apiCarteRouter } from './routes/api_carte.js';
 import { manifesteRouter } from './routes/manifeste.js';
+import { evenementsRouter } from './routes/evenements.js';
 import { reservationRouter } from './routes/reservation.js';
 import { commandeRouter } from './routes/commande.js';
 import { paiementRouter, paiementWebhookRouter } from './routes/paiement.js';
@@ -16,6 +19,7 @@ import { serviceRouter } from './routes/service.js';
 import { cuisineRouter } from './routes/cuisine.js';
 import { salonRouter } from './routes/salon.js';
 import { salonCarteRouter } from './routes/salon_carte.js';
+import { salonEvenementsRouter } from './routes/salon_evenements.js';
 import { salonServicesRouter } from './routes/salon_services.js';
 import { salonSalleRouter } from './routes/salon_salle.js';
 import { salonEquipeRouter } from './routes/salon_equipe.js';
@@ -26,6 +30,7 @@ import { salonCommandesRouter } from './routes/salon_commandes.js';
 import { salonAnalyseRouter } from './routes/salon_analyse.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const racine = join(__dirname, '..');
 const app = express();
 
@@ -68,7 +73,55 @@ app.use('/assets', express.static(join(racine, 'assets'), {
 // cache long est ici sans danger et sans revalidation.
 app.use('/css', express.static(join(__dirname, 'public', 'css'), { maxAge: '7d' }));
 app.use('/uploads', express.static(join(__dirname, 'public', 'uploads'), { maxAge: '1d' }));
-app.get('/', (req, res) => res.sendFile(join(racine, 'index.html')));
+// ── La page d'accueil ───────────────────────────────────────
+// Elle reste un fichier statique, écrit à la main : c'est sa force, et on
+// ne va pas la transformer en gabarit pour une seule section. Les soirées
+// y sont simplement injectées à la place du repère `<!--SOIREES-->`, juste
+// avant la carte.
+//
+// Rendu côté serveur, et non chargé après coup comme la carte : cette
+// section est en haut de page. Un contenu qui apparaîtrait une seconde
+// plus tard ferait sauter la mise en page sous les yeux du visiteur.
+//
+// Le fichier est lu une fois au démarrage — le relire à chaque visite
+// coûterait un accès disque pour un contenu qui ne change qu'au
+// déploiement.
+//
+// Attention, piège de plateforme : Vercel sert les fichiers du dépôt AVANT
+// de consulter les réécritures. Avec un simple `rewrites`, « / » tombait
+// donc sur le index.html brut du dépôt et cette route n'était jamais
+// appelée — le repère restait visible dans la page livrée et aucune soirée
+// n'apparaissait, alors que tout fonctionnait en local. D'où le `routes`
+// de vercel.json, qui envoie « / » à la fonction avant le `handle:
+// filesystem`.
+const REPERE_SOIREES = '<!--SOIREES-->';
+const pageAccueil = readFileSync(join(racine, 'index.html'), 'utf8');
+
+// Un ancien signet, ou un lien écrit à la main, peut viser « /index.html ».
+// Tant que la page était un fichier, Vercel la servait ; maintenant qu'elle
+// passe par l'application, il faut le dire, sans quoi c'est une page
+// introuvable.
+app.get('/index.html', (req, res) => res.redirect(301, '/'));
+
+app.get('/', async (req, res, next) => {
+  try {
+    const { evenementsPublics } = await import('./lib/evenements.js');
+    const { dateLongue } = await import('./lib/jours.js');
+    const { euros } = await import('./lib/money.js');
+
+    const evenements = await evenementsPublics();
+    const section = sectionSoirees({ evenements, dateLongue, euros });
+    // Pas de cache au bord, et c'est délibéré. Une minute de s-maxage
+    // suffisait à ce qu'une soirée publiée au salon n'apparaisse pas sur
+    // le site : le restaurant voit sa propre page inchangée, conclut que
+    // ça n'a pas marché, et recommence. Une page qui ment pendant une
+    // minute coûte plus cher que l'aller-retour vers la base qu'elle
+    // économise — la requête est petite, indexée, et le trafic d'un
+    // restaurant de quartier ne la rend jamais coûteuse.
+    res.set('Cache-Control', 'no-cache');
+    res.type('html').send(pageAccueil.replace(REPERE_SOIREES, section));
+  } catch (err) { next(err); }
+});
 
 // ── Le webhook Stripe, avant tout analyseur de corps ────────
 // Sa signature porte sur les octets bruts de la requête : passer après
@@ -96,6 +149,7 @@ app.use(apiCarteRouter);
 app.use(manifesteRouter);
 app.use(reservationRouter);
 app.use(commandeRouter);
+app.use(evenementsRouter);
 app.use(paiementRouter);
 app.use(compteRouter);
 app.use(tableRouter);
@@ -103,6 +157,7 @@ app.use(serviceRouter);
 app.use(cuisineRouter);
 app.use(salonRouter);
 app.use(salonCarteRouter);
+app.use(salonEvenementsRouter);
 app.use(salonServicesRouter);
 app.use(salonSalleRouter);
 app.use(salonEquipeRouter);
