@@ -1,10 +1,10 @@
 import express from 'express';
-import ejs from 'ejs';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sessionMiddleware, injecterMiseEnPage, chargerNotifications } from './middleware.js';
 import { nettoyerSessionsExpirees, nettoyerTentativesAnciennes } from './db.js';
+import { sectionSoirees } from './lib/layout.js';
 
 import { api } from './routes/api.js';
 import { apiCarteRouter } from './routes/api_carte.js';
@@ -31,12 +31,6 @@ import { salonAnalyseRouter } from './routes/salon_analyse.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Compilé une seule fois : recompiler le gabarit à chaque visite de la page
-// d'accueil serait le refaire des milliers de fois pour rien.
-const rendreSoirees = ejs.compile(
-  readFileSync(join(__dirname, 'views', 'partials', 'evenements-accueil.ejs'), 'utf8'),
-  { filename: join(__dirname, 'views', 'partials', 'evenements-accueil.ejs') }
-);
 const racine = join(__dirname, '..');
 const app = express();
 
@@ -116,7 +110,7 @@ app.get('/', async (req, res, next) => {
     const { euros } = await import('./lib/money.js');
 
     const evenements = await evenementsPublics();
-    const section = rendreSoirees({ evenements, dateLongue, euros });
+    const section = sectionSoirees({ evenements, dateLongue, euros });
     // La vitrine du restaurant redevient une fonction : sans cache, chaque
     // visiteur paierait un démarrage à froid et un aller-retour vers la
     // base pour une page qui ne change qu'à l'ajout d'une soirée. Une

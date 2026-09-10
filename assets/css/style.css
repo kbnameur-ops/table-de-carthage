@@ -933,7 +933,6 @@ button{font:inherit;color:inherit}
 
 .soiree__actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
 .soiree--alt .soiree__actions{justify-content:flex-end}
-.soiree__reste{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--gold-300)}
 .soiree__complet{
   padding:.5rem 1rem;border:1px solid rgba(250,246,236,.34);border-radius:999px;
   font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(250,246,236,.72)

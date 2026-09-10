@@ -67,14 +67,14 @@
           <span>par personne</span>
         </p>
 
+        <%# Le nombre de places est une donnée d'exploitation : elle sert au
+            restaurant à dimensionner chaque soirée selon sa nature, elle
+            n'a rien à faire sous les yeux du client. Seul l'état complet /
+            pas complet est public — sans lui, on laisserait quelqu'un
+            remplir tout un formulaire pour une soirée déjà pleine. %>
         <div class="soiree__actions">
           <% if (e.placesRestantes > 0) { %>
             <a class="btn btn--gold" href="/evenements/<%= e.slug %>">Réserver ma place</a>
-            <% if (e.placesRestantes <= 10) { %>
-              <span class="soiree__reste">
-                Plus que <%= e.placesRestantes %> place<%= e.placesRestantes > 1 ? 's' : '' %>
-              </span>
-            <% } %>
           <% } else { %>
             <span class="soiree__complet">Complet</span>
             <a class="btn btn--ligne" href="/evenements/<%= e.slug %>">Voir la soirée</a>

@@ -39,6 +39,7 @@ const fnCuisinePied = compiler('partials/cuisine-pied.ejs');
 const fnTeteApp = compiler('partials/tete-app.ejs');
 const fnEpingler = compiler('partials/epingler.ejs');
 const fnIdentiteClient = compiler('partials/identite-client.ejs');
+const fnSoirees = compiler('partials/evenements-accueil.ejs');
 
 // `cssApp` est ajouté à chaque rendu d'en-tête : aucun appelant n'a à y penser.
 export const entete = donnees => fnEntete({ cssApp, ...donnees });
@@ -72,3 +73,9 @@ export const epingler = donnees => fnEpingler(donnees);
 export const identiteClient = donnees => fnIdentiteClient({
   client: null, erreurs: {}, valeurs: {}, erreurConnexion: null, ...donnees,
 });
+
+/** La section des soirées, injectée dans la page d'accueil à la place du
+ *  repère <!--SOIREES-->. Elle rend une chaîne vide quand il n'y a rien à
+ *  annoncer : la page reprend alors exactement l'allure qu'elle avait avant
+ *  que les soirées n'existent. */
+export const sectionSoirees = donnees => fnSoirees(donnees);

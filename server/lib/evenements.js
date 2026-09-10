@@ -107,7 +107,10 @@ export async function reserverPlaces(evenementId, clientId, placesDemandees) {
     const { restantes } = await placesRestantes(evenementId, t);
     if (restantes <= 0) return { erreur: 'Cette soirée est complète.' };
     if (n > restantes) {
-      return { erreur: `Il ne reste que ${restantes} place${restantes > 1 ? 's' : ''}.` };
+      // Sans le chiffre : le nombre de places est une donnée
+      // d'exploitation, et un message d'erreur est un endroit comme un
+      // autre pour la laisser fuir.
+      return { erreur: 'Il ne reste pas assez de places pour cette demande. Essayez avec moins de couverts, ou appelez-nous.' };
     }
 
     const reservation = await t.une(

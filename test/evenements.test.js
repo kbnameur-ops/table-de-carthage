@@ -64,7 +64,10 @@ test('on ne vend pas plus de places qu\'il n\'en reste', async (t) => {
   const e = await soiree(4);
   assert.ok((await ev.reserverPlaces(e.id, client.id, 3)).reservation);
   const trop = await ev.reserverPlaces(e.id, client.id, 3);
-  assert.match(trop.erreur, /ne reste que 1 place/);
+  assert.match(trop.erreur, /pas assez de places/);
+  // Et le refus ne doit pas dire combien il en reste : la capacité d'une
+  // soirée regarde le restaurant, pas le client.
+  assert.doesNotMatch(trop.erreur, /\d/, 'le message ne doit contenir aucun chiffre');
   assert.ok((await ev.reserverPlaces(e.id, client.id, 1)).reservation);
   assert.match((await ev.reserverPlaces(e.id, client.id, 1)).erreur, /complète/);
 });

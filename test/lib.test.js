@@ -124,3 +124,47 @@ test("le bloc d'identité montre tous les champs que le serveur peut reprocher",
   assert.ok(!reconnu.includes('name="telephone"'), 'un client reconnu ne resaisit pas ses identifiants');
   assert.match(reconnu, /Ce n'est pas moi/);
 });
+
+test("sans soirée, la page d'accueil n'a pas de zone soirées du tout", async () => {
+  const { sectionSoirees } = await import('../server/lib/layout.js');
+  const { dateLongue } = await import('../server/lib/jours.js');
+  const { euros } = await import('../server/lib/money.js');
+  // Pas « une section vide » : rien. Le repère <!--SOIREES--> est remplacé
+  // par cette chaîne, et la page doit reprendre exactement l'allure qu'elle
+  // avait avant que les soirées n'existent.
+  assert.equal(sectionSoirees({ evenements: [], dateLongue, euros }).trim(), '');
+});
+
+test("le nombre de places ne sort jamais du salon", async () => {
+  const { sectionSoirees } = await import('../server/lib/layout.js');
+  const { dateLongue } = await import('../server/lib/jours.js');
+  const { euros } = await import('../server/lib/money.js');
+
+  // La capacité sert au restaurant à dimensionner chaque soirée selon sa
+  // nature. Elle n'a rien à faire sous les yeux du client — ni en toutes
+  // lettres, ni dans un « plus que 7 places » qui la trahirait autant.
+  const html = sectionSoirees({
+    evenements: [{
+      id: 1, slug: 'essai', titre: 'Essai', accroche: '', texte: '',
+      date: '2099-12-31', heure: '20:00', prix_cents: 4200,
+      places: 137, placesRestantes: 7, photos: [],
+    }],
+    dateLongue, euros,
+  });
+  const lu = html.replace(/<svg[\s\S]*?<\/svg>/g, ' ').replace(/<[^>]+>/g, ' ');
+  assert.ok(!/\b137\b/.test(lu), 'la capacité est affichée');
+  assert.ok(!/\b7\b/.test(lu), 'le nombre de places restantes est affiché');
+  assert.match(lu, /42\s*€/, 'le prix, lui, doit bien être annoncé');
+
+  // Complet reste public : sans ça, on laisserait quelqu'un remplir tout un
+  // formulaire pour une soirée déjà pleine.
+  const complet = sectionSoirees({
+    evenements: [{
+      id: 1, slug: 'essai', titre: 'Essai', accroche: '', texte: '',
+      date: '2099-12-31', heure: '20:00', prix_cents: 4200,
+      places: 137, placesRestantes: 0, photos: [],
+    }],
+    dateLongue, euros,
+  });
+  assert.match(complet, /Complet/);
+});
