@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { euros, versCents } from '../server/lib/money.js';
 import { normaliserTelephone, telephoneValide } from '../server/lib/phone.js';
 import { emailValide, dateValide, heureValide, dateNaissanceValide } from '../server/lib/validate.js';
@@ -77,4 +78,24 @@ test('libelleJourCourt() dit le jour comme un client le lirait', () => {
 
   // Une autre année, en revanche, doit être datée : « 15 janv. 2019 ».
   assert.match(libelleJourCourt('2019-01-15'), /2019/);
+});
+
+test("vercel.json envoie « / » à l'application, pas au fichier statique", () => {
+  // Sur Vercel, les fichiers du dépôt sont servis AVANT que les
+  // réécritures ne soient consultées : avec un simple `rewrites`, « / »
+  // renvoyait le index.html brut et la section des soirées n'apparaissait
+  // jamais en ligne, alors qu'elle s'affichait parfaitement en local. Ce
+  // test tient la configuration, parce que la panne est silencieuse — la
+  // page se charge, il n'y manque « que » les soirées.
+  const config = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.ok(!config.rewrites, "`rewrites` passe après le système de fichiers : « / » y échapperait");
+  const routes = config.routes || [];
+  const filtre = routes.findIndex(r => r.handle === 'filesystem');
+  const accueil = routes.findIndex(r => r.src === '/' && r.dest === '/api/index');
+  assert.ok(accueil >= 0, '« / » doit être routé vers /api/index');
+  assert.ok(filtre === -1 || accueil < filtre, '« / » doit passer AVANT le système de fichiers');
+
+  // Et le repère que cette route vient remplacer doit exister dans la page.
+  const accueilHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.ok(accueilHtml.includes('<!--SOIREES-->'), 'le repère des soirées a disparu de index.html');
 });

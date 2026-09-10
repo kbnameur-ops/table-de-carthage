@@ -92,6 +92,14 @@ app.use('/uploads', express.static(join(__dirname, 'public', 'uploads'), { maxAg
 // Le fichier est lu une fois au démarrage — le relire à chaque visite
 // coûterait un accès disque pour un contenu qui ne change qu'au
 // déploiement.
+//
+// Attention, piège de plateforme : Vercel sert les fichiers du dépôt AVANT
+// de consulter les réécritures. Avec un simple `rewrites`, « / » tombait
+// donc sur le index.html brut du dépôt et cette route n'était jamais
+// appelée — le repère restait visible dans la page livrée et aucune soirée
+// n'apparaissait, alors que tout fonctionnait en local. D'où le `routes`
+// de vercel.json, qui envoie « / » à la fonction avant le `handle:
+// filesystem`.
 const REPERE_SOIREES = '<!--SOIREES-->';
 const pageAccueil = readFileSync(join(racine, 'index.html'), 'utf8');
 
@@ -103,6 +111,16 @@ app.get('/', async (req, res, next) => {
 
     const evenements = await evenementsPublics();
     const section = rendreSoirees({ evenements, dateLongue, euros });
+    // La vitrine du restaurant redevient une fonction : sans cache, chaque
+    // visiteur paierait un démarrage à froid et un aller-retour vers la
+    // base pour une page qui ne change qu'à l'ajout d'une soirée. Une
+    // minute au bord suffit à ce que la quasi-totalité des visites soient
+    // servies depuis le cache ; après une modification au salon, la page
+    // suivante est régénérée en arrière-plan (stale-while-revalidate),
+    // donc le changement se voit au second rafraîchissement.
+    // Rien ici ne dépend du visiteur : la route est montée avant la
+    // session, elle ne pose aucun cookie.
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.type('html').send(pageAccueil.replace(REPERE_SOIREES, section));
   } catch (err) { next(err); }
 });
