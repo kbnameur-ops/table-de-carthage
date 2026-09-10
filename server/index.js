@@ -111,16 +111,14 @@ app.get('/', async (req, res, next) => {
 
     const evenements = await evenementsPublics();
     const section = sectionSoirees({ evenements, dateLongue, euros });
-    // La vitrine du restaurant redevient une fonction : sans cache, chaque
-    // visiteur paierait un démarrage à froid et un aller-retour vers la
-    // base pour une page qui ne change qu'à l'ajout d'une soirée. Une
-    // minute au bord suffit à ce que la quasi-totalité des visites soient
-    // servies depuis le cache ; après une modification au salon, la page
-    // suivante est régénérée en arrière-plan (stale-while-revalidate),
-    // donc le changement se voit au second rafraîchissement.
-    // Rien ici ne dépend du visiteur : la route est montée avant la
-    // session, elle ne pose aucun cookie.
-    res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    // Pas de cache au bord, et c'est délibéré. Une minute de s-maxage
+    // suffisait à ce qu'une soirée publiée au salon n'apparaisse pas sur
+    // le site : le restaurant voit sa propre page inchangée, conclut que
+    // ça n'a pas marché, et recommence. Une page qui ment pendant une
+    // minute coûte plus cher que l'aller-retour vers la base qu'elle
+    // économise — la requête est petite, indexée, et le trafic d'un
+    // restaurant de quartier ne la rend jamais coûteuse.
+    res.set('Cache-Control', 'no-cache');
     res.type('html').send(pageAccueil.replace(REPERE_SOIREES, section));
   } catch (err) { next(err); }
 });
