@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { une, executer, transaction } from './db.js';
 import { versCents } from './lib/money.js';
 import { enregistrerPhotoPlat } from './lib/image.js';
+import { codeQr } from './lib/tables.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const racine = join(__dirname, '..');
@@ -78,8 +79,14 @@ async function semerTables(t, serviceId) {
   for (const [base, couverts, nombre] of SALLE_TYPE) {
     for (let i = 0; i < nombre; i++) {
       await t.executer(
-        `INSERT INTO tables_resto (service_id, nom, couverts, position) VALUES ($1, $2, $3, $4)`,
-        [serviceId, nombre === 1 ? base : `${base} ${i + 1}`, couverts, position++]
+        // `code_qr` est NOT NULL depuis que chaque table porte son QR :
+        // l'oublier ici faisait échouer tout le semis sur une base neuve.
+        // Le même oubli avait déjà cassé l'ajout d'une table au salon ; il
+        // dormait encore ici, où il ne se voit qu'à la première
+        // installation — ou sur une préversion.
+        `INSERT INTO tables_resto (service_id, nom, couverts, position, code_qr)
+         VALUES ($1, $2, $3, $4, $5)`,
+        [serviceId, nombre === 1 ? base : `${base} ${i + 1}`, couverts, position++, codeQr()]
       );
     }
   }
