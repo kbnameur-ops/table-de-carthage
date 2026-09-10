@@ -1,0 +1,39 @@
+<%- entete %>
+<div class="wrap">
+  <p class="fil">Réservation <%= resa.reference %></p>
+  <h1><%= enAttente ? 'Paiement en cours' : 'Votre place est réservée' %></h1>
+
+  <div class="alerte alerte--<%= enAttente ? 'info' : 'ok' %>">
+    <% if (enAttente) { %>
+      Votre banque confirme le paiement. Cette page se met à jour toute seule.
+    <% } else if (resa.statut === 'annulee') { %>
+      Cette réservation a été annulée.
+    <% } else if (resa.statut === 'a_payer') { %>
+      Votre place est retenue. Le règlement se fera sur place, au restaurant.
+    <% } else { %>
+      C'est noté. Nous vous attendons.
+    <% } %>
+  </div>
+
+  <div class="card">
+    <table>
+      <tr><th>Soirée</th><td><%= resa.titre %></td></tr>
+      <tr><th>Quand</th><td><%= dateLongue(resa.date) %> à <%= resa.heure %></td></tr>
+      <tr><th>Places</th><td><%= resa.places %></td></tr>
+      <tr><th>Total</th><td><%= euros(resa.total_cents) %></td></tr>
+      <tr><th>Référence</th><td><%= resa.reference %></td></tr>
+    </table>
+  </div>
+
+  <div class="btn-row">
+    <a class="btn" href="/compte">Mon espace</a>
+    <a class="btn btn--ghost" href="/">Retour à l'accueil</a>
+  </div>
+</div>
+
+<% if (enAttente) { %>
+  <%# Le webhook fait foi, pas ce retour de navigateur : on relit la page
+      plutôt que de laisser le client sur une information périmée. %>
+  <script>setTimeout(function () { location.reload(); }, 4000);</script>
+<% } %>
+<%- pied %>

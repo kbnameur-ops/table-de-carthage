@@ -1,4 +1,6 @@
 import express from 'express';
+import ejs from 'ejs';
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sessionMiddleware, injecterMiseEnPage, chargerNotifications } from './middleware.js';
@@ -7,6 +9,7 @@ import { nettoyerSessionsExpirees, nettoyerTentativesAnciennes } from './db.js';
 import { api } from './routes/api.js';
 import { apiCarteRouter } from './routes/api_carte.js';
 import { manifesteRouter } from './routes/manifeste.js';
+import { evenementsRouter } from './routes/evenements.js';
 import { reservationRouter } from './routes/reservation.js';
 import { commandeRouter } from './routes/commande.js';
 import { paiementRouter, paiementWebhookRouter } from './routes/paiement.js';
@@ -16,6 +19,7 @@ import { serviceRouter } from './routes/service.js';
 import { cuisineRouter } from './routes/cuisine.js';
 import { salonRouter } from './routes/salon.js';
 import { salonCarteRouter } from './routes/salon_carte.js';
+import { salonEvenementsRouter } from './routes/salon_evenements.js';
 import { salonServicesRouter } from './routes/salon_services.js';
 import { salonSalleRouter } from './routes/salon_salle.js';
 import { salonEquipeRouter } from './routes/salon_equipe.js';
@@ -26,6 +30,13 @@ import { salonCommandesRouter } from './routes/salon_commandes.js';
 import { salonAnalyseRouter } from './routes/salon_analyse.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Compilé une seule fois : recompiler le gabarit à chaque visite de la page
+// d'accueil serait le refaire des milliers de fois pour rien.
+const rendreSoirees = ejs.compile(
+  readFileSync(join(__dirname, 'views', 'partials', 'evenements-accueil.ejs'), 'utf8'),
+  { filename: join(__dirname, 'views', 'partials', 'evenements-accueil.ejs') }
+);
 const racine = join(__dirname, '..');
 const app = express();
 
@@ -68,7 +79,33 @@ app.use('/assets', express.static(join(racine, 'assets'), {
 // cache long est ici sans danger et sans revalidation.
 app.use('/css', express.static(join(__dirname, 'public', 'css'), { maxAge: '7d' }));
 app.use('/uploads', express.static(join(__dirname, 'public', 'uploads'), { maxAge: '1d' }));
-app.get('/', (req, res) => res.sendFile(join(racine, 'index.html')));
+// ── La page d'accueil ───────────────────────────────────────
+// Elle reste un fichier statique, écrit à la main : c'est sa force, et on
+// ne va pas la transformer en gabarit pour une seule section. Les soirées
+// y sont simplement injectées à la place du repère `<!--SOIREES-->`, juste
+// avant la carte.
+//
+// Rendu côté serveur, et non chargé après coup comme la carte : cette
+// section est en haut de page. Un contenu qui apparaîtrait une seconde
+// plus tard ferait sauter la mise en page sous les yeux du visiteur.
+//
+// Le fichier est lu une fois au démarrage — le relire à chaque visite
+// coûterait un accès disque pour un contenu qui ne change qu'au
+// déploiement.
+const REPERE_SOIREES = '<!--SOIREES-->';
+const pageAccueil = readFileSync(join(racine, 'index.html'), 'utf8');
+
+app.get('/', async (req, res, next) => {
+  try {
+    const { evenementsPublics } = await import('./lib/evenements.js');
+    const { dateLongue } = await import('./lib/jours.js');
+    const { euros } = await import('./lib/money.js');
+
+    const evenements = await evenementsPublics();
+    const section = rendreSoirees({ evenements, dateLongue, euros });
+    res.type('html').send(pageAccueil.replace(REPERE_SOIREES, section));
+  } catch (err) { next(err); }
+});
 
 // ── Le webhook Stripe, avant tout analyseur de corps ────────
 // Sa signature porte sur les octets bruts de la requête : passer après
@@ -96,6 +133,7 @@ app.use(apiCarteRouter);
 app.use(manifesteRouter);
 app.use(reservationRouter);
 app.use(commandeRouter);
+app.use(evenementsRouter);
 app.use(paiementRouter);
 app.use(compteRouter);
 app.use(tableRouter);
@@ -103,6 +141,7 @@ app.use(serviceRouter);
 app.use(cuisineRouter);
 app.use(salonRouter);
 app.use(salonCarteRouter);
+app.use(salonEvenementsRouter);
 app.use(salonServicesRouter);
 app.use(salonSalleRouter);
 app.use(salonEquipeRouter);

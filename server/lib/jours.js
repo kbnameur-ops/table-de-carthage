@@ -23,6 +23,15 @@ export function libelleJour(date) {
   });
 }
 
+/** La date en toutes lettres, année comprise : « vendredi 3 octobre 2026 ».
+ *  Pour une soirée annoncée des mois à l'avance, « vendredi 3 octobre » sans
+ *  l'année laisserait un doute que personne n'a envie d'avoir en réservant. */
+export function dateLongue(date) {
+  return new Date(date + 'T00:00').toLocaleDateString('fr-FR', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+  });
+}
+
 /** Comme `libelleJour`, mais assez court pour tenir dans une colonne de
  *  tableau sur un téléphone : « aujourd'hui », « demain », sinon
  *  « 1 sept. ». L'année n'apparaît que si ce n'est pas l'année en cours —

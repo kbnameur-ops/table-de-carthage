@@ -185,6 +185,58 @@ export async function ouvrirPaiementTablee(tableeId) {
   return { paiement, secretClient: intention.secretClient };
 }
 
+/** Ouvre — ou retrouve — le paiement d'une place de soirée.
+ *
+ *  Toujours en débit immédiat : une place se paie à la réservation, il n'y
+ *  a rien à arbitrer plus tard comme pour une commande qu'on vient
+ *  chercher. C'est aussi ce qui rend la place vraiment acquise — une
+ *  empreinte se libère, un paiement non. */
+export async function ouvrirPaiementEvenement(reservationId) {
+  if (!paiementDisponible()) return { erreur: 'Le paiement en ligne n\'est pas activé.' };
+
+  const r = await une(
+    `SELECT r.*, e.titre FROM evenement_reservations r
+       JOIN evenements e ON e.id = r.evenement_id
+      WHERE r.id = $1`, [reservationId]);
+  if (!r) return { erreur: 'Réservation introuvable.' };
+  if (r.statut === 'annulee') return { erreur: 'Cette réservation est annulée.' };
+  if (r.statut !== 'a_payer') return { paiement: null, dejaRegle: true };
+
+  const existant = await paiementVivantEvenement(reservationId);
+  if (existant) {
+    if (existant.statut !== 'a_confirmer') return { paiement: existant, dejaRegle: true };
+    if (existant.montant_cents === r.total_cents && existant.intention_id) {
+      return { paiement: existant, secretClient: await recupererSecret(existant.intention_id) };
+    }
+    await executer(
+      `UPDATE paiements SET statut = 'echoue', echec_motif = 'montant obsolète' WHERE id = $1`,
+      [existant.id]);
+  }
+
+  const intention = await creerIntention({
+    montantCents: r.total_cents, mode: 'immediat',
+    cle: `evt-${reservationId}-${r.total_cents}`,
+    description: `${r.titre} — ${r.places} place${r.places > 1 ? 's' : ''} — La Table de Carthage`,
+    metadonnees: { evenement_reservation_id: String(reservationId), reference: r.reference },
+    clientStripeId: await ficheStripeDuClient(r.client_id),
+  });
+
+  const paiement = await une(
+    `INSERT INTO paiements (client_id, evenement_reservation_id, montant_cents, mode, intention_id)
+     VALUES ($1, $2, $3, 'immediat', $4) RETURNING *`,
+    [r.client_id, reservationId, r.total_cents, intention.id]
+  );
+  return { paiement, secretClient: intention.secretClient, reservation: r };
+}
+
+export async function paiementVivantEvenement(reservationId) {
+  return (await une(
+    `SELECT * FROM paiements
+      WHERE evenement_reservation_id = $1 AND statut IN ('a_confirmer','autorise','capture')`,
+    [reservationId]
+  )) ?? null;
+}
+
 /** L'empreinte est autorisée : l'argent est bloqué, rien n'est encore
  *  débité. La commande peut partir en cuisine — c'est ici, et seulement
  *  ici, qu'elle quitte 'a_payer'. */
@@ -381,6 +433,13 @@ export async function marquerPayeEtEncaisser(intentionId) {
   );
   if (!p) return { ignore: true };
 
+  // Trois cibles possibles, trois suites différentes. Une place de soirée
+  // ne passe pas par l'encaissement : il n'y a ni cuisine ni addition,
+  // seulement une place qui devient acquise.
+  if (p.evenement_reservation_id) {
+    const { confirmerReservation } = await import('./evenements.js');
+    return { paiement: p, reservation: await confirmerReservation(p.evenement_reservation_id) };
+  }
   const enc = p.commande_id
     ? await encaisserCommande(p.commande_id, { remiseCents: 0 })
     : await encaisserTablee(p.tablee_id, { remiseCents: 0 });

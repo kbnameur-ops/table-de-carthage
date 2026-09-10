@@ -1,0 +1,77 @@
+<%- salonEntete %>
+<div class="page-titre">
+  <h1>Soirées</h1>
+  <p class="lead">
+    Les événements du restaurant : soirées à thème, concerts, dîners de fête.
+    Ils apparaissent sur le site avant la carte, et se règlent à la réservation.
+  </p>
+</div>
+
+<% if (erreur) { %><div class="alerte alerte--erreur"><%= erreur %></div><% } %>
+<% if (info) { %><div class="alerte alerte--ok"><%= info %></div><% } %>
+
+<h2>Nouvelle soirée</h2>
+<div class="card">
+  <form method="post" action="/salon/evenements">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="n-titre">Titre</label>
+      <input type="text" id="n-titre" name="titre" maxlength="120" required placeholder="Nuit andalouse">
+    </div>
+    <div class="field--row">
+      <div class="field">
+        <label for="n-date">Date</label>
+        <input type="date" id="n-date" name="date" required>
+      </div>
+      <div class="field">
+        <label for="n-heure">Heure</label>
+        <input type="time" id="n-heure" name="heure" required>
+      </div>
+    </div>
+    <div class="field--row">
+      <div class="field">
+        <label for="n-prix">Prix par personne</label>
+        <input type="text" id="n-prix" name="prix" inputmode="decimal" required placeholder="45">
+      </div>
+      <div class="field">
+        <label for="n-places">Places</label>
+        <input type="number" id="n-places" name="places" min="1" max="500" required placeholder="40">
+      </div>
+    </div>
+    <button type="submit" class="btn">Créer</button>
+    <p class="aide">
+      Elle sera créée <strong>non visible</strong> : vous ajoutez photos et texte,
+      puis vous l'annoncez quand elle est prête.
+    </p>
+  </form>
+</div>
+
+<h2>Toutes les soirées</h2>
+<% if (!evenements.length) { %>
+  <p class="vide">Aucune soirée pour l'instant.</p>
+<% } else { %>
+  <div class="table-scroll"><table class="table-empilee">
+    <thead><tr><th>Quand</th><th>Soirée</th><th>Prix</th><th>Places</th><th>Encaissé</th><th>Statut</th><th></th></tr></thead>
+    <tbody>
+      <% evenements.forEach(e => { %>
+        <tr>
+          <td data-l="Quand"><%= dateLongue(e.date) %><br><small style="color:var(--muted)"><%= e.heure %></small></td>
+          <td data-l="Soirée">
+            <%= e.titre %>
+            <br><small style="color:var(--muted)"><%= e.nb_photos %> photo<%= e.nb_photos > 1 ? 's' : '' %></small>
+          </td>
+          <td data-l="Prix"><%= euros(e.prix_cents) %></td>
+          <td data-l="Places"><%= e.places_vendues %> / <%= e.places %></td>
+          <td data-l="Encaissé"><%= euros(e.encaisse_cents) %></td>
+          <td data-l="Statut">
+            <span class="badge badge--<%= e.visible ? 'confirmee' : 'attente' %>">
+              <%= e.visible ? 'visible' : 'brouillon' %>
+            </span>
+          </td>
+          <td class="cellule-action"><a class="btn btn--sm" href="/salon/evenements/<%= e.id %>">Ouvrir</a></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table></div>
+<% } %>
+<%- salonPied %>

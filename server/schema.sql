@@ -556,3 +556,80 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_clients_stripe
 -- paiement précédent : cocher la case une fois ne vaut pas consentement
 -- pour toujours, et la trace de ce qui a été coché doit rester lisible.
 ALTER TABLE paiements ADD COLUMN IF NOT EXISTS carte_enregistree BOOLEAN NOT NULL DEFAULT false;
+
+-- ─────────────────────────────────────────────────────────────────────────
+-- v9 — Les événements : soirées à thème, concerts, dîners de fête.
+--
+-- Ce n'est ni un plat ni une formule : on ne le commande pas, on y prend
+-- une place. D'où des tables à part plutôt qu'une catégorie de la carte —
+-- un événement a une date, un nombre de places, et se paie à la
+-- réservation.
+-- ─────────────────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS evenements (
+  id          INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  slug        TEXT    NOT NULL UNIQUE,          -- l'adresse publique : /evenements/nuit-andalouse
+  titre       TEXT    NOT NULL,
+  accroche    TEXT    NOT NULL DEFAULT '',      -- une ligne, celle qu'on lit en passant
+  texte       TEXT    NOT NULL DEFAULT '',      -- le récit, en paragraphes séparés par une ligne vide
+  date        TEXT    NOT NULL,                 -- 'YYYY-MM-DD'
+  heure       TEXT    NOT NULL,                 -- 'HH:MM'
+  prix_cents  INTEGER NOT NULL CHECK (prix_cents >= 0),   -- par personne
+  places      INTEGER NOT NULL CHECK (places > 0),
+  visible     BOOLEAN NOT NULL DEFAULT false,   -- on prépare une soirée avant de l'annoncer
+  position    INTEGER NOT NULL DEFAULT 0,
+  cree_le     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_evenements_date ON evenements(date, heure);
+
+-- Les photos qui défilent. L'ordre est choisi au salon : la première donne
+-- le ton, et c'est elle qu'on retrouve en vignette.
+CREATE TABLE IF NOT EXISTS evenement_photos (
+  id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  evenement_id INTEGER NOT NULL REFERENCES evenements(id) ON DELETE CASCADE,
+  url          TEXT    NOT NULL,
+  legende      TEXT    NOT NULL DEFAULT '',
+  position     INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_evenement_photos ON evenement_photos(evenement_id, position);
+
+-- Une place vendue. `ON DELETE RESTRICT` sur l'événement : une soirée qui a
+-- vendu des places ne s'efface pas d'un clic, comme une table qui a servi
+-- ne se supprime pas — ce sont des ventes, pas de la configuration.
+CREATE TABLE IF NOT EXISTS evenement_reservations (
+  id           INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  reference    TEXT    NOT NULL UNIQUE,
+  evenement_id INTEGER NOT NULL REFERENCES evenements(id) ON DELETE RESTRICT,
+  client_id    INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  places       INTEGER NOT NULL CHECK (places > 0),
+  total_cents  INTEGER NOT NULL CHECK (total_cents >= 0),
+  statut       TEXT    NOT NULL DEFAULT 'a_payer'
+               CHECK (statut IN ('a_payer','confirmee','annulee','honoree')),
+  cree_le      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_evenement_resa ON evenement_reservations(evenement_id, statut);
+CREATE INDEX IF NOT EXISTS idx_evenement_resa_client ON evenement_reservations(client_id, cree_le DESC);
+
+-- Une troisième cible pour un paiement. La contrainte d'origine n'en
+-- acceptait que deux (commande ou tablée) ; elle est remplacée ici par un
+-- décompte, qui exige toujours une cible et une seule. C'est la dernière
+-- version de cette contrainte : c'est donc ce bloc, et lui seul, qui la
+-- redéfinit sans condition.
+ALTER TABLE paiements ADD COLUMN IF NOT EXISTS evenement_reservation_id
+  INTEGER REFERENCES evenement_reservations(id) ON DELETE CASCADE;
+
+DO $$ BEGIN
+  ALTER TABLE paiements DROP CONSTRAINT IF EXISTS paiements_cible_unique;
+  ALTER TABLE paiements ADD CONSTRAINT paiements_cible_unique CHECK (
+    (commande_id IS NOT NULL)::int
+  + (tablee_id IS NOT NULL)::int
+  + (evenement_reservation_id IS NOT NULL)::int = 1
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+-- Comme pour les commandes : un seul paiement vivant à la fois, sans quoi
+-- deux onglets bloqueraient deux fois le montant sur la carte.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_paiement_evenement_vivant
+  ON paiements(evenement_reservation_id)
+  WHERE evenement_reservation_id IS NOT NULL AND statut IN ('a_confirmer','autorise','capture');
