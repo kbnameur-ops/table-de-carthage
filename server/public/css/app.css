@@ -535,28 +535,22 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
 }
 
 /* ── Identité dans les tunnels ────────────────────────────── */
-/* Deux entrées côte à côte : se reconnaître, ou tout saisir. Le séparateur
-   « ou » passe d'une barre verticale à une barre horizontale quand les
-   colonnes s'empilent. */
-.identite-choix{display:grid;grid-template-columns:1fr auto 1fr;gap:1.6rem;align-items:start}
-.identite-choix__col h3{
+/* Une seule colonne, et dans l'ordre : d'abord le téléphone et la date de
+   naissance — tout le monde en a besoin, ce sont les identifiants —, puis
+   les coordonnées, qui ne concernent que ceux qui viennent pour la
+   première fois. L'ancienne mise en page en deux colonnes « ou » laissait
+   croire qu'on pouvait choisir l'une des deux. */
+.identite-titre{
   font-family:var(--ff-title);font-weight:400;font-size:1.1rem;color:var(--navy-800);
   margin:0 0 .4rem;
 }
-.identite-choix__col .aide{margin:0 0 1.1rem;font-size:.85rem;color:var(--muted);line-height:1.5}
-.identite-choix__col .aide:last-child{margin:1rem 0 0}
-.identite-choix__ou{
-  position:relative;align-self:stretch;display:flex;align-items:center;justify-content:center;
-  min-width:2.5rem;
+.identite-mot{margin:0 0 1.1rem;font-size:.85rem;color:var(--muted);line-height:1.5}
+.identite-retour{
+  display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-top:.3rem;
+  font-size:.85rem;color:var(--muted);line-height:1.5;
 }
-.identite-choix__ou::before{
-  content:'';position:absolute;top:0;bottom:0;left:50%;width:1px;
-  background:linear-gradient(180deg,transparent,rgba(14,42,78,.14),transparent);
-}
-.identite-choix__ou span{
-  position:relative;background:#fff;padding:.4rem;font-size:.72rem;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--muted);
-}
+.identite-retour span{flex:1 1 12rem}
+.bloc-identite .separateur-ou{margin:1.6rem 0 1.2rem}
 
 .carte-identifie{border-left:4px solid #4C9A5E}
 .identifie{display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
@@ -573,12 +567,7 @@ body.salon h1{font-family:var(--ff-display);font-weight:600;font-size:clamp(1.7r
 .identifie__qui small{display:block;color:var(--muted);font-size:.84rem}
 
 @media (max-width:720px){
-  .identite-choix{grid-template-columns:1fr;gap:.4rem}
-  .identite-choix__ou{min-height:2.6rem}
-  .identite-choix__ou::before{
-    top:50%;bottom:auto;left:0;right:0;width:auto;height:1px;
-    background:linear-gradient(90deg,transparent,rgba(14,42,78,.14),transparent);
-  }
+  .identite-retour .btn{flex:1 1 100%}
   .identifie{gap:.7rem}
   .identifie .btn{flex:1 1 100%}
 }

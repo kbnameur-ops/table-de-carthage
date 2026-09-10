@@ -99,3 +99,28 @@ test("vercel.json envoie « / » à l'application, pas au fichier statique", () 
   const accueilHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.ok(accueilHtml.includes('<!--SOIREES-->'), 'le repère des soirées a disparu de index.html');
 });
+
+test("le bloc d'identité montre tous les champs que le serveur peut reprocher", async () => {
+  // La panne qu'on empêche : les quatre tunnels affichaient « Numéro de
+  // téléphone invalide. Date de naissance invalide. » sous un formulaire
+  // qui ne demandait que le prénom, le nom et l'e-mail. Le visiteur ne
+  // pouvait pas corriger ce qu'on ne lui montrait pas.
+  const { identiteClient } = await import('../server/lib/layout.js');
+  const { validerIdentite } = await import('../server/lib/clients.js');
+
+  const erreurs = validerIdentite({});   // tout est vide : tout est reproché
+  const html = identiteClient({ erreurs });
+
+  for (const champ of Object.keys(erreurs)) {
+    assert.match(html, new RegExp(`name="${champ}"`),
+      `« ${champ} » est refusé par le serveur mais n'a pas de champ à l'écran`);
+    assert.ok(html.includes(erreurs[champ]), `le message pour « ${champ} » n'est pas affiché`);
+  }
+
+  // Et quand on est déjà reconnu, on ne redemande rien.
+  const reconnu = identiteClient({
+    client: { prenom: 'Kimo', nom: 'Diego', telephone_saisi: '06 12 34 56 78', email: 'k@example.test' },
+  });
+  assert.ok(!reconnu.includes('name="telephone"'), 'un client reconnu ne resaisit pas ses identifiants');
+  assert.match(reconnu, /Ce n'est pas moi/);
+});

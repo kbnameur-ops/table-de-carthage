@@ -1,0 +1,79 @@
+<%# Se faire connaître : le même bloc pour une réservation, une commande à
+    emporter, une commande à table et une place de soirée.
+
+    Il était recopié dans les quatre vues, et il y mentait de la même façon
+    dans les quatre : la colonne « Première fois ? » ne demandait que le
+    prénom, le nom et l'e-mail, alors que le serveur exige aussi le
+    téléphone et la date de naissance — les deux informations qui SONT les
+    identifiants du futur espace client. Le visiteur remplissait donc ce
+    qu'on lui montrait, et recevait « Numéro de téléphone invalide. Date de
+    naissance invalide. » sous des champs qui n'existaient pas devant lui.
+
+    D'où cette mise en page, linéaire plutôt qu'en deux colonnes « ou » :
+    le téléphone et la date de naissance sont demandés d'abord, à tout le
+    monde, parce que tout le monde en a besoin ; les coordonnées ne
+    concernent que ceux qui viennent pour la première fois. %>
+<% if (client) { %>
+  <div class="card carte-identifie">
+    <div class="identifie">
+      <span class="identifie__pastille" aria-hidden="true"><%= client.prenom.charAt(0) %><%= client.nom.charAt(0) %></span>
+      <div class="identifie__qui">
+        <strong><%= client.prenom %> <%= client.nom %></strong>
+        <small><%= client.telephone_saisi %> · <%= client.email %></small>
+      </div>
+      <button type="submit" name="action" value="changer" class="btn btn--ghost btn--sm">Ce n'est pas moi</button>
+    </div>
+  </div>
+<% } else { %>
+  <div class="card bloc-identite">
+    <% if (erreurConnexion) { %>
+      <div class="alerte alerte--erreur" style="margin-bottom:1rem"><%= erreurConnexion %></div>
+    <% } %>
+
+    <h3 class="identite-titre">Vos identifiants</h3>
+    <p class="aide identite-mot">
+      Votre téléphone et votre date de naissance vous suivent d'une visite à
+      l'autre&nbsp;: ce sont eux, et rien d'autre, qui ouvrent votre espace client.
+    </p>
+    <div class="field--row">
+      <div class="field <%= erreurs.telephone ? 'champ-invalide' : '' %>">
+        <label for="c-tel">Téléphone</label>
+        <input type="tel" id="c-tel" name="telephone" value="<%= valeurs.telephone || '' %>" autocomplete="tel">
+        <% if (erreurs.telephone) { %><span class="erreur"><%= erreurs.telephone %></span><% } %>
+      </div>
+      <div class="field <%= erreurs.dateNaissance ? 'champ-invalide' : '' %>">
+        <label for="c-naissance">Date de naissance</label>
+        <input type="date" id="c-naissance" name="dateNaissance" value="<%= valeurs.dateNaissance || '' %>">
+        <% if (erreurs.dateNaissance) { %><span class="erreur"><%= erreurs.dateNaissance %></span><% } %>
+      </div>
+    </div>
+
+    <div class="identite-retour">
+      <span>Déjà venu chez nous&nbsp;? Ces deux informations suffisent.</span>
+      <button type="submit" name="action" value="connexion" class="btn btn--ghost btn--sm">Me reconnaître</button>
+    </div>
+
+    <p class="separateur-ou"><span>première fois&nbsp;?</span></p>
+
+    <p class="aide identite-mot">
+      Ajoutez vos coordonnées&nbsp;: votre espace client sera créé automatiquement.
+    </p>
+    <div class="field--row">
+      <div class="field <%= erreurs.prenom ? 'champ-invalide' : '' %>">
+        <label for="f-prenom">Prénom</label>
+        <input type="text" id="f-prenom" name="prenom" value="<%= valeurs.prenom || '' %>" autocomplete="given-name">
+        <% if (erreurs.prenom) { %><span class="erreur"><%= erreurs.prenom %></span><% } %>
+      </div>
+      <div class="field <%= erreurs.nom ? 'champ-invalide' : '' %>">
+        <label for="f-nom">Nom</label>
+        <input type="text" id="f-nom" name="nom" value="<%= valeurs.nom || '' %>" autocomplete="family-name">
+        <% if (erreurs.nom) { %><span class="erreur"><%= erreurs.nom %></span><% } %>
+      </div>
+    </div>
+    <div class="field <%= erreurs.email ? 'champ-invalide' : '' %>">
+      <label for="f-email">E-mail</label>
+      <input type="email" id="f-email" name="email" value="<%= valeurs.email || '' %>" autocomplete="email">
+      <% if (erreurs.email) { %><span class="erreur"><%= erreurs.email %></span><% } %>
+    </div>
+  </div>
+<% } %>
