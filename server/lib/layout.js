@@ -38,6 +38,7 @@ const fnCuisineEntete = compiler('partials/cuisine-entete.ejs');
 const fnCuisinePied = compiler('partials/cuisine-pied.ejs');
 const fnTeteApp = compiler('partials/tete-app.ejs');
 const fnEpingler = compiler('partials/epingler.ejs');
+const fnIdentiteClient = compiler('partials/identite-client.ejs');
 
 // `cssApp` est ajouté à chaque rendu d'en-tête : aucun appelant n'a à y penser.
 export const entete = donnees => fnEntete({ cssApp, ...donnees });
@@ -62,3 +63,12 @@ export const cuisinePied = donnees => fnCuisinePied(donnees);
  *  exactement le même code. */
 export const teteApp = donnees => fnTeteApp(donnees);
 export const epingler = donnees => fnEpingler(donnees);
+
+/** Le bloc « qui êtes-vous ? » des quatre tunnels (réserver, commander,
+ *  commander à table, prendre une place de soirée). Rendu ici et non
+ *  recopié dans chaque vue : c'est la copie qui avait laissé les quatre
+ *  formulaires réclamer un téléphone et une date de naissance qu'ils ne
+ *  demandaient nulle part. */
+export const identiteClient = donnees => fnIdentiteClient({
+  client: null, erreurs: {}, valeurs: {}, erreurConnexion: null, ...donnees,
+});

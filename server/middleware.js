@@ -1,5 +1,5 @@
 import { creerSessionInvite, obtenirSession } from './lib/auth.js';
-import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied, cuisineEntete, cuisinePied, teteApp, epingler } from './lib/layout.js';
+import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied, cuisineEntete, cuisinePied, teteApp, epingler, identiteClient } from './lib/layout.js';
 import { ESPACES, espaceDe } from './lib/epinglage.js';
 import { nomTable } from './lib/jours.js';
 import { cssApp } from './lib/version-actifs.js';
@@ -131,6 +131,9 @@ const PAGES = {
   'erreur':                 { titre: 'Erreur' },
 };
 
+/** Les vues qui demandent au visiteur de se faire connaître. */
+const VUES_AVEC_IDENTITE = new Set(['reservation', 'commande', 'table']);
+
 /** Calcule l'en-tête et le pied de page une fois pour toutes et les
  *  injecte dans les données de chaque rendu, sans toucher chaque route une
  *  par une. Les vues appellent <%- entete %> / <%- pied %> — de simples
@@ -148,6 +151,19 @@ export function injecterMiseEnPage(req, res, next) {
     const court = ESPACES[espace].court;
     donnees.teteApp ??= teteApp({ espace, court });
     donnees.epingler ??= epingler({ espace, court });
+    // Les quatre tunnels demandent la même chose au visiteur : qui es-tu ?
+    // Le bloc est rendu ici pour qu'ils partagent exactement le même, sans
+    // que chaque route ait à y penser — et sans qu'une copie puisse
+    // diverger, comme cela s'est produit.
+    if (donnees.blocIdentite === undefined && VUES_AVEC_IDENTITE.has(vue)) {
+      donnees.blocIdentite = identiteClient({
+        client: donnees.client ?? null,
+        erreurs: donnees.erreurs ?? {},
+        valeurs: donnees.valeurs ?? {},
+        erreurConnexion: donnees.erreurConnexion ?? null,
+      });
+    }
+
     const defauts = PAGES[vue];
     if (defauts) {
       donnees.titre ??= defauts.titre;
