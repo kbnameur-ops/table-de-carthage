@@ -103,6 +103,12 @@ app.use('/uploads', express.static(join(__dirname, 'public', 'uploads'), { maxAg
 const REPERE_SOIREES = '<!--SOIREES-->';
 const pageAccueil = readFileSync(join(racine, 'index.html'), 'utf8');
 
+// Un ancien signet, ou un lien écrit à la main, peut viser « /index.html ».
+// Tant que la page était un fichier, Vercel la servait ; maintenant qu'elle
+// passe par l'application, il faut le dire, sans quoi c'est une page
+// introuvable.
+app.get('/index.html', (req, res) => res.redirect(301, '/'));
+
 app.get('/', async (req, res, next) => {
   try {
     const { evenementsPublics } = await import('./lib/evenements.js');
