@@ -1,7 +1,7 @@
 import { une, query, executer, transaction } from '../db.js';
 import {
   creerIntention, recupererSecret, capturer, liberer, paiementDisponible,
-  creerClientStripe, definirEnregistrement,
+  creerClientStripe, definirEnregistrement, etatIntention, paiementSimule,
 } from './paiement.js';
 import { encaisserCommande, encaisserTablee } from './encaissement.js';
 import { additionDeTablee } from './tablees.js';
@@ -259,6 +259,68 @@ export async function marquerAutorise(intentionId) {
   });
 }
 
+/** Demande à Stripe où en est réellement un paiement, et met notre base
+ *  d'accord avec lui.
+ *
+ *  Pourquoi ce second chemin : le webhook est la voie normale, et c'est la
+ *  seule qui fonctionne quand le client ferme son onglet en plein
+ *  paiement. Mais il dépend d'une configuration extérieure au code — une
+ *  adresse déclarée dans le tableau de bord Stripe, un secret de signature
+ *  qui correspond, et le bon mode (un endpoint déclaré en mode test ne
+ *  reçoit rien d'un compte passé en mode réel). Quand cette configuration
+ *  est absente ou fausse, AUCUN webhook n'arrive, et rien ne le signale :
+ *  la carte est débitée ou bloquée chez Stripe pendant que la commande
+ *  reste « à régler » pour toujours. C'est exactement ce qui s'est
+ *  produit.
+ *
+ *  Interroger Stripe au retour du navigateur rattrape tous les cas où le
+ *  client est encore là — c'est-à-dire la quasi-totalité. Le webhook garde
+ *  son rôle pour les autres.
+ *
+ *  Ne touche qu'un paiement en attente de confirmation : un paiement déjà
+ *  autorisé, capturé ou échoué a son état, et Stripe n'a rien à y redire.
+ *  Une panne de réseau n'est pas une erreur ici — on rend l'état connu. */
+/** Ce que l'état d'une intention chez Stripe implique pour notre paiement.
+ *
+ *  Séparé de l'appel réseau parce que c'est cette table de correspondance
+ *  qui décide si une commande part en cuisine ou reste à régler — elle
+ *  mérite d'être lisible et vérifiable sans Stripe au bout du fil.
+ *
+ *  Rend `null` quand il n'y a rien à conclure : le client est encore dans
+ *  son paiement ('requires_confirmation', 'requires_action', 'processing'),
+ *  ou sa carte vient d'être refusée et il peut retenter sur la même
+ *  intention ('requires_payment_method'). */
+export function suiteDeLetatStripe(statutStripe) {
+  switch (statutStripe) {
+    case 'requires_capture': return 'autorise';   // empreinte posée, rien de débité
+    case 'succeeded':        return 'capture';    // débit abouti
+    case 'canceled':         return 'echoue';
+    default:                 return null;
+  }
+}
+
+export async function reconcilierPaiement(paiement) {
+  if (!paiement || paiement.statut !== 'a_confirmer' || paiementSimule()) {
+    return { paiement, changement: false };
+  }
+  let etat;
+  try {
+    etat = await etatIntention(paiement.intention_id);
+  } catch (err) {
+    console.error('Stripe injoignable pour', paiement.intention_id, ':', err?.message);
+    return { paiement, changement: false, injoignable: true };
+  }
+  if (!etat) return { paiement, changement: false };
+
+  const suite = suiteDeLetatStripe(etat.statut);
+  if (!suite) return { paiement, changement: false };
+
+  const r = suite === 'autorise' ? await marquerAutorise(paiement.intention_id)
+          : suite === 'capture'  ? await marquerPayeEtEncaisser(paiement.intention_id)
+          :                        await marquerEchoue(paiement.intention_id, 'annulé chez Stripe');
+  return { paiement: r.paiement ?? paiement, changement: !r.ignore, devenu: suite };
+}
+
 /** Le paiement a échoué (carte refusée, authentification abandonnée). La
  *  commande reste 'a_payer' : elle n'ira pas en cuisine, et le client peut
  *  retenter depuis son espace sans que rien ne soit perdu. */
@@ -306,16 +368,18 @@ export async function denouerCommandeAPayer(commandeId, action) {
 
   const vivant = await paiementVivantCommande(commandeId);
   if (vivant) {
+    // On demande d'abord à Stripe : notre « en attente de confirmation »
+    // peut très bien recouvrir une empreinte déjà posée, si le webhook
+    // n'est pas arrivé.
+    const { paiement: relu } = await reconcilierPaiement(vivant);
     // Une empreinte DÉJÀ autorisée ne se dénoue pas ici : il y a de
     // l'argent bloqué sur la carte du client, et le rendre ou le prendre
     // est l'arbitrage « Débiter / Libérer », pas ce bouton-ci.
-    if (vivant.statut !== 'a_confirmer') {
+    if (relu.statut !== 'a_confirmer') {
       return { erreur: 'Une empreinte est déjà prise : utilisez Débiter ou Libérer.' };
     }
-    await executer(
-      `UPDATE paiements SET statut = 'echoue', echec_motif = $2 WHERE id = $1`,
-      [vivant.id, action === 'abandonner' ? 'commande abandonnée' : 'repris au comptoir']
-    );
+    const r = await clorePaiement(relu, action === 'abandonner' ? 'commande abandonnée' : 'repris au comptoir');
+    if (r.erreur) return r;
   }
 
   const statut = action === 'abandonner' ? 'annulee' : 'en_attente';
@@ -380,6 +444,50 @@ export async function libererPaiement(paiementId, { annulerCommande = true } = {
   return { paiement: await une(`SELECT * FROM paiements WHERE id = $1`, [p.id]) };
 }
 
+/** Ferme un paiement qui n'aboutira pas — en base ET chez Stripe.
+ *
+ *  C'est le « et chez Stripe » qui manquait. On marquait le paiement
+ *  échoué chez nous en se disant que rien n'avait encore été bloqué,
+ *  puisque notre base le donnait « en attente de confirmation ». Mais
+ *  notre base n'apprend l'autorisation que par le webhook : quand celui-ci
+ *  ne fonctionne pas, l'intention est en réalité autorisée chez Stripe.
+ *  Résultat observé en production : commande annulée, et l'argent du
+ *  client toujours bloqué, sans plus personne pour le rendre.
+ *
+ *  D'où l'ordre ici : on demande d'abord à Stripe où en est le paiement,
+ *  et on agit sur ce qu'il répond, jamais sur ce qu'on croyait savoir.
+ *
+ *  Rend `{ erreur }` si le paiement est déjà débité — rendre l'argent est
+ *  un remboursement, pas une annulation. */
+async function clorePaiement(paiement, motif) {
+  const { paiement: p } = await reconcilierPaiement(paiement);
+
+  if (p.statut === 'capture') {
+    return { erreur: 'Cette commande a déjà été débitée. Contactez le restaurant pour un remboursement.' };
+  }
+  if (p.statut === 'autorise') {
+    const r = await libererPaiement(p.id, { annulerCommande: false });
+    return r.erreur ? r : { paiement: r.paiement, empreinteRendue: true };
+  }
+  if (p.statut !== 'a_confirmer') return { paiement: p, empreinteRendue: false };
+
+  // Toujours en attente de confirmation, des deux côtés : on close
+  // l'intention pour de bon. Sans ça, l'index unique interdirait tout
+  // futur paiement sur cette commande, et une intention laissée ouverte
+  // peut encore être confirmée par un onglet resté ouvert.
+  try {
+    await liberer(p.intention_id);
+  } catch (err) {
+    // Stripe injoignable : on ne bloque pas l'annulation pour autant, mais
+    // on le dit — l'intention reste à fermer.
+    console.error('Intention non close chez Stripe :', p.intention_id, err?.message);
+  }
+  await executer(
+    `UPDATE paiements SET statut = 'echoue', echec_motif = $2 WHERE id = $1`,
+    [p.id, String(motif).slice(0, 300)]);
+  return { paiement: await une(`SELECT * FROM paiements WHERE id = $1`, [p.id]), empreinteRendue: false };
+}
+
 /** Le client annule sa commande depuis son espace.
  *
  *  Depuis que le paiement est actif, annuler ne peut plus se réduire à
@@ -399,28 +507,16 @@ export async function annulerCommandeDuClient(commandeId, clientId) {
   if (c.statut === 'encaissee') return { erreur: 'Cette commande est déjà réglée.' };
   if (c.statut === 'retiree') return { erreur: 'Cette commande a déjà été retirée.' };
 
+  let empreinteRendue = false;
   const p = await paiementVivantCommande(commandeId);
-  if (p && p.statut === 'capture') {
-    return { erreur: 'Cette commande a déjà été débitée. Contactez le restaurant pour un remboursement.' };
-  }
-
-  if (p && p.statut === 'autorise') {
-    // Rend l'empreinte ET annule la commande dans la foulée.
-    const r = await libererPaiement(p.id, { annulerCommande: true });
+  if (p) {
+    const r = await clorePaiement(p, 'commande annulée par le client');
     if (r.erreur) return r;
-    return { commande: await une(`SELECT * FROM commandes WHERE id = $1`, [commandeId]), empreinteRendue: true };
-  }
-
-  if (p && p.statut === 'a_confirmer') {
-    // Rien n'a encore été bloqué : l'intention est simplement close, sans
-    // quoi l'index unique interdirait tout futur paiement sur ce numéro.
-    await executer(
-      `UPDATE paiements SET statut = 'echoue', echec_motif = 'commande annulée par le client' WHERE id = $1`,
-      [p.id]);
+    empreinteRendue = r.empreinteRendue;
   }
 
   await executer(`UPDATE commandes SET statut = 'annulee' WHERE id = $1`, [commandeId]);
-  return { commande: await une(`SELECT * FROM commandes WHERE id = $1`, [commandeId]), empreinteRendue: false };
+  return { commande: await une(`SELECT * FROM commandes WHERE id = $1`, [commandeId]), empreinteRendue };
 }
 
 /** Un débit immédiat a réussi (règlement depuis l'espace client) : il n'y

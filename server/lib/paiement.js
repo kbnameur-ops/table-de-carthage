@@ -291,10 +291,38 @@ export async function capturer(intentionId, montantCents) {
   return { capture_cents: intention.amount_received };
 }
 
-/** Rend l'empreinte sans rien débiter. */
+/** L'état réel d'une intention, demandé à Stripe.
+ *
+ *  Le webhook reste la voie normale — c'est lui qui prévient même quand le
+ *  client ferme son onglet. Mais il peut ne jamais arriver : endpoint non
+ *  déclaré dans le tableau de bord, déclaré en mode test alors que le
+ *  compte est en mode réel, secret de signature qui ne correspond pas,
+ *  coupure. Dans ces cas-là, rien ne signalait le problème : la commande
+ *  restait « à régler » pendant que l'argent était bien bloqué chez
+ *  Stripe. Pouvoir demander directement donne un second chemin, emprunté
+ *  au retour du navigateur.
+ *
+ *  Rend `null` en mode simulé — il n'y a alors aucune intention chez
+ *  Stripe à interroger. */
+export async function etatIntention(intentionId) {
+  if (paiementSimule()) return null;
+  const i = await (await stripe()).paymentIntents.retrieve(intentionId);
+  return { statut: i.status, montantCents: i.amount, captureCents: i.amount_received };
+}
+
+/** Rend l'empreinte sans rien débiter.
+ *
+ *  Tolère une intention que Stripe refuse d'annuler parce qu'elle est déjà
+ *  close (annulée, ou jamais confirmée et expirée) : l'objectif est qu'il
+ *  ne reste rien de bloqué, et c'est déjà le cas. */
 export async function liberer(intentionId) {
   if (paiementSimule()) return { libere: true };
-  await (await stripe()).paymentIntents.cancel(intentionId);
+  try {
+    await (await stripe()).paymentIntents.cancel(intentionId);
+  } catch (err) {
+    if (err?.code === 'payment_intent_unexpected_state') return { libere: true, dejaClose: true };
+    throw err;
+  }
   return { libere: true };
 }
 

@@ -607,3 +607,21 @@ test('une commande dont l\'heure de retrait est passée reste annulable', async 
   const relu = await db.une(`SELECT statut FROM commandes WHERE id = $1`, [cmd.id]);
   assert.equal(relu.statut, 'annulee');
 });
+
+test("l'état Stripe décide, et un état ambigu ne conclut rien", async () => {
+  const { suiteDeLetatStripe } = await import('../server/lib/reglement.js');
+
+  // Ce que le webhook aurait appris, la réconciliation doit l'apprendre à
+  // l'identique : c'est la même table de correspondance.
+  assert.equal(suiteDeLetatStripe('requires_capture'), 'autorise');
+  assert.equal(suiteDeLetatStripe('succeeded'), 'capture');
+  assert.equal(suiteDeLetatStripe('canceled'), 'echoue');
+
+  // Et surtout : tant que le client est encore dans son paiement, on ne
+  // conclut RIEN. Conclure « échoué » sur un 'requires_action' annulerait
+  // la commande de quelqu'un en train de valider son 3-D Secure.
+  for (const enCours of ['requires_payment_method', 'requires_confirmation',
+                         'requires_action', 'processing', 'une_nouveaute_de_stripe']) {
+    assert.equal(suiteDeLetatStripe(enCours), null, `${enCours} ne doit rien conclure`);
+  }
+});

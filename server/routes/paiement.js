@@ -11,7 +11,7 @@ import {
 import {
   ouvrirPaiementCommande, ouvrirPaiementTablee, paiementVivantCommande,
   marquerAutorise, marquerEchoue, marquerPayeEtEncaisser, evenementDejaVu,
-  choisirEnregistrementCarte,
+  choisirEnregistrementCarte, reconcilierPaiement,
 } from '../lib/reglement.js';
 
 /** Le paiement en ligne, côté écrans.
@@ -86,13 +86,17 @@ paiementWebhookRouter.post(
   }
 );
 
-async function surAutorisation(intentionId) {
-  const r = await marquerAutorise(intentionId);
-  if (r.ignore || !r.paiement?.commande_id) return;
+/** Prévenir le salon : extrait des gestionnaires de webhook pour que la
+ *  réconciliation au retour du navigateur prévienne exactement de la même
+ *  façon. Une empreinte découverte par l'un ou par l'autre doit apparaître
+ *  au salon à l'identique — sinon le restaurant ne voit la commande que
+ *  dans un cas sur deux. */
+async function prevenirDuneEmpreinte(paiement) {
+  if (!paiement?.commande_id) return;
   const c = await une(
     `SELECT c.reference, c.date, c.heure, c.total_cents, cl.prenom, cl.nom, cl.telephone_saisi
        FROM commandes c JOIN clients cl ON cl.id = c.client_id WHERE c.id = $1`,
-    [r.paiement.commande_id]
+    [paiement.commande_id]
   );
   if (!c) return;
   await notifier({
@@ -103,15 +107,26 @@ async function surAutorisation(intentionId) {
   });
 }
 
+async function prevenirDunReglement(paiement) {
+  if (!paiement) return;
+  await notifier({
+    type: 'commande',
+    titre: `Règlement en ligne — ${euros(paiement.montant_cents)}`,
+    detail: paiement.commande_id ? 'Commande à emporter réglée' : 'Addition de table réglée',
+    lien: paiement.commande_id ? '/salon/commandes' : '/salon/tables-clients',
+  });
+}
+
+async function surAutorisation(intentionId) {
+  const r = await marquerAutorise(intentionId);
+  if (r.ignore) return;
+  await prevenirDuneEmpreinte(r.paiement);
+}
+
 async function surPaiement(intentionId) {
   const r = await marquerPayeEtEncaisser(intentionId);
   if (r.ignore) return;
-  await notifier({
-    type: 'commande',
-    titre: `Règlement en ligne — ${euros(r.paiement.montant_cents)}`,
-    detail: r.paiement.commande_id ? 'Commande à emporter réglée' : 'Addition de table réglée',
-    lien: r.paiement.commande_id ? '/salon/commandes' : '/salon/tables-clients',
-  });
+  await prevenirDunReglement(r.paiement);
 }
 
 /** ── La page de paiement ─────────────────────────────────────
@@ -166,16 +181,33 @@ function pageFaite(req, res, commande, message) {
   };
 }
 
-/** Là où Stripe renvoie le navigateur après confirmation. On n'y décide
- *  rien : l'état fait foi côté webhook. Cet écran ne fait que dire au
- *  client où il en est. */
+/** Là où Stripe renvoie le navigateur après confirmation.
+ *
+ *  Cet écran ne décidait rien : il lisait notre base, qui n'apprend
+ *  l'autorisation que par le webhook. Quand le webhook ne fonctionne pas —
+ *  endpoint absent du tableau de bord Stripe, déclaré en mode test alors
+ *  que le compte est en mode réel, secret qui ne correspond pas —, il
+ *  affichait « paiement en cours de confirmation, cette page se met à jour
+ *  toute seule » et la page ne se mettait jamais à jour : l'argent bloqué
+ *  chez Stripe, la commande « à régler » à vie. Constaté en production.
+ *
+ *  On interroge donc Stripe ici, avant d'afficher. Le client est encore
+ *  là — c'est le moment le plus sûr pour remettre les deux côtés d'accord,
+ *  et ça rattrape la quasi-totalité des cas. Le webhook garde son rôle
+ *  pour celui qui ferme son onglet en plein paiement. */
 paiementRouter.get('/paiement/:reference/retour', async (req, res, next) => {
   try {
     const commande = await une(
       `SELECT * FROM commandes WHERE reference = $1`, [req.params.reference]);
     if (!commande) return res.redirect('/commander');
 
-    const paiement = await paiementVivantCommande(commande.id);
+    const enBase = await paiementVivantCommande(commande.id);
+    const { paiement, devenu } = await reconcilierPaiement(enBase);
+    // La réconciliation a pu faire ce que le webhook aurait fait : le
+    // salon doit l'apprendre de la même façon.
+    if (devenu === 'autorise') await prevenirDuneEmpreinte(paiement);
+    else if (devenu === 'capture') await prevenirDunReglement(paiement);
+
     const message = !paiement
       ? "Le paiement n'a pas abouti. Vous pouvez réessayer depuis votre espace."
       : paiement.statut === 'a_confirmer'
