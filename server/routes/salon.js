@@ -7,36 +7,61 @@ import {
   enregistrerTentative, tropDeTentatives, reinitialiserTentatives, MINUTES_BLOCAGE,
 } from '../lib/auth.js';
 import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
+import { donneAccesSalon } from '../lib/personnel.js';
 import { listerNotifications, compterNonLues, marquerLue, toutMarquerLu } from '../lib/notifications.js';
 import { euros } from '../lib/money.js';
 
 export const salonRouter = Router();
 
-salonRouter.get('/salon/connexion', (req, res) => {
-  if (req.session.role === 'admin') return res.redirect('/salon');
-  res.render('salon-connexion', { erreurGenerale: null, valeurs: {}, csrfToken: res.locals.csrfToken });
+salonRouter.get('/salon/connexion', async (req, res, next) => {
+  try {
+    if (await donneAccesSalon(req.session)) return res.redirect('/salon');
+    res.render('salon-connexion', { erreurGenerale: null, valeurs: {}, csrfToken: res.locals.csrfToken });
+  } catch (err) { next(err); }
 });
 
+/** Deux origines pour un accès au salon, sur un seul formulaire :
+ *
+ *  — un compte historique (table `admins`), identifié par e-mail ;
+ *  — un membre de l'équipe à qui l'accès admin a été donné depuis sa
+ *    fiche, identifié comme aux portes du service et de la cuisine — par
+ *    son identifiant, avec le même mot de passe.
+ *
+ *  On tranche sur la forme de ce qui a été saisi : une adresse e-mail vise
+ *  la première table, tout le reste vise la seconde. Les deux mènent à
+ *  '/salon' de la même façon — la seule différence est la table d'où sort
+ *  l'identifiant, portée par le rôle de session ('admin' ou 'serveur') et
+ *  invisible ensuite pour qui visite le salon. */
 salonRouter.post('/salon/connexion', verifierCsrf, async (req, res, next) => {
   try {
-    const { email, motDePasse } = req.body;
+    const identifiant = (req.body.email || '').trim().toLowerCase();
+    const motDePasse = req.body.motDePasse || '';
     const rendreErreur = (msg) => res.render('salon-connexion', {
       erreurGenerale: msg, valeurs: req.body, csrfToken: res.locals.csrfToken,
     });
 
-    if (!emailValide(email) || !motDePasse) return rendreErreur('Identifiants invalides.');
+    if (!identifiant || !motDePasse) return rendreErreur('Identifiants invalides.');
 
-    const cle = `admin:${email}:${req.ip}`;
+    const cle = `admin:${identifiant}:${req.ip}`;
     if (await tropDeTentatives(cle)) return rendreErreur(`Trop de tentatives. Réessayez dans ${MINUTES_BLOCAGE} minutes.`);
 
-    const admin = await une(`SELECT * FROM admins WHERE email = $1`, [email.trim().toLowerCase()]);
-    if (!admin || !verifierMotDePasse(motDePasse, admin.mot_de_passe)) {
+    const compte = emailValide(identifiant)
+      ? { role: 'admin', ligne: await une(`SELECT * FROM admins WHERE email = $1`, [identifiant]) }
+      : {
+          role: 'serveur',
+          ligne: await une(
+            `SELECT * FROM employes WHERE identifiant = $1 AND actif = true AND acces_admin = true`,
+            [identifiant]
+          ),
+        };
+
+    if (!compte.ligne || !compte.ligne.mot_de_passe || !verifierMotDePasse(motDePasse, compte.ligne.mot_de_passe)) {
       await enregistrerTentative(cle);
       return rendreErreur('Identifiants invalides.');
     }
 
     await reinitialiserTentatives(cle);
-    await elargirSession(req.session.id, 'admin', admin.id);
+    await elargirSession(req.session.id, compte.role, compte.ligne.id);
     res.redirect('/salon');
   } catch (err) { next(err); }
 });

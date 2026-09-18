@@ -24,11 +24,11 @@ after(async () => {
 });
 
 let compteur = 0;
-async function employeDEssai({ service, cuisine, actif = true }) {
+async function employeDEssai({ service, cuisine, admin = false, actif = true }) {
   const e = await db.une(
-    `INSERT INTO employes (prenom, nom, identifiant, mot_de_passe, actif, acces_service, acces_cuisine)
-     VALUES ('Essai','Personnel',$1,'x',$2,$3,$4) RETURNING id`,
-    [`essai.${Date.now()}.${++compteur}`, actif, service, cuisine]
+    `INSERT INTO employes (prenom, nom, identifiant, mot_de_passe, actif, acces_service, acces_cuisine, acces_admin)
+     VALUES ('Essai','Personnel',$1,'x',$2,$3,$4,$5) RETURNING id`,
+    [`essai.${Date.now()}.${++compteur}`, actif, service, cuisine, admin]
   );
   employes.push(e.id);
   return e;
@@ -81,4 +81,43 @@ test('le salon passe par les deux portes', async (t) => {
   const admin = { session: { role: 'admin', sujetId: 1 } };
   assert.equal(await dejaConnecte(admin, 'cuisine'), '/cuisine');
   assert.equal(await dejaConnecte(admin, 'service'), '/service');
+});
+
+// ── L'accès admin, une compétence comme les deux autres ────────────────
+// Coché seul, sans « Service » ni « Cuisine », il doit quand même ouvrir
+// les deux portes — c'est tout l'intérêt de l'appeler « admin » plutôt que
+// « salon » : quelqu'un qui dirige n'a pas à se faire cocher trois cases
+// pour une seule compétence.
+
+test('admin seul ouvre les deux portes malgré lui', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const { apresConnexion, dejaConnecte } = personnel;
+
+  assert.equal(apresConnexion({ acces_service: false, acces_cuisine: false, acces_admin: true }, 'service'), '/service');
+  assert.equal(apresConnexion({ acces_service: false, acces_cuisine: false, acces_admin: true }, 'cuisine'), '/cuisine');
+
+  const patron = await employeDEssai({ service: false, cuisine: false, admin: true });
+  assert.equal(await dejaConnecte(session(patron.id), 'service'), '/service');
+  assert.equal(await dejaConnecte(session(patron.id), 'cuisine'), '/cuisine');
+});
+
+test('donneAccesSalon() : la seule question qui compte pour ouvrir le salon', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const { donneAccesSalon } = personnel;
+
+  assert.equal(await donneAccesSalon({ role: 'admin', sujetId: 1 }), true);
+  assert.equal(await donneAccesSalon({ role: 'client', sujetId: 1 }), false);
+  assert.equal(await donneAccesSalon({ role: 'invite', sujetId: null }), false);
+
+  const patron = await employeDEssai({ service: false, cuisine: false, admin: true });
+  assert.equal(await donneAccesSalon({ role: 'serveur', sujetId: patron.id }), true);
+
+  // Cocher « Service » ou « Cuisine » n'ouvre pas le salon — seul « Admin »
+  // le fait. C'est le sens même de la distinction.
+  const serveur = await employeDEssai({ service: true, cuisine: true, admin: false });
+  assert.equal(await donneAccesSalon({ role: 'serveur', sujetId: serveur.id }), false);
+
+  // Une fiche désactivée ne rouvre rien, même avec la case cochée.
+  const parti = await employeDEssai({ service: false, cuisine: false, admin: true, actif: false });
+  assert.equal(await donneAccesSalon({ role: 'serveur', sujetId: parti.id }), false);
 });

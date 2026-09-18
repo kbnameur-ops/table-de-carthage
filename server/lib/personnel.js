@@ -26,7 +26,7 @@ export async function connecterPersonnel(req, { identifiant, motDePasse }) {
   const employe = await une(
     `SELECT * FROM employes
       WHERE identifiant = $1 AND actif = true
-        AND (acces_service = true OR acces_cuisine = true)`,
+        AND (acces_service = true OR acces_cuisine = true OR acces_admin = true)`,
     [identifiant]
   );
   if (!employe || !employe.mot_de_passe || !verifierMotDePasse(motDePasse, employe.mot_de_passe)) {
@@ -42,10 +42,15 @@ export async function connecterPersonnel(req, { identifiant, motDePasse }) {
 /** Où atterrit un employé qui vient de se connecter. Depuis la porte de la
  *  cuisine on reste en cuisine ; depuis celle de la salle, un commis qui n'a
  *  que le passe file au passe plutôt que sur un plan de salle où il n'a rien
- *  à faire. */
+ *  à faire.
+ *
+ *  L'accès admin ouvre les deux : quelqu'un qui ne coche que « Admin » doit
+ *  quand même pouvoir entrer par n'importe laquelle des deux portes plutôt
+ *  que de se voir refuser l'entrée faute d'avoir coché « Service » ou
+ *  « Cuisine » en plus. */
 export function apresConnexion(employe, depuis = 'service') {
-  if (depuis === 'cuisine' && employe.acces_cuisine) return '/cuisine';
-  return employe.acces_service ? '/service' : '/cuisine';
+  if (depuis === 'cuisine' && (employe.acces_cuisine || employe.acces_admin)) return '/cuisine';
+  return (employe.acces_service || employe.acces_admin) ? '/service' : '/cuisine';
 }
 
 /** Où renvoyer quelqu'un déjà connecté qui retombe sur une porte d'entrée,
@@ -60,15 +65,31 @@ export async function dejaConnecte(req, depuis) {
   if (req.session.role !== 'serveur') return null;
 
   const e = await une(
-    `SELECT acces_service, acces_cuisine FROM employes WHERE id = $1 AND actif = true`,
+    `SELECT acces_service, acces_cuisine, acces_admin FROM employes WHERE id = $1 AND actif = true`,
     [req.session.sujetId]
   );
   // Fiche désactivée ou accès retirés depuis le salon : qu'il se reconnecte.
   if (!e) return null;
-  if (depuis === 'cuisine' && e.acces_cuisine) return '/cuisine';
-  if (depuis === 'service' && e.acces_service) return '/service';
+  if (depuis === 'cuisine' && (e.acces_cuisine || e.acces_admin)) return '/cuisine';
+  if (depuis === 'service' && (e.acces_service || e.acces_admin)) return '/service';
   // Connecté, mais pas pour cet écran-là : on l'emmène au sien.
-  if (e.acces_service) return '/service';
+  if (e.acces_service || e.acces_admin) return '/service';
   if (e.acces_cuisine) return '/cuisine';
   return null;
+}
+
+/** Vrai si cette session ouvre le salon : soit un compte admin historique
+ *  (table `admins`, par e-mail), soit un membre de l'équipe à qui l'accès a
+ *  été donné depuis sa fiche — au même titre que la prise de commande ou la
+ *  cuisine. Un seul endroit tranche la question ; middleware, connexion et
+ *  badge de notifications s'y réfèrent plutôt que de relire chacun la
+ *  colonne `acces_admin` à leur façon. */
+export async function donneAccesSalon(session) {
+  if (session.role === 'admin') return true;
+  if (session.role !== 'serveur') return false;
+  const e = await une(
+    `SELECT id FROM employes WHERE id = $1 AND actif = true AND acces_admin = true`,
+    [session.sujetId]
+  );
+  return !!e;
 }

@@ -633,3 +633,14 @@ END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS idx_paiement_evenement_vivant
   ON paiements(evenement_reservation_id)
   WHERE evenement_reservation_id IS NOT NULL AND statut IN ('a_confirmer','autorise','capture');
+
+-- ═══════════════════════════════════════════════════════════
+-- v10 — L'accès admin, une compétence de plus sur la fiche employé
+-- ═══════════════════════════════════════════════════════════
+-- Jusqu'ici, ouvrir le salon exigeait un compte à part (table `admins`),
+-- créé hors de l'application par un e-mail et un mot de passe. Coché
+-- depuis /salon/equipe comme la prise de commande et la cuisine, avec le
+-- même identifiant et le même mot de passe déjà posés sur la fiche : plus
+-- besoin de sortir de l'application pour donner l'accès au salon à
+-- quelqu'un qui a déjà un accès personnel.
+ALTER TABLE employes ADD COLUMN IF NOT EXISTS acces_admin BOOLEAN NOT NULL DEFAULT false;
