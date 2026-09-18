@@ -1,4 +1,5 @@
 import { creerSessionInvite, obtenirSession } from './lib/auth.js';
+import { donneAccesSalon } from './lib/personnel.js';
 import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied, cuisineEntete, cuisinePied, teteApp, epingler, identiteClient } from './lib/layout.js';
 import { ESPACES, espaceDe } from './lib/epinglage.js';
 import { nomTable } from './lib/jours.js';
@@ -69,12 +70,20 @@ export function exigerClient(req, res, next) {
   next();
 }
 
-export function exigerAdmin(req, res, next) {
-  if (req.session.role !== 'admin') {
-    return res.redirect('/salon/connexion');
-  }
-  req.adminId = req.session.sujetId;
-  next();
+/** L'accès admin ouvre le salon : soit un compte historique (table
+ *  `admins`), soit un membre de l'équipe à qui l'accès a été donné depuis
+ *  sa fiche — voir donneAccesSalon(). `req.adminId` ne vaut quelque chose
+ *  que dans le premier cas ; personne ne le lit aujourd'hui, mais mieux
+ *  vaut `null` qu'un identifiant d'employé pris pour un identifiant
+ *  d'admin par du code écrit plus tard. */
+export async function exigerAdmin(req, res, next) {
+  try {
+    if (await donneAccesSalon(req.session)) {
+      req.adminId = req.session.role === 'admin' ? req.session.sujetId : null;
+      return next();
+    }
+    res.redirect('/salon/connexion');
+  } catch (err) { next(err); }
 }
 
 /** Les écrans du personnel : la prise de commande et la cuisine.
@@ -100,15 +109,21 @@ function exigerAcces(colonne, connexion) {
 
       const { une } = await import('./db.js');
       const employe = await une(
-        `SELECT id, prenom, acces_service, acces_cuisine FROM employes
+        `SELECT id, prenom, acces_service, acces_cuisine, acces_admin FROM employes
           WHERE id = $1 AND actif = true`,
         [req.session.sujetId]
       );
-      if (!employe || !employe[colonne]) return res.redirect(connexion);
+      // L'accès admin, coché sur la fiche, ouvre aussi ces deux écrans :
+      // quelqu'un à qui on donne le salon n'a pas, en plus, à se faire
+      // cocher « Service » et « Cuisine » pour pouvoir y entrer.
+      if (!employe || !(employe[colonne] || employe.acces_admin)) return res.redirect(connexion);
 
       req.employeId = employe.id;
       res.locals.employe = employe;
-      res.locals.droits = { service: employe.acces_service, cuisine: employe.acces_cuisine };
+      res.locals.droits = {
+        service: employe.acces_service || employe.acces_admin,
+        cuisine: employe.acces_cuisine || employe.acces_admin,
+      };
       next();
     } catch (err) { next(err); }
   };
@@ -239,7 +254,7 @@ export function redirigerRetour(req, res, parDefaut) {
  *  module, et le charger au sommet créerait une dépendance croisée. */
 export async function chargerNotifications(req, res, next) {
   res.locals.notifs = 0;
-  if (req.session?.role !== 'admin') return next();
+  if (!req.session || !(await donneAccesSalon(req.session))) return next();
   try {
     const { compterNonLues } = await import('./lib/notifications.js');
     res.locals.notifs = await compterNonLues();
