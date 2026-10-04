@@ -5,7 +5,7 @@
 :root{
   --navy-900:#071A31; --navy-800:#0E2A4E; --navy-700:#14345F;
   --gold-500:#C9A961; --gold-400:#D9BE7E; --gold-300:#EBD8A8;
-  --cream:#FAF6EC; --cream-2:#F2EADA; --ink:#12212F; --muted:#6C7A88;
+  --cream:#FAF6EC; --cream-2:#F2EADA; --ink:#12212F; --muted:#5B6773; --gold-700:#7D6224;
   --ok:#3E7A4C; --err:#B4402A;
   --ff-title:'Marcellus', Georgia, serif;
   --ff-display:'Cormorant Garamond', Georgia, serif;
@@ -87,7 +87,7 @@ p.lead{color:var(--muted);max-width:60ch;margin:0 0 2rem}
 .grid--2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
 
 .field{margin-bottom:1.2rem}
-.field label{display:block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-500);margin-bottom:.4rem;font-weight:500}
+.field label{display:block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-700);margin-bottom:.4rem;font-weight:500}
 .field input,.field select,.field textarea{
   width:100%;padding:.7rem .8rem;border:1px solid rgba(14,42,78,.2);border-radius:3px;
   font-family:inherit;font-size:1rem;background:#fff;color:var(--ink);
@@ -132,7 +132,7 @@ tbody tr:hover{background:var(--cream-2)}
 .badge--prete{background:#DCE8F5;color:#2A5C8A}
 .badge--honoree,.badge--retiree{background:#E4E4E4;color:#555}
 .badge--annulee,.badge--absente{background:#F3DCD8;color:var(--err)}
-.badge--veg{background:#E4EFE0;color:#4B7A3B}
+.badge--veg{background:#E4EFE0;color:#3F6B30}
 .badge--signature{background:var(--gold-500);color:var(--navy-900)}
 /* Les classes ci-dessus viennent de `statut.replace('_','')` : un statut à
    rallonge donne « enattente », « enpreparation », « apayer ». Sans ces
@@ -173,7 +173,7 @@ tbody tr:hover{background:var(--cream-2)}
 .menu-plat__infos{flex:1;min-width:0}
 .menu-plat__infos h4{margin:0 0 .25rem;font-family:var(--ff-title);font-weight:400;font-size:1.08rem}
 .menu-plat__infos p{margin:0;color:var(--muted);font-size:.85rem}
-.menu-plat__prix{font-family:var(--ff-display);font-weight:600;color:var(--gold-500);font-size:1.25rem;white-space:nowrap}
+.menu-plat__prix{font-family:var(--ff-display);font-weight:600;color:var(--gold-700);font-size:1.25rem;white-space:nowrap}
 .menu-plat__qte{width:70px}
 .menu-plat__qte input{text-align:center}
 

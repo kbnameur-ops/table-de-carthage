@@ -59,6 +59,14 @@ out = out
 // dupliquerait un data-URI de plusieurs centaines de kilo-octets.
 out = out.replace(/^\s*<link rel="preload" as="image"[^>]*>\n/gm, '');
 
+// Les sources WebP et les marqueurs de rendu serveur n'ont pas de sens dans un
+// fichier unique : le JPG incorporé sert, et la carte vient de menu-data.js.
+out = out
+  .replace(/<source type="image\/webp"[^>]*>/g, '')
+  .replace('<!--SEO-->', '<meta name="description" content="Restaurant tunisien à Puteaux (92) — couscous, ojja, kafteji, grillades et pâtisseries maison.">')
+  .replace('<!--FILTRES-->', '')
+  .replace('<!--CARTE-->', '');
+
 for (const [chemin, uri] of photos) out = out.replaceAll(chemin, () => uri);
 
 if (fragment) {
@@ -71,7 +79,7 @@ if (fragment) {
     .join('\n');
   // Sur une galerie d'Artifacts, le nom seul identifie mieux la page.
   out = `${keep}\n${body}`.replace(
-    '<title>La Table de Carthage — Restaurant Tunisien</title>',
+    '<title>La Table de Carthage — Restaurant tunisien à Puteaux (La Défense)</title>',
     '<title>La Table de Carthage</title>');
 }
 

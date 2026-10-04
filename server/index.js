@@ -5,6 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { sessionMiddleware, injecterMiseEnPage, chargerNotifications } from './middleware.js';
 import { nettoyerSessionsExpirees, nettoyerTentativesAnciennes } from './db.js';
 import { sectionSoirees } from './lib/layout.js';
+import { carteVisible } from './lib/carte.js';
+import {
+  estPrive, metaTags, scriptJsonLd, jsonLdRestaurant, htmlCarte, htmlFiltres, DESCRIPTION_ACCUEIL,
+} from './lib/seo.js';
+import { vitrineRouter } from './routes/vitrine.js';
 
 import { api } from './routes/api.js';
 import { apiCarteRouter } from './routes/api_carte.js';
@@ -37,6 +42,15 @@ const app = express();
 app.set('view engine', 'ejs');
 app.set('views', join(__dirname, 'views'));
 app.disable('x-powered-by');
+
+// Les espaces de travail, les comptes, les paiements et les confirmations ne
+// doivent jamais entrer dans un moteur de recherche. L'en-tête vaut pour toute
+// réponse, y compris les redirections et les erreurs, sans que chaque route
+// ait à y penser.
+app.use((req, res, next) => {
+  if (estPrive(req.path)) res.set('X-Robots-Tag', 'noindex, nofollow');
+  next();
+});
 
 // Derrière le proxy de Vercel, sans ce réglage, Express voit l'adresse du
 // proxy et non celle du visiteur : TOUS les clients partagent alors une
@@ -95,6 +109,9 @@ app.use('/uploads', express.static(join(__dirname, 'public', 'uploads'), { maxAg
 // de vercel.json, qui envoie « / » à la fonction avant le `handle:
 // filesystem`.
 const REPERE_SOIREES = '<!--SOIREES-->';
+const REPERE_SEO = '<!--SEO-->';
+const REPERE_CARTE = '<!--CARTE-->';
+const REPERE_FILTRES = '<!--FILTRES-->';
 const pageAccueil = readFileSync(join(racine, 'index.html'), 'utf8');
 
 // Un ancien signet, ou un lien écrit à la main, peut viser « /index.html ».
@@ -111,6 +128,19 @@ app.get('/', async (req, res, next) => {
 
     const evenements = await evenementsPublics();
     const section = sectionSoirees({ evenements, dateLongue, euros });
+
+    // La carte et les données structurées sont posées dans le HTML : un
+    // robot qui n'exécute pas le JavaScript y lit les plats et les prix.
+    // Une base injoignable ne doit pas faire tomber la vitrine : la carte
+    // reste alors vide et main.js retombe sur menu-data.js.
+    const menu = await carteVisible().catch(err => { console.error('carte indisponible', err.message); return []; });
+    const seo = [
+      metaTags({
+        titre: 'La Table de Carthage — Restaurant tunisien à Puteaux (La Défense)',
+        description: DESCRIPTION_ACCUEIL, chemin: '/', type: 'restaurant.restaurant',
+      }),
+      scriptJsonLd(jsonLdRestaurant(menu)),
+    ].join('\n');
     // Pas de cache au bord, et c'est délibéré. Une minute de s-maxage
     // suffisait à ce qu'une soirée publiée au salon n'apparaisse pas sur
     // le site : le restaurant voit sa propre page inchangée, conclut que
@@ -119,9 +149,16 @@ app.get('/', async (req, res, next) => {
     // économise — la requête est petite, indexée, et le trafic d'un
     // restaurant de quartier ne la rend jamais coûteuse.
     res.set('Cache-Control', 'no-cache');
-    res.type('html').send(pageAccueil.replace(REPERE_SOIREES, section));
+    res.type('html').send(pageAccueil
+      .replace(REPERE_SEO, () => seo)
+      .replace(REPERE_FILTRES, () => (menu.length ? htmlFiltres(menu) : ''))
+      .replace(REPERE_CARTE, () => htmlCarte(menu))
+      .replace(REPERE_SOIREES, () => section));
   } catch (err) { next(err); }
 });
+
+// robots.txt, sitemap.xml et pages vitrine secondaires : publics, sans session.
+app.use(vitrineRouter);
 
 // ── Le webhook Stripe, avant tout analyseur de corps ────────
 // Sa signature porte sur les octets bruts de la requête : passer après

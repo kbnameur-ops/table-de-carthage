@@ -13,7 +13,7 @@
     const el = $('#preloader');
     if (!el) return;
     $$('#preloader .preloader__text span').forEach((s, i) => {
-      s.style.animationDelay = (0.9 + i * 0.045) + 's';
+      s.style.animationDelay = (0.35 + i * 0.03) + 's';
     });
     const hide = () => {
       el.classList.add('is-done');
@@ -21,8 +21,8 @@
       setTimeout(() => el.remove(), 900);
     };
     document.body.classList.add('is-locked');
-    window.addEventListener('load', () => setTimeout(hide, reduced ? 0 : 1900));
-    setTimeout(hide, 4500); // filet de sécurité
+    window.addEventListener('load', () => setTimeout(hide, reduced ? 0 : 900));
+    setTimeout(hide, 3000); // filet de sécurité
   })();
 
   /* ── Année ───────────────────────────────────────────── */
@@ -138,7 +138,14 @@
     return `assets/img/plats/${valeur}.jpg`;
   }
 
+  // Quand le serveur a déjà rendu la carte (accueil servi par server/index.js),
+  // le HTML est la source : on ne refait ni le fetch ni le dessin, on branche
+  // seulement les filtres et la visionneuse. Le dessin ci-dessous ne sert plus
+  // qu'à l'export en fichier unique (build.mjs) et aux pages ouvertes hors serveur.
+  const carteRenduePar = () => { const g = $('#menuGrid'); return !!(g && g.children.length); };
+
   async function chargerCarteActuelle () {
+    if (carteRenduePar()) return;
     try {
       const r = await fetch('/api/carte');
       if (!r.ok) throw new Error('réponse HTTP ' + r.status);
@@ -152,35 +159,38 @@
 
   function dessinerCarte () {
     const grid = $('#menuGrid'), filters = $('#filters');
-    if (!grid || !MENU_ACTUELLE.length) return;
+    const dejaRendue = carteRenduePar();
+    if (!grid || (!dejaRendue && !MENU_ACTUELLE.length)) return;
 
-    grid.innerHTML = MENU_ACTUELLE.map(cat => `
-      <section class="cat${cat.items.some(i => i.photo) ? ' cat--photos' : ''}" data-cat="${cat.id}">
-        <header class="cat__head">
-          <h3>${cat.name}</h3>
-          <p>${cat.tagline}</p>
-        </header>
-        ${cat.items.map(it => `
-          <article class="dish">
-            ${it.photo ? `
-              <button type="button" class="dish__thumb" data-photo="${it.photo}" data-name="${it.name}"
-                      aria-label="Agrandir la photo : ${it.name}">
-                <img src="${cheminPhoto(it.photo)}" alt="${it.name}" loading="lazy">
-              </button>` : ''}
-            <h4 class="dish__name">
-              ${it.name}
-              ${it.veg ? '<i class="veg-dot" title="Végétarien" aria-label="Végétarien"></i>' : ''}
-              ${it.star ? '<span class="dish__star">Signature</span>' : ''}
-            </h4>
-            <span class="dish__price">${euro(it.price)}</span>
-            <p class="dish__desc">${it.desc}</p>
-          </article>`).join('')}
-      </section>`).join('');
+    if (!dejaRendue) {
+      grid.innerHTML = MENU_ACTUELLE.map(cat => `
+        <section class="cat${cat.items.some(i => i.photo) ? ' cat--photos' : ''}" data-cat="${cat.id}">
+          <header class="cat__head">
+            <h3>${cat.name}</h3>
+            <p>${cat.tagline}</p>
+          </header>
+          ${cat.items.map(it => `
+            <article class="dish">
+              ${it.photo ? `
+                <button type="button" class="dish__thumb" data-photo="${it.photo}" data-name="${it.name}"
+                        aria-label="Agrandir la photo : ${it.name}">
+                  <img src="${cheminPhoto(it.photo)}" alt="${it.name}" loading="lazy">
+                </button>` : ''}
+              <h4 class="dish__name">
+                ${it.name}
+                ${it.veg ? '<i class="veg-dot" role="img" title="Végétarien" aria-label="Végétarien"></i>' : ''}
+                ${it.star ? '<span class="dish__star">Signature</span>' : ''}
+              </h4>
+              <span class="dish__price">${euro(it.price)}</span>
+              <p class="dish__desc">${it.desc}</p>
+            </article>`).join('')}
+        </section>`).join('');
 
-    const cats = [{ id: 'all', name: 'Tout' }].concat(MENU_ACTUELLE.map(c => ({ id: c.id, name: c.name })));
-    filters.innerHTML = cats.map((c, i) =>
-      `<button type="button" role="tab" data-filter="${c.id}" class="${i === 0 ? 'is-active' : ''}" aria-selected="${i === 0}">${c.name}</button>`
-    ).join('');
+      const cats = [{ id: 'all', name: 'Tout' }].concat(MENU_ACTUELLE.map(c => ({ id: c.id, name: c.name })));
+      filters.innerHTML = cats.map((c, i) =>
+        `<button type="button" role="tab" data-filter="${c.id}" class="${i === 0 ? 'is-active' : ''}" aria-selected="${i === 0}">${c.name}</button>`
+      ).join('');
+    }
 
     filters.addEventListener('click', e => {
       const btn = e.target.closest('button[data-filter]');
@@ -200,7 +210,8 @@
     });
 
     observeReveals();
-    injectSchema();
+    // Le serveur a déjà posé les données structurées ; on ne les double pas.
+    if (!dejaRendue && !document.querySelector('script[type="application/ld+json"]')) injectSchema();
     lightbox(grid);
   }
 

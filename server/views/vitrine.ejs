@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= titre %></title>
+<%- meta %>
+<meta name="theme-color" content="#071A31">
+<link rel="icon" href="/assets/img/logo.jpg">
+<link rel="apple-touch-icon" href="/assets/img/icones/icone-180.png">
+<link rel="manifest" href="/manifeste/client.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&family=Marcellus&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Jost:wght@300;400;500;600&family=Marcellus&display=swap"></noscript>
+<link rel="stylesheet" href="/assets/css/style.css">
+<noscript><style>.cat{opacity:1;transform:none}</style></noscript>
+<%- jsonLd %>
+</head>
+<body class="vp">
+<header class="nav is-stuck" id="nav">
+  <a class="nav__brand" href="/">
+    <img src="/assets/img/logo.jpg" alt="La Table de Carthage" class="nav__logo" width="64" height="64">
+    <span class="nav__name">La Table de Carthage</span>
+  </a>
+  <nav class="nav__links" id="navLinks" aria-label="Navigation principale">
+    <a href="/">Accueil</a>
+    <a href="/carte"<%- chemin === '/carte' ? ' aria-current="page"' : '' %>>La Carte</a>
+    <a href="/privatisation"<%- chemin === '/privatisation' ? ' aria-current="page"' : '' %>>Privatiser</a>
+    <a href="/traiteur"<%- chemin === '/traiteur' ? ' aria-current="page"' : '' %>>Traiteur</a>
+    <a href="/commander" class="nav__cta">Commander</a>
+    <a href="/reserver" class="nav__cta nav__cta--fort">Réserver</a>
+  </nav>
+  <button class="burger" id="burger" aria-label="Ouvrir le menu" aria-expanded="false"><i></i><i></i><i></i></button>
+</header>
+
+<main>
+<%- contenu %>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot__grid">
+    <div class="foot__brand">
+      <img src="/assets/img/logo.jpg" alt="" class="foot__logo" width="64" height="64" loading="lazy">
+      <p>La Table de Carthage<br><small>Cuisine tunisienne · Fait maison</small></p>
+    </div>
+    <nav class="foot__nav" aria-label="Pied de page">
+      <a href="/">Accueil</a>
+      <a href="/carte">La Carte</a>
+      <a href="/privatisation">Privatiser</a>
+      <a href="/traiteur">Traiteur</a>
+      <a href="/reserver">Réserver</a>
+    </nav>
+    <div class="foot__meta">
+      <p><a href="https://maps.google.com/?q=6+boulevard+Richard+Wallace+92800+Puteaux" target="_blank" rel="noopener">6 boulevard Richard Wallace, 92800 Puteaux</a></p>
+      <p>Lun – Sam 12h–23h · Dim 12h–22h</p>
+      <p><a href="tel:+33761976711">07 61 97 67 11</a></p>
+    </div>
+  </div>
+  <p class="foot__copy">© <%= new Date().getFullYear() %> La Table de Carthage — 6 bd Richard Wallace, Puteaux — Tous droits réservés.</p>
+</footer>
+<script src="/assets/js/vitrine.js"></script>
+</body>
+</html>
