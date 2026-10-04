@@ -21,8 +21,14 @@
       setTimeout(() => el.remove(), 900);
     };
     document.body.classList.add('is-locked');
-    window.addEventListener('load', () => setTimeout(hide, reduced ? 0 : 900));
-    setTimeout(hide, 3000); // filet de sécurité
+    // Le rideau se lève dès que la page est lisible, sans attendre que
+    // toutes les images aient fini de charger (l'événement `load`) : sur
+    // mobile en 4G, cette attente retardait l'affichage du hero de
+    // plusieurs secondes. Le fond du hero est de toute façon déjà bleu nuit.
+    const lever = () => setTimeout(hide, reduced ? 0 : 500);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', lever);
+    else lever();
+    setTimeout(hide, 2500); // filet de sécurité
   })();
 
   /* ── Année ───────────────────────────────────────────── */
@@ -235,7 +241,7 @@
 
     const open = btn => {
       opener = btn;
-      img.src = btn.querySelector('img').src;
+      img.src = btn.dataset.full || btn.querySelector('img').src;
       img.alt = btn.dataset.name;
       cap.textContent = btn.dataset.name;
       box.classList.add('is-open');

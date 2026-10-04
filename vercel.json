@@ -1,13 +1,52 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "routes": [
-    { "src": "/", "dest": "/api/index" },
-    { "src": "/index.html", "dest": "/api/index" },
-    { "handle": "filesystem" },
-    { "src": "/(.*)", "dest": "/api/index" }
+    {
+      "src": "/assets/img/(.*)",
+      "headers": {
+        "cache-control": "public, max-age=604800, stale-while-revalidate=86400"
+      },
+      "continue": true
+    },
+    {
+      "src": "/",
+      "dest": "/api/index"
+    },
+    {
+      "src": "/index.html",
+      "dest": "/api/index"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index"
+    }
   ],
   "functions": {
     "api/index.js": {
       "maxDuration": 30
     }
+  },
+  "images": {
+    "sizes": [
+      256,
+      640
+    ],
+    "qualities": [
+      75
+    ],
+    "formats": [
+      "image/webp"
+    ],
+    "minimumCacheTTL": 2678400,
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "uyiaim3h4fr0qhsi.public.blob.vercel-storage.com",
+        "pathname": "^/.*$"
+      }
+    ]
   }
 }

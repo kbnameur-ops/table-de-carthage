@@ -10,7 +10,7 @@
 <meta name="geo.placename" content="Puteaux">
 <meta name="geo.position" content="48.878831;2.242182">
 <meta name="ICBM" content="48.878831, 2.242182">
-<link rel="icon" href="/assets/img/logo.jpg" type="image/jpeg">
+<link rel="icon" href="/assets/img/icones/favicon-48.png" type="image/png" sizes="48x48">
 <!-- Épinglable sur l'écran d'accueil sous le nom « Carthage » : la vitrine
      et l'espace client forment une seule application côté client. -->
 <link rel="manifest" href="/manifeste/client.webmanifest">
@@ -62,7 +62,7 @@
 <!-- ══════════════ NAV ══════════════ -->
 <header class="nav" id="nav">
   <a class="nav__brand" href="#accueil" data-cursor="link">
-    <img src="assets/img/logo.jpg" alt="La Table de Carthage" class="nav__logo">
+    <picture><source type="image/webp" srcset="assets/img/logo-128.webp"><img src="assets/img/logo.jpg" alt="La Table de Carthage" class="nav__logo" width="46" height="46"></picture>
     <span class="nav__name">La Table de Carthage</span>
   </a>
   <nav class="nav__links" id="navLinks" aria-label="Navigation principale">
@@ -87,17 +87,17 @@
   <div class="hero__frieze" aria-hidden="true"></div>
 
   <div class="hero__inner">
-    <p class="hero__kicker reveal-up">Depuis les rivages de Byrsa · Cuisine tunisienne</p>
+    <p class="hero__kicker hero__fade">Depuis les rivages de Byrsa · Cuisine tunisienne</p>
     <h1 class="hero__title">
       <span class="line"><em>La Table</em></span>
       <span class="line">de <b>Carthage</b></span>
       <span class="sr-only"> — restaurant tunisien à Puteaux, près de La Défense</span>
     </h1>
-    <p class="hero__sub reveal-up" data-delay="250">
+    <p class="hero__sub hero__fade">
       Là où l'épice punique rencontre la table méditerranéenne.<br>
       Une cuisine de mémoire, dressée comme un empire.
     </p>
-    <div class="hero__actions reveal-up" data-delay="300">
+    <div class="hero__actions hero__fade">
       <a href="#carte" class="btn btn--gold" data-cursor="link"><span>Découvrir la carte</span></a>
       <a href="/reserver" class="btn btn--ghost" data-cursor="link"><span>Réserver une table</span></a>
       <a href="/commander" class="btn btn--ghost" data-cursor="link"><span>Commander à emporter</span></a>
@@ -146,7 +146,7 @@
   <div class="wrap heritage__grid">
     <div class="heritage__visual reveal-up">
       <div class="medallion" data-tilt>
-        <img src="assets/img/logo.jpg" alt="Sceau de La Table de Carthage">
+        <picture><source type="image/webp" srcset="assets/img/logo-420.webp"><img src="assets/img/logo.jpg" alt="Sceau de La Table de Carthage" width="420" height="420" loading="lazy" decoding="async"></picture>
         <div class="medallion__halo"></div>
       </div>
       <div class="heritage__stats">
@@ -265,7 +265,7 @@
 
     <figure class="exp__photo reveal-up">
       <div class="exp__frame">
-      <picture><source type="image/webp" srcset="assets/img/salle.webp"><img src="assets/img/salle.jpg" alt="Longue table dressée dans la salle de La Table de Carthage, dattes et salade méchouia servies à l'accueil" loading="lazy" width="1400" height="1750"></picture>
+      <picture><source type="image/webp" srcset="assets/img/salle-700.webp 700w, assets/img/salle.webp 1400w" sizes="(max-width:760px) 100vw, 620px"><img src="assets/img/salle.jpg" alt="Longue table dressée dans la salle de La Table de Carthage, dattes et salade méchouia servies à l'accueil" loading="lazy" width="1400" height="1750"></picture>
       </div>
       <figcaption>La grande table dressée, avant le service.</figcaption>
     </figure>
@@ -405,7 +405,7 @@
       </p>
 
       <figure class="book__facade">
-        <picture><source type="image/webp" srcset="assets/img/facade.webp"><img src="assets/img/facade.jpg" alt="La devanture de La Table de Carthage : store noir portant l'enseigne, guirlande d'ampoules et terrasse en rotin, boulevard Richard Wallace à Puteaux" loading="lazy" width="1200" height="800"></picture>
+        <picture><source type="image/webp" srcset="assets/img/facade-700.webp 700w, assets/img/facade.webp 1200w" sizes="(max-width:760px) 100vw, 620px"><img src="assets/img/facade.jpg" alt="La devanture de La Table de Carthage : store noir portant l'enseigne, guirlande d'ampoules et terrasse en rotin, boulevard Richard Wallace à Puteaux" loading="lazy" width="1200" height="800"></picture>
         <figcaption>La devanture et sa terrasse, 6 boulevard Richard Wallace.</figcaption>
       </figure>
     </div>
@@ -418,7 +418,7 @@
 <footer class="foot">
   <div class="wrap foot__grid">
     <div class="foot__brand">
-      <img src="assets/img/logo.jpg" alt="" class="foot__logo">
+      <picture><source type="image/webp" srcset="assets/img/logo-128.webp"><img src="assets/img/logo.jpg" alt="" class="foot__logo" width="64" height="64" loading="lazy" decoding="async"></picture>
       <p>La Table de Carthage<br><small>Cuisine tunisienne · Fait maison</small></p>
     </div>
     <nav class="foot__nav" aria-label="Pied de page">

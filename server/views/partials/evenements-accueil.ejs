@@ -43,7 +43,7 @@
                   défile, elle se lit mal et encombre. Elles sont gardées en
                   base et servies sur la page de la soirée, où elles ont la
                   place de respirer. %>
-              <div class="soiree__vue"><img src="<%= p.url %>" alt="" loading="lazy" decoding="async"></div>
+              <div class="soiree__vue"><img src="<%= optimiser(p.url, 640) %>" alt="" loading="lazy" decoding="async"></div>
             <% }) %>
           </div>
         </div>

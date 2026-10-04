@@ -6,7 +6,7 @@
 <title><%= titre %></title>
 <%- meta %>
 <meta name="theme-color" content="#071A31">
-<link rel="icon" href="/assets/img/logo.jpg">
+<link rel="icon" href="/assets/img/icones/favicon-48.png" type="image/png" sizes="48x48">
 <link rel="apple-touch-icon" href="/assets/img/icones/icone-180.png">
 <link rel="manifest" href="/manifeste/client.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,7 +20,7 @@
 <body class="vp">
 <header class="nav is-stuck" id="nav">
   <a class="nav__brand" href="/">
-    <img src="/assets/img/logo.jpg" alt="La Table de Carthage" class="nav__logo" width="64" height="64">
+    <picture><source type="image/webp" srcset="/assets/img/logo-128.webp"><img src="/assets/img/logo.jpg" alt="La Table de Carthage" class="nav__logo" width="46" height="46"></picture>
     <span class="nav__name">La Table de Carthage</span>
   </a>
   <nav class="nav__links" id="navLinks" aria-label="Navigation principale">
@@ -41,7 +41,7 @@
 <footer class="foot">
   <div class="wrap foot__grid">
     <div class="foot__brand">
-      <img src="/assets/img/logo.jpg" alt="" class="foot__logo" width="64" height="64" loading="lazy">
+      <picture><source type="image/webp" srcset="/assets/img/logo-128.webp"><img src="/assets/img/logo.jpg" alt="" class="foot__logo" width="64" height="64" loading="lazy" decoding="async"></picture>
       <p>La Table de Carthage<br><small>Cuisine tunisienne · Fait maison</small></p>
     </div>
     <nav class="foot__nav" aria-label="Pied de page">

@@ -37,7 +37,7 @@
     const bouton = e.target.closest('.dish__thumb');
     if (!bouton) return;
     origine = bouton;
-    img.src = bouton.querySelector('img').src;
+    img.src = bouton.dataset.full || bouton.querySelector('img').src;
     img.alt = bouton.dataset.name;
     legende.textContent = bouton.dataset.name;
     boite.classList.add('is-open');
