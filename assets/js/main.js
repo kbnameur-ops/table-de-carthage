@@ -13,7 +13,7 @@
     const el = $('#preloader');
     if (!el) return;
     $$('#preloader .preloader__text span').forEach((s, i) => {
-      s.style.animationDelay = (0.9 + i * 0.045) + 's';
+      s.style.animationDelay = (0.35 + i * 0.03) + 's';
     });
     const hide = () => {
       el.classList.add('is-done');
@@ -21,8 +21,8 @@
       setTimeout(() => el.remove(), 900);
     };
     document.body.classList.add('is-locked');
-    window.addEventListener('load', () => setTimeout(hide, reduced ? 0 : 1900));
-    setTimeout(hide, 4500); // filet de sécurité
+    window.addEventListener('load', () => setTimeout(hide, reduced ? 0 : 900));
+    setTimeout(hide, 3000); // filet de sécurité
   })();
 
   /* ── Année ───────────────────────────────────────────── */
@@ -178,7 +178,7 @@
                 </button>` : ''}
               <h4 class="dish__name">
                 ${it.name}
-                ${it.veg ? '<i class="veg-dot" title="Végétarien" aria-label="Végétarien"></i>' : ''}
+                ${it.veg ? '<i class="veg-dot" role="img" title="Végétarien" aria-label="Végétarien"></i>' : ''}
                 ${it.star ? '<span class="dish__star">Signature</span>' : ''}
               </h4>
               <span class="dish__price">${euro(it.price)}</span>

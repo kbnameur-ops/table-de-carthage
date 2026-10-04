@@ -119,7 +119,7 @@ export function htmlCarte(menu) {
               </button>` : ''}
             <h4 class="dish__name">
               ${esc(it.name)}
-              ${it.veg ? '<i class="veg-dot" title="Végétarien" aria-label="Végétarien"></i>' : ''}
+              ${it.veg ? '<i class="veg-dot" role="img" title="Végétarien" aria-label="Végétarien"></i>' : ''}
               ${it.star ? '<span class="dish__star">Signature</span>' : ''}
             </h4>
             <span class="dish__price">${euro(it.price)}</span>

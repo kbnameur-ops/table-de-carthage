@@ -45,6 +45,7 @@ export function pageCarte(menu) {
     "Couscous, ojja, kafteji, mloukhia, grillades au charbon de bois, poisson du jour et pâtisseries tunisiennes : tous nos plats sont préparés à la commande. Prix nets, service compris.")}
   <section class="menu vp-carte">
     <div class="wrap">
+      <h2 class="sr-only">Plats, prix et photos</h2>
       ${corps}
       <p class="menu__note">
         Une allergie, un régime particulier ? Prévenez-nous : la cuisine s'adapte.
