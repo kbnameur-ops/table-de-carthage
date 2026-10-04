@@ -31,6 +31,13 @@ npm start              # http://localhost:3000
 `npm run dev` relance le serveur automatiquement à chaque modification de fichier
 (`node --watch`) — pratique en développement, à ne pas utiliser en production.
 
+## Référencement (SEO)
+
+- `SITE_URL` (optionnel, défaut `https://table-de-carthage.com`) : domaine utilisé pour les URL canoniques, le sitemap et les données structurées.
+- `/robots.txt` et `/sitemap.xml` sont générés par `server/lib/seo.js` ; les espaces privés (salon, service, cuisine, compte, paiement, confirmations) sont exclus et servis avec `X-Robots-Tag: noindex`.
+- La carte et le JSON-LD de l'accueil et de `/carte` sont rendus côté serveur ; `/privatisation` et `/traiteur` sont des pages dédiées (`server/lib/vitrine-pages.js`).
+- Après ajout d'images dans `assets/img/`, lancer `node outils/images-webp.mjs` pour produire les versions WebP.
+
 ## Architecture
 
 ```

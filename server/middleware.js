@@ -4,6 +4,7 @@ import { entete, pied, salonEntete, salonPied, serviceEntete, servicePied, cuisi
 import { ESPACES, espaceDe } from './lib/epinglage.js';
 import { nomTable } from './lib/jours.js';
 import { cssApp } from './lib/version-actifs.js';
+import { metaTags, estPrive } from './lib/seo.js';
 
 const COOKIE = 'sid';
 const estProd = process.env.NODE_ENV === 'production';
@@ -135,10 +136,20 @@ export const exigerCuisine = exigerAcces('acces_cuisine', '/cuisine/connexion');
 /** Titre d'onglet et entrée de nav active par vue publique. Défini ici
  *  plutôt que dans chaque res.render : une route qui oublie de passer
  *  `titre` produirait sinon un onglet « — La Table de Carthage ». */
+/** Résumé d'une soirée pour la balise description : ses premiers mots, sans
+ *  retours à la ligne, tronqués proprement. */
+function descriptionEvenement(e) {
+  const texte = String(e.texte ?? '').replace(/\s+/g, ' ').trim();
+  const corps = texte.length > 150 ? texte.slice(0, 150).replace(/\s+\S*$/, '') + '…' : texte;
+  return `${e.titre} — La Table de Carthage, Puteaux. ${corps}`.trim();
+}
+
 const PAGES = {
-  'reservation':            { titre: 'Réserver une table',   actif: 'reserver' },
+  'reservation':            { titre: 'Réserver une table',   actif: 'reserver',
+                              description: "Réservez une table à La Table de Carthage, restaurant tunisien à Puteaux : choisissez la date, l'heure et le nombre de couverts parmi les créneaux disponibles." },
   'reservation-confirmee':  { titre: 'Réservation confirmée', actif: 'reserver' },
-  'commande':               { titre: 'Commander à emporter', actif: 'commander' },
+  'commande':               { titre: 'Commander à emporter', actif: 'commander',
+                              description: "Commandez à emporter à La Table de Carthage, Puteaux : couscous, ojja, kafteji, grillades. Choisissez votre heure de retrait, règlement sur place." },
   'commande-confirmee':     { titre: 'Commande confirmée',   actif: 'commander' },
   'compte-connexion':       { titre: 'Mon espace',           actif: 'compte' },
   'compte-tableau':         { titre: 'Mon espace',           actif: 'compte' },
@@ -220,6 +231,13 @@ export function injecterMiseEnPage(req, res, next) {
         donnees.entete = entete({
           titre: donnees.titre, session: donnees.session ?? req.session ?? { role: 'invite' },
           actif: donnees.actif, teteApp: donnees.teteApp,
+          meta: metaTags({
+            titre: donnees.titre, description: donnees.description ?? defauts?.description ?? (donnees.evenement && descriptionEvenement(donnees.evenement)),
+            chemin: req.path,
+            // Les confirmations, les pages d'erreur et toute réponse non 200
+            // n'ont rien à faire dans un index.
+            noindex: estPrive(req.path) || vue === 'erreur' || res.statusCode >= 400 || !!donnees.evenement?.estPasse,
+          }),
         });
         donnees.pied = pied({ epingler: donnees.epingler });
       }

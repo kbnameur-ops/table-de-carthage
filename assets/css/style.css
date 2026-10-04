@@ -196,6 +196,7 @@ button{font:inherit;color:inherit}
 .hero__photo{
   position:absolute;inset:0;z-index:0;overflow:hidden;
   background-image:url('../img/salle-hero.jpg');
+  background-image:image-set(url('../img/salle-hero.webp') type('image/webp'),url('../img/salle-hero.jpg') type('image/jpeg'));
   background-size:cover;background-position:center 62%;
   transform:scale(1.04);
   animation:heroRespire 26s ease-in-out infinite alternate;
@@ -223,7 +224,7 @@ button{font:inherit;color:inherit}
   .hero__photo{animation:none}
 }
 @media (max-width:760px){
-  .hero__photo{background-image:url('../img/salle-hero-mobile.jpg');background-position:center 42%}
+  .hero__photo{background-image:url('../img/salle-hero-mobile.jpg');background-image:image-set(url('../img/salle-hero-mobile.webp') type('image/webp'),url('../img/salle-hero-mobile.jpg') type('image/jpeg'));background-position:center 42%}
 }
 
 /* Le canevas animé reste, en surimpression légère : il apportait le grain
@@ -956,3 +957,25 @@ button{font:inherit;color:inherit}
   .soiree__piste--defile{animation:none}
   .soiree__ruban{overflow-x:auto}
 }
+
+/* ══════════════ PAGES SECONDAIRES (/carte, /privatisation, /traiteur) ══════════════ */
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.vp main{padding-top:4.5rem}
+.vp-hero{background:var(--navy-800);color:var(--cream);padding:clamp(3rem,7vw,5.5rem) 0}
+.vp-hero .eyebrow{color:var(--gold-500)}
+.vp-title{font-family:var(--ff-display);font-weight:500;font-size:clamp(2rem,5vw,3.4rem);line-height:1.1;margin:.5rem 0 1.1rem;max-width:24ch}
+.vp-intro{max-width:64ch;margin:0;color:rgba(250,246,236,.8)}
+.vp-bloc{padding:clamp(3rem,6vw,5rem) 0;background:var(--cream)}
+.vp-bloc--creme{background:var(--cream-2)}
+.vp-prose{max-width:780px}
+.vp-prose p,.vp-prose li{line-height:1.75}
+.vp-prose a,.vp-links a{color:var(--navy-700);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--gold-500)}
+.vp .offer h2{font-family:var(--ff-display);font-weight:500;font-size:1.7rem;margin:0 0 .4rem}
+.vp .offer .btn{margin-top:1.4rem}
+.vp-steps{padding-left:1.2rem;display:grid;gap:.8rem}
+.vp-links{margin-top:2.5rem;font-size:.9rem;color:var(--muted);line-height:2}
+.vp-cta{display:flex;gap:1rem;flex-wrap:wrap;justify-content:center;margin:2.5rem 0 0}
+.vp-vide{text-align:center;color:rgba(250,246,236,.7)}
+.vp-carte .menu__grid{margin-top:0}
+.vp-hero .btn,.vp-bloc .btn{font-size:.78rem}
+.nav__links a[aria-current="page"]{color:var(--gold-400)}
