@@ -80,6 +80,20 @@ export const scriptJsonLd = donnees =>
 // ── Carte rendue côté serveur ────────────────────────────────
 const CHEMIN_PLATS = '/assets/img/plats/';
 
+/** Largeurs autorisées par l'optimiseur d'images de Vercel : doivent
+ *  correspondre à `images.sizes` dans vercel.json. */
+export const LARGEURS_IMAGES = [256, 640];
+
+/** Les photos téléversées depuis le salon sont des JPG de 1000 px sur
+ *  Vercel Blob ; affichées en vignette de 74 px, elles pesaient chacune
+ *  100 à 200 Ko. Sur Vercel, on les fait passer par l'optimiseur
+ *  (/_vercel/image) qui les redimensionne et les sert en WebP. Ailleurs
+ *  (développement), l'URL d'origine est rendue telle quelle. */
+export function imageOptimisee(url, largeur) {
+  if (!process.env.VERCEL || !/^https:\/\//.test(url)) return url;
+  return `/_vercel/image?url=${encodeURIComponent(url)}&w=${largeur}&q=75`;
+}
+
 const estLocalSeed = photo => !/^https?:\/\//.test(photo) && !photo.startsWith('/');
 
 /** Adresse d'une photo de plat : une URL Blob ou un chemin /uploads/... est
@@ -92,7 +106,7 @@ export const euro = n =>
   n.toLocaleString('fr-FR', { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }) + ' €';
 
 function htmlVignette(photo, nom) {
-  const src = cheminPhoto(photo);
+  const src = estLocalSeed(photo) ? cheminPhoto(photo) : imageOptimisee(cheminPhoto(photo), 256);
   const img = `<img src="${esc(src)}" alt="${esc(nom)}" width="160" height="160" loading="lazy" decoding="async">`;
   // Les photos de la carte d'amorçage ont une vignette WebP ; celles
   // téléversées depuis le salon restent telles quelles.
@@ -113,7 +127,7 @@ export function htmlCarte(menu) {
         ${cat.items.map(it => `
           <article class="dish">
             ${it.photo ? `
-              <button type="button" class="dish__thumb" data-photo="${esc(it.photo)}" data-name="${esc(it.name)}"
+              <button type="button" class="dish__thumb" data-photo="${esc(it.photo)}" data-full="${esc(imageOptimisee(cheminPhoto(it.photo), 640))}" data-name="${esc(it.name)}"
                       aria-label="Agrandir la photo : ${esc(it.name)}">
                 ${htmlVignette(it.photo, it.name)}
               </button>` : ''}

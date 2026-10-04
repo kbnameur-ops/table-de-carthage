@@ -7,7 +7,7 @@ import { nettoyerSessionsExpirees, nettoyerTentativesAnciennes } from './db.js';
 import { sectionSoirees } from './lib/layout.js';
 import { carteVisible } from './lib/carte.js';
 import {
-  estPrive, metaTags, scriptJsonLd, jsonLdRestaurant, htmlCarte, htmlFiltres, DESCRIPTION_ACCUEIL,
+  estPrive, metaTags, scriptJsonLd, jsonLdRestaurant, htmlCarte, htmlFiltres, DESCRIPTION_ACCUEIL, imageOptimisee,
 } from './lib/seo.js';
 import { vitrineRouter } from './routes/vitrine.js';
 
@@ -127,7 +127,7 @@ app.get('/', async (req, res, next) => {
     const { euros } = await import('./lib/money.js');
 
     const evenements = await evenementsPublics();
-    const section = sectionSoirees({ evenements, dateLongue, euros });
+    const section = sectionSoirees({ evenements, dateLongue, euros, optimiser: imageOptimisee });
 
     // La carte et les données structurées sont posées dans le HTML : un
     // robot qui n'exécute pas le JavaScript y lit les plats et les prix.

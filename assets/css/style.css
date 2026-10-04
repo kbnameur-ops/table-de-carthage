@@ -39,6 +39,8 @@ body{
 }
 body.is-locked{overflow:hidden}
 img{max-width:100%;display:block}
+/* <picture> ne sert qu'à proposer le WebP : il ne doit pas peser sur la mise en page. */
+picture{display:contents}
 a{color:inherit;text-decoration:none}
 button{font:inherit;color:inherit}
 ::selection{background:var(--gold-500);color:var(--navy-900)}
@@ -274,6 +276,14 @@ button{font:inherit;color:inherit}
 .hero__title .line:nth-child(2){animation:riseLine 1.2s .4s var(--ease) both}
 @keyframes riseIn{to{transform:translateY(0)}}
 @keyframes riseLine{from{opacity:0}to{opacity:1}}
+/* Le texte du hero apparaît par une animation CSS, lancée dès le premier
+   rendu, plutôt que par le script de révélation : il ne dépend plus du
+   chargement de main.js, et le navigateur l'affiche (LCP) plus tôt. */
+@keyframes heroFade{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.hero__fade{animation:heroFade .9s var(--ease) both}
+.hero__kicker.hero__fade{animation-delay:.15s}
+.hero__sub.hero__fade{animation-delay:.3s}
+.hero__actions.hero__fade{animation-delay:.45s}
 @keyframes shimmer{to{background-position:220% 0}}
 
 .hero__sub{color:rgba(250,246,236,.86);margin:1.8rem auto 2.6rem;max-width:44ch;font-size:1.02rem;text-shadow:0 1px 14px rgba(7,26,49,.9)}
@@ -420,7 +430,7 @@ button{font:inherit;color:inherit}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60'%3E%3Cg fill='none' stroke='%23C9A961'%3E%3Ccircle cx='30' cy='30' r='12'/%3E%3Cpath d='M30 0v18M30 42v18M0 30h18M42 30h18'/%3E%3C/g%3E%3C/svg%3E");
 }
 .menu .h2,.menu .eyebrow{color:var(--cream)}
-.menu .eyebrow{color:var(--gold-500)}
+.menu .eyebrow,.exp .eyebrow{color:var(--gold-500)}
 .menu .section-head__sub{color:rgba(250,246,236,.55)}
 
 .filters{

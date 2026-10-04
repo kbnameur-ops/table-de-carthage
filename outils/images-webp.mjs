@@ -6,6 +6,17 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
+/** Réglages particuliers : le fond du hero est la première image chargée
+ *  sur mobile, chaque kilo-octet y compte ; le logo n'est jamais affiché
+ *  au-delà de 420 px (médaillon) et de 64 px (barre et pied de page). */
+const PARTICULIERS = {
+  'salle-hero-mobile.jpg': [{ suffixe: '', largeur: 640, qualite: 62 }],
+  'salle-hero.jpg': [{ suffixe: '', qualite: 70 }],
+  'salle.jpg': [{ suffixe: '', qualite: 72 }, { suffixe: '-700', largeur: 700, qualite: 70 }],
+  'facade.jpg': [{ suffixe: '', qualite: 72 }, { suffixe: '-700', largeur: 700, qualite: 70 }],
+  'logo.jpg': [{ suffixe: '-128', largeur: 128, qualite: 80 }, { suffixe: '-420', largeur: 420, qualite: 78 }],
+};
+
 const racine = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'img');
 
 function jpgs(dossier) {
@@ -17,9 +28,17 @@ function jpgs(dossier) {
 }
 
 for (const jpg of jpgs(racine)) {
-  // Le logo reste en JPG (favicon, données structurées) ; les plats n'ont
-  // que leur vignette, la visionneuse affichant le JPG complet.
-  if (jpg.endsWith('logo.jpg')) continue;
+  const nom = jpg.split('/').pop();
+  if (PARTICULIERS[nom]) {
+    for (const { suffixe, largeur, qualite } of PARTICULIERS[nom]) {
+      const sortie = jpg.replace(/\.jpe?g$/i, `${suffixe}.webp`);
+      const image = largeur ? sharp(jpg).resize({ width: largeur }) : sharp(jpg);
+      const { size } = await image.webp({ quality: qualite }).toFile(sortie);
+      console.log(sortie.replace(racine + '/', ''), Math.round(size / 1024) + ' Ko');
+    }
+    continue;
+  }
+  // Les plats n'ont que leur vignette, la visionneuse affichant le JPG complet.
   const estPlat = jpg.includes(join('img', 'plats'));
   const webp = jpg.replace(/\.jpe?g$/i, '.webp');
   if (!estPlat) {
