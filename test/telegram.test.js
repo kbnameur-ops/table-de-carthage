@@ -9,35 +9,41 @@ import assert from 'node:assert/strict';
    que c'est elle qui a cassé en vrai lors de la mise au point — est
    testée sans réseau du tout. */
 
-const anciens = { token: process.env.TELEGRAM_BOT_TOKEN, chat: process.env.TELEGRAM_CHAT_ID };
+const anciens = { token: process.env.TELEGRAM_BOT_TOKEN, chats: process.env.TELEGRAM_CHAT_IDS };
 delete process.env.TELEGRAM_BOT_TOKEN;
-delete process.env.TELEGRAM_CHAT_ID;
+delete process.env.TELEGRAM_CHAT_IDS;
 
 const { telegramActif, envoyerTelegram, formaterMessage } = await import('../server/lib/telegram.js');
 
-test('telegramActif() exige les deux variables, jamais une seule', () => {
+test('telegramActif() exige le jeton ET au moins un destinataire', () => {
   delete process.env.TELEGRAM_BOT_TOKEN;
-  delete process.env.TELEGRAM_CHAT_ID;
+  delete process.env.TELEGRAM_CHAT_IDS;
   assert.equal(telegramActif(), false);
 
   process.env.TELEGRAM_BOT_TOKEN = '123:abc';
   assert.equal(telegramActif(), false, 'le jeton seul ne suffit pas');
   delete process.env.TELEGRAM_BOT_TOKEN;
 
-  process.env.TELEGRAM_CHAT_ID = '42';
-  assert.equal(telegramActif(), false, 'le chat seul ne suffit pas');
-  delete process.env.TELEGRAM_CHAT_ID;
+  process.env.TELEGRAM_CHAT_IDS = '42';
+  assert.equal(telegramActif(), false, 'un destinataire seul ne suffit pas');
+  delete process.env.TELEGRAM_CHAT_IDS;
 
   process.env.TELEGRAM_BOT_TOKEN = '123:abc';
-  process.env.TELEGRAM_CHAT_ID = '42';
+  process.env.TELEGRAM_CHAT_IDS = '42';
   assert.equal(telegramActif(), true);
+
+  // Une virgule en trop, ou des espaces mal placés, ne doivent pas
+  // produire un destinataire fantôme ni casser l'activation.
+  process.env.TELEGRAM_CHAT_IDS = ' 42 , , 1001 ,';
+  assert.equal(telegramActif(), true);
+
   delete process.env.TELEGRAM_BOT_TOKEN;
-  delete process.env.TELEGRAM_CHAT_ID;
+  delete process.env.TELEGRAM_CHAT_IDS;
 });
 
 test('envoyerTelegram() ne tente rien tant que ce n\'est pas configuré', async () => {
   delete process.env.TELEGRAM_BOT_TOKEN;
-  delete process.env.TELEGRAM_CHAT_ID;
+  delete process.env.TELEGRAM_CHAT_IDS;
   const r = await envoyerTelegram('peu importe');
   assert.deepEqual(r, { ignore: true });
 });
@@ -87,4 +93,4 @@ test('formaterMessage() échappe aussi l\'adresse insérée pour le lien', () =>
 });
 
 if (anciens.token) process.env.TELEGRAM_BOT_TOKEN = anciens.token; else delete process.env.TELEGRAM_BOT_TOKEN;
-if (anciens.chat) process.env.TELEGRAM_CHAT_ID = anciens.chat; else delete process.env.TELEGRAM_CHAT_ID;
+if (anciens.chats) process.env.TELEGRAM_CHAT_IDS = anciens.chats; else delete process.env.TELEGRAM_CHAT_IDS;
