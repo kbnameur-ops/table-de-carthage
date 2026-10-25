@@ -104,6 +104,7 @@ async function prevenirDuneEmpreinte(paiement) {
     titre: `Commande payée — ${euros(c.total_cents)}`,
     detail: `${c.prenom} ${c.nom} · empreinte prise · retrait ${c.date} ${c.heure} · ${c.telephone_saisi}`,
     lien: `/salon/commandes?date=${c.date}`,
+    whatsapp: true,
   });
 }
 

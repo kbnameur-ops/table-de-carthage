@@ -15,6 +15,7 @@
     "admin": "node server/create-admin.js",
     "test": "node --test test/**/*.test.js",
     "pdf": "node outils/manuel-pdf.mjs",
+    "whatsapp:test": "node outils/whatsapp-test.mjs",
     "vercel-build": "node outils/migrer-au-deploiement.mjs"
   },
   "dependencies": {

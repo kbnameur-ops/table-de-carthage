@@ -110,6 +110,7 @@ reservationRouter.post('/reserver', verifierCsrf, async (req, res, next) => {
       titre: `Nouvelle réservation — ${couverts} couvert${couverts > 1 ? 's' : ''}`,
       detail: `${client.prenom} ${client.nom} · ${quand(b.date, b.heure)} · table ${table.nom} · ${client.telephone_saisi}`,
       lien: `/salon/reservations?date=${b.date}`,
+      whatsapp: true,
     });
 
     res.redirect(`/reserver/confirmation?ref=${encodeURIComponent(reference)}`);

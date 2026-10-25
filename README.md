@@ -330,6 +330,51 @@ Toutes ces informations sont vérifiées. Pour changer le téléphone, remplacer
 dans les liens) et la clé `telephone` des données structurées dans
 `assets/js/main.js`.
 
+## Alertes WhatsApp du gérant
+
+Chaque réservation, commande à emporter, place de soirée ou annulation faite
+**en ligne** par un client déclenche, en plus de la notification du salon, un
+WhatsApp envoyé par le serveur au(x) gérant(s). Transparent pour le client :
+il ne voit que sa page de confirmation. Les saisies de l'équipe (salle,
+comptoir, commandes QR à table) ne déclenchent pas d'alerte.
+
+Envoi via l'API WhatsApp Cloud de Meta (`server/lib/whatsapp.js`), activé par
+le paramètre `whatsapp: true` de `notifier()`. Sans configuration : inactif.
+Un échec d'envoi est journalisé, jamais bloquant (la notification du salon
+reste).
+
+**Mise en place (une fois)**
+
+1. [business.facebook.com](https://business.facebook.com) : créer (ou réutiliser)
+   un compte Meta Business, puis une app de type « Business » sur
+   [developers.facebook.com](https://developers.facebook.com) avec le produit WhatsApp.
+2. Ajouter un **numéro d'envoi dédié** (pas le WhatsApp personnel du gérant :
+   un numéro relié à l'API ne fonctionne plus dans l'application WhatsApp).
+3. Créer un **utilisateur système** avec la permission `whatsapp_business_messaging`
+   et générer un jeton permanent.
+4. Créer le modèle de message, catégorie **Utilitaire**, nom `alerte_salon`,
+   langue **français**, corps à trois variables :
+   ```
+   🔔 {{1}}
+   {{2}}
+   Voir dans le salon : {{3}}
+   ```
+   Validation Meta : quelques minutes à 48 h.
+5. Variables d'environnement Vercel :
+
+| Variable | Exemple | |
+|---|---|---|
+| `WHATSAPP_TOKEN` | `EAAG…` | jeton permanent de l'utilisateur système |
+| `WHATSAPP_PHONE_NUMBER_ID` | `1234567890` | identifiant du numéro d'envoi (pas le numéro lui-même) |
+| `WHATSAPP_DESTINATAIRES` | `33761976711,336…` | numéros du/des gérant(s), séparés par des virgules |
+| `WHATSAPP_MODELE` | `alerte_salon` | facultatif |
+| `WHATSAPP_LANGUE` | `fr` | facultatif |
+
+6. Vérifier : `npm run whatsapp:test` (avec ces variables) envoie un message d'essai.
+
+Coût : Meta facture chaque message « utilitaire » envoyé hors fenêtre de
+24 h (quelques centimes, grille tarifaire Meta selon le pays).
+
 ## Demandes clients → WhatsApp
 
 Aucun serveur, aucun formulaire à héberger : le site compose le message et

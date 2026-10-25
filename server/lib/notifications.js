@@ -1,10 +1,14 @@
 import { query, une, executer } from '../db.js';
+import { alerterWhatsApp } from './whatsapp.js';
 
 /** Enregistre un événement à signaler au salon. Volontairement tolérante :
  *  si l'écriture échoue, on ne fait pas échouer la réservation ou la
  *  commande du client pour autant — une notification manquante est un
- *  désagrément, une commande perdue est une faute. */
-export async function notifier({ type, titre, detail = '', lien = '/salon' }) {
+ *  désagrément, une commande perdue est une faute.
+ *  `whatsapp: true` prévient aussi le gérant sur WhatsApp (voir
+ *  lib/whatsapp.js) : réservé à ce que le client fait en ligne, pas à ce que
+ *  l'équipe saisit elle-même en salle ou au comptoir. */
+export async function notifier({ type, titre, detail = '', lien = '/salon', whatsapp = false }) {
   try {
     await executer(
       `INSERT INTO notifications (type, titre, detail, lien) VALUES ($1, $2, $3, $4)`,
@@ -13,6 +17,7 @@ export async function notifier({ type, titre, detail = '', lien = '/salon' }) {
   } catch (err) {
     console.error('Notification non enregistrée :', err.message);
   }
+  if (whatsapp) await alerterWhatsApp({ titre, detail, lien });
 }
 
 export async function compterNonLues() {

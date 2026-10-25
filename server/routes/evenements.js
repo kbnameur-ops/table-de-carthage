@@ -113,6 +113,7 @@ evenementsRouter.post('/evenements/:slug/reserver', verifierCsrf, async (req, re
         titre: `Soirée — ${evenement.titre}`,
         detail: `${client.prenom} ${client.nom} · ${places} place${places > 1 ? 's' : ''} · ${euros(r.reservation.total_cents)} · à régler sur place`,
         lien: `/salon/evenements/${evenement.id}`,
+        whatsapp: true,
       });
       return res.redirect(`/evenements/${evenement.slug}/confirmation?ref=${encodeURIComponent(r.reservation.reference)}`);
     }

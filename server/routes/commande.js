@@ -171,6 +171,7 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
         titre: `Nouvelle commande — ${euros(panier.total)}`,
         detail: `${client.prenom} ${client.nom} · retrait ${quand(b.date, b.heure)} · ${nbPlats} article${nbPlats > 1 ? 's' : ''} · ${client.telephone_saisi}`,
         lien: `/salon/commandes?date=${b.date}`,
+        whatsapp: true,
       });
     }
 

@@ -140,6 +140,7 @@ compteRouter.post('/compte/reservations/:id/annuler', exigerClient, verifierCsrf
         titre: `Réservation annulée — ${annulee.couverts} couvert${annulee.couverts > 1 ? 's' : ''}`,
         detail: `${client.prenom} ${client.nom} · ${quand(annulee.date, annulee.heure)} · ${annulee.reference}`,
         lien: `/salon/reservations?date=${annulee.date}`,
+        whatsapp: true,
       });
     }
     res.redirect('/compte?msg=' + encodeURIComponent('Réservation annulée.'));
@@ -158,6 +159,7 @@ compteRouter.post('/compte/commandes/:id/annuler', exigerClient, verifierCsrf, a
         titre: `Commande annulée — ${euros(annulee.total_cents)}`,
         detail: `${client.prenom} ${client.nom} · retrait ${quand(annulee.date, annulee.heure)} · ${annulee.reference}`,
         lien: `/salon/commandes?date=${annulee.date}`,
+        whatsapp: true,
       });
     }
     res.redirect('/compte?msg=' + encodeURIComponent(
