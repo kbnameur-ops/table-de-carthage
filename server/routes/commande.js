@@ -10,6 +10,8 @@ import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
 import { notifier, quand } from '../lib/notifications.js';
 import { paiementDisponible } from '../lib/paiement.js';
 import { clientDeSession, connecterDepuisTunnel, quitterIdentite } from '../lib/tunnel-identite.js';
+import { dateLongue } from '../lib/jours.js';
+import { envoyerEmail, emailConfirmationCommande, emailNotificationInterne, contactInterne } from '../lib/email.js';
 
 const MAX_SOUMISSIONS_15MIN = 20;
 
@@ -166,13 +168,21 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
     // chaque panier abandonné à l'écran de paiement sonnerait en cuisine.
     if (!aRegler) {
       const nbPlats = panier.lignes.reduce((n, l) => n + l.quantite, 0);
-      await notifier({
-        type: 'commande',
-        titre: `Nouvelle commande — ${euros(panier.total)}`,
-        detail: `${client.prenom} ${client.nom} · retrait ${quand(b.date, b.heure)} · ${nbPlats} article${nbPlats > 1 ? 's' : ''} · ${client.telephone_saisi}`,
-        lien: `/salon/commandes?date=${b.date}`,
-      });
+      const titreNotif = `Nouvelle commande — ${euros(panier.total)}`;
+      const detailNotif = `${client.prenom} ${client.nom} · retrait ${quand(b.date, b.heure)} · ${nbPlats} article${nbPlats > 1 ? 's' : ''} · ${client.telephone_saisi}`;
+      const lienNotif = `/salon/commandes?date=${b.date}`;
+      await notifier({ type: 'commande', titre: titreNotif, detail: detailNotif, lien: lienNotif });
+      await envoyerEmail({ a: contactInterne(), ...emailNotificationInterne({ titre: titreNotif, detail: detailNotif, lien: lienNotif }) });
     }
+
+    // La confirmation de commande part dans tous les cas, payée ou non :
+    // le client doit savoir que sa commande est enregistrée dès qu'il la
+    // passe, pas seulement une fois réglée.
+    const { sujet, html } = emailConfirmationCommande({
+      client, reference, dateLisible: dateLongue(b.date), heure: b.heure,
+      lignes: panier.lignes, totalCents: panier.total,
+    });
+    await envoyerEmail({ a: client.email, sujet, html });
 
     res.redirect(aRegler
       ? `/paiement/${encodeURIComponent(reference)}`
