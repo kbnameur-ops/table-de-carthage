@@ -1,18 +1,25 @@
 import { query, une, executer } from '../db.js';
+import { telegramActif, envoyerTelegram, formaterMessage } from './telegram.js';
 
-/** Enregistre un événement à signaler au salon. Volontairement tolérante :
- *  si l'écriture échoue, on ne fait pas échouer la réservation ou la
+/** Enregistre un événement à signaler au salon, et le relaie sur Telegram
+ *  s'il est configuré. Volontairement tolérante des deux côtés : si l'une
+ *  des deux écritures échoue, on ne fait pas échouer la réservation ou la
  *  commande du client pour autant — une notification manquante est un
- *  désagrément, une commande perdue est une faute. */
+ *  désagrément, une commande perdue est une faute.
+ *
+ *  Les deux canaux sont indépendants et ne se bloquent pas l'un l'autre
+ *  (Promise.allSettled) : un Telegram qui met du temps à répondre ne doit
+ *  pas retarder la pastille du salon, qui elle est lue à chaque requête. */
 export async function notifier({ type, titre, detail = '', lien = '/salon' }) {
-  try {
-    await executer(
+  await Promise.allSettled([
+    executer(
       `INSERT INTO notifications (type, titre, detail, lien) VALUES ($1, $2, $3, $4)`,
       [type, titre, detail, lien]
-    );
-  } catch (err) {
-    console.error('Notification non enregistrée :', err.message);
-  }
+    ).catch((err) => { console.error('Notification non enregistrée :', err.message); }),
+    telegramActif()
+      ? envoyerTelegram(formaterMessage({ titre, detail, lien }))
+      : Promise.resolve(),
+  ]);
 }
 
 export async function compterNonLues() {
