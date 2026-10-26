@@ -8,6 +8,8 @@ import { verifierCsrf } from '../middleware.js';
 import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
 import { notifier, quand } from '../lib/notifications.js';
 import { clientDeSession, connecterDepuisTunnel, quitterIdentite } from '../lib/tunnel-identite.js';
+import { dateLongue } from '../lib/jours.js';
+import { envoyerEmail, emailConfirmationReservation, emailNotificationInterne, contactInterne } from '../lib/email.js';
 
 const MAX_SOUMISSIONS_15MIN = 20;
 
@@ -105,12 +107,18 @@ reservationRouter.post('/reserver', verifierCsrf, async (req, res, next) => {
       [reference, client.id, service.id, table.id, b.date, b.heure, couverts, (b.message || '').trim()]
     );
 
-    await notifier({
-      type: 'reservation',
-      titre: `Nouvelle réservation — ${couverts} couvert${couverts > 1 ? 's' : ''}`,
-      detail: `${client.prenom} ${client.nom} · ${quand(b.date, b.heure)} · table ${table.nom} · ${client.telephone_saisi}`,
-      lien: `/salon/reservations?date=${b.date}`,
+    const titreNotif = `Nouvelle réservation — ${couverts} couvert${couverts > 1 ? 's' : ''}`;
+    const detailNotif = `${client.prenom} ${client.nom} · ${quand(b.date, b.heure)} · table ${table.nom} · ${client.telephone_saisi}`;
+    const lienNotif = `/salon/reservations?date=${b.date}`;
+    await notifier({ type: 'reservation', titre: titreNotif, detail: detailNotif, lien: lienNotif });
+
+    const { sujet, html } = emailConfirmationReservation({
+      client, reference, dateLisible: dateLongue(b.date), heure: b.heure, couverts,
     });
+    await Promise.allSettled([
+      envoyerEmail({ a: client.email, sujet, html }),
+      envoyerEmail({ a: contactInterne(), ...emailNotificationInterne({ titre: titreNotif, detail: detailNotif, lien: lienNotif }) }),
+    ]);
 
     res.redirect(`/reserver/confirmation?ref=${encodeURIComponent(reference)}`);
   } catch (err) { next(err); }

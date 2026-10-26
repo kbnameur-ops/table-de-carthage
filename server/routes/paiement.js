@@ -4,7 +4,8 @@ import { une, query } from '../db.js';
 import { verifierCsrf, exigerClient } from '../middleware.js';
 import { euros } from '../lib/money.js';
 import { libelleJour } from '../lib/jours.js';
-import { notifier } from '../lib/notifications.js';
+import { notifier, quand } from '../lib/notifications.js';
+import { envoyerEmail, emailConfirmationPaiement, emailNotificationInterne, contactInterne } from '../lib/email.js';
 import {
   paiementDisponible, paiementSimule, clePublique, evenementDepuisWebhook,
 } from '../lib/paiement.js';
@@ -94,27 +95,100 @@ paiementWebhookRouter.post(
 async function prevenirDuneEmpreinte(paiement) {
   if (!paiement?.commande_id) return;
   const c = await une(
-    `SELECT c.reference, c.date, c.heure, c.total_cents, cl.prenom, cl.nom, cl.telephone_saisi
+    `SELECT c.reference, c.date, c.heure, c.total_cents, cl.prenom, cl.nom, cl.email, cl.telephone_saisi
        FROM commandes c JOIN clients cl ON cl.id = c.client_id WHERE c.id = $1`,
     [paiement.commande_id]
   );
   if (!c) return;
-  await notifier({
-    type: 'commande',
-    titre: `Commande payée — ${euros(c.total_cents)}`,
-    detail: `${c.prenom} ${c.nom} · empreinte prise · retrait ${c.date} ${c.heure} · ${c.telephone_saisi}`,
-    lien: `/salon/commandes?date=${c.date}`,
-  });
+  const titreNotif = `Commande payée — ${euros(c.total_cents)}`;
+  const detailNotif = `${c.prenom} ${c.nom} · empreinte prise · retrait ${c.date} ${c.heure} · ${c.telephone_saisi}`;
+  const lienNotif = `/salon/commandes?date=${c.date}`;
+  await notifier({ type: 'commande', titre: titreNotif, detail: detailNotif, lien: lienNotif });
+  await Promise.allSettled([
+    envoyerEmail({ a: contactInterne(), ...emailNotificationInterne({ titre: titreNotif, detail: detailNotif, lien: lienNotif }) }),
+    envoyerEmail({
+      a: c.email,
+      ...emailConfirmationPaiement({
+        client: c, reference: c.reference, montantCents: c.total_cents,
+        libelle: 'Votre carte a été validée : vous serez débité au retrait de votre commande.',
+      }),
+    }),
+  ]);
 }
 
+/** Prévenir du règlement effectif (capture) d'un paiement — une commande
+ *  à emporter retirée, une addition de table, ou une place d'événement.
+ *  Les trois cibles sont mutuellement exclusives (contrainte en base) :
+ *  chaque paiement ne correspond jamais qu'à l'une d'elles. */
 async function prevenirDunReglement(paiement) {
   if (!paiement) return;
+  const client = await une(`SELECT prenom, nom, email FROM clients WHERE id = $1`, [paiement.client_id]);
+
+  if (paiement.evenement_reservation_id) {
+    const r = await une(
+      `SELECT r.reference, r.places, e.titre, e.date, e.heure
+         FROM evenement_reservations r JOIN evenements e ON e.id = r.evenement_id
+        WHERE r.id = $1`,
+      [paiement.evenement_reservation_id]
+    );
+    const titreNotif = `Réservation d'événement réglée — ${euros(paiement.montant_cents)}`;
+    const detailNotif = r
+      ? `${client?.prenom} ${client?.nom} · « ${r.titre} » · ${r.places} place${r.places > 1 ? 's' : ''} · ${quand(r.date, r.heure)}`
+      : `Paiement de ${euros(paiement.montant_cents)}`;
+    const lienNotif = '/salon/evenements';
+    await notifier({ type: 'commande', titre: titreNotif, detail: detailNotif, lien: lienNotif });
+    await Promise.allSettled([
+      envoyerEmail({ a: contactInterne(), ...emailNotificationInterne({ titre: titreNotif, detail: detailNotif, lien: lienNotif }) }),
+      client?.email
+        ? envoyerEmail({
+            a: client.email,
+            ...emailConfirmationPaiement({
+              client, reference: r?.reference, montantCents: paiement.montant_cents,
+              libelle: r ? `Votre réservation pour « ${r.titre} » est réglée.` : 'Votre réservation est réglée.',
+            }),
+          })
+        : Promise.resolve(),
+    ]);
+    return;
+  }
+
+  if (paiement.commande_id) {
+    const c = await une(`SELECT reference FROM commandes WHERE id = $1`, [paiement.commande_id]);
+    await notifier({
+      type: 'commande',
+      titre: `Règlement en ligne — ${euros(paiement.montant_cents)}`,
+      detail: 'Commande à emporter réglée',
+      lien: '/salon/commandes',
+    });
+    if (client?.email) {
+      await envoyerEmail({
+        a: client.email,
+        ...emailConfirmationPaiement({
+          client, reference: c?.reference, montantCents: paiement.montant_cents,
+          libelle: 'Votre commande à emporter est réglée.',
+        }),
+      });
+    }
+    return;
+  }
+
+  // Addition de table : la seule cible restante, la contrainte en base
+  // n'en laisse pas d'autre.
   await notifier({
     type: 'commande',
     titre: `Règlement en ligne — ${euros(paiement.montant_cents)}`,
-    detail: paiement.commande_id ? 'Commande à emporter réglée' : 'Addition de table réglée',
-    lien: paiement.commande_id ? '/salon/commandes' : '/salon/tables-clients',
+    detail: 'Addition de table réglée',
+    lien: '/salon/tables-clients',
   });
+  if (client?.email) {
+    await envoyerEmail({
+      a: client.email,
+      ...emailConfirmationPaiement({
+        client, reference: null, montantCents: paiement.montant_cents,
+        libelle: 'Votre addition est réglée.',
+      }),
+    });
+  }
 }
 
 async function surAutorisation(intentionId) {
