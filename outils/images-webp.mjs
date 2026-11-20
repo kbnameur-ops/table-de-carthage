@@ -17,6 +17,9 @@ const PARTICULIERS = {
   'logo.jpg': [{ suffixe: '-128', largeur: 128, qualite: 80 }, { suffixe: '-420', largeur: 420, qualite: 78 }],
 };
 
+/** Les plats de la section « Signatures » de l'accueil (index.html). */
+const SIGNATURES = ['couscous-royal.jpg', 'mloukhia.jpg', 'ojja-fruits-de-mer.jpg'];
+
 const racine = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'img');
 
 function jpgs(dossier) {
@@ -39,7 +42,17 @@ for (const jpg of jpgs(racine)) {
     continue;
   }
   // Les plats n'ont que leur vignette, la visionneuse affichant le JPG complet.
+  // Exception : les plats mis en avant dans la section « Signatures » de
+  // l'accueil, servis en grand via <picture> — sans leur .webp, le
+  // navigateur prend la source WebP, reçoit un 404, et n'affiche RIEN (il ne
+  // retombe pas sur le JPG). D'où cette liste, à tenir à jour avec
+  // index.html.
   const estPlat = jpg.includes(join('img', 'plats'));
+  if (estPlat && SIGNATURES.includes(nom)) {
+    const sortie = jpg.replace(/\.jpe?g$/i, '.webp');
+    const { size } = await sharp(jpg).resize({ width: 800, withoutEnlargement: true }).webp({ quality: 78 }).toFile(sortie);
+    console.log(sortie.replace(racine + '/', ''), Math.round(size / 1024) + ' Ko');
+  }
   const webp = jpg.replace(/\.jpe?g$/i, '.webp');
   if (!estPlat) {
     const { size } = await sharp(jpg).webp({ quality: 78 }).toFile(webp);
