@@ -14,21 +14,20 @@
     </div>
   <% } %>
 
-  <% if (evenement.photos.length) { %>
-    <%# Ici les photos ne défilent pas : on les regarde. Le ruban animé est
-        fait pour attirer l'œil en page d'accueil, pas pour être consulté. %>
-    <div class="galerie-soiree">
-      <% evenement.photos.forEach(p => { %>
-        <figure>
-          <img src="<%= p.url %>" alt="<%= p.legende %>" loading="lazy" decoding="async">
-          <% if (p.legende) { %><figcaption><%= p.legende %></figcaption><% } %>
-        </figure>
-      <% }) %>
-    </div>
-  <% } %>
-
   <div class="soiree-detail">
     <div class="soiree-detail__recit">
+      <% if (evenement.photos.length) { %>
+        <%# Ici les photos ne défilent pas : on les regarde. Le ruban animé est
+            fait pour attirer l'œil en page d'accueil, pas pour être consulté. %>
+        <div class="galerie-soiree<%= evenement.photos.length === 1 ? ' galerie-soiree--une' : '' %>">
+          <% evenement.photos.forEach(p => { %>
+            <figure>
+              <img src="<%= p.url %>" alt="<%= p.legende %>" loading="lazy" decoding="async">
+              <% if (p.legende) { %><figcaption><%= p.legende %></figcaption><% } %>
+            </figure>
+          <% }) %>
+        </div>
+      <% } %>
       <% if (evenement.accroche) { %>
         <p class="soiree-detail__accroche"><%= evenement.accroche %></p>
       <% } %>

@@ -969,6 +969,50 @@ button{font:inherit;color:inherit}
   .soiree__ruban{overflow-x:auto}
 }
 
+/* ── Côte à côte : l'image d'un côté, les mots de l'autre ─────────────
+   Les soirées s'annoncent le plus souvent par une AFFICHE, qui porte déjà
+   son propre texte. Posé par-dessus, le titre se mêlait à celui de
+   l'affiche et ni l'un ni l'autre ne se lisait. L'image a donc sa colonne,
+   entière (jamais recadrée : on couperait la date ou le nom de l'artiste),
+   et le texte la sienne. Une soirée sur deux inverse les côtés. */
+.soiree{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  align-items:center;gap:clamp(1.5rem,4vw,3.5rem);
+  min-height:0;max-width:var(--wrap);margin-left:auto;margin-right:auto;
+  padding:0 clamp(1.25rem,4vw,2.5rem);overflow:visible;
+}
+.soiree--sans-photo{grid-template-columns:minmax(0,1fr)}
+.soiree__voile{display:none}
+.soiree__ruban{
+  position:relative;inset:auto;height:clamp(360px,40vw,560px);
+  border-radius:14px;background:rgba(250,246,236,.04);
+}
+.soiree__piste:not(.soiree__piste--defile){width:100%;justify-content:center}
+.soiree__piste--defile{gap:.8rem}
+.soiree__vue img{
+  height:100%;width:auto;max-width:none;object-fit:contain;filter:none;
+  border-radius:10px;box-shadow:0 18px 40px rgba(0,0,0,.35);
+}
+.soiree__mots{
+  padding:0;margin:0;width:auto;max-width:34rem;text-align:left;
+}
+.soiree--alt .soiree__ruban{order:2}
+.soiree--alt .soiree__mots{margin-left:auto;text-align:left}
+.soiree--alt .soiree__titre,
+.soiree--alt .soiree__accroche{margin-left:0}
+.soiree--alt .soiree__quand,
+.soiree--alt .soiree__prix,
+.soiree--alt .soiree__actions{justify-content:flex-start}
+
+@media (max-width:760px){
+  .soiree{grid-template-columns:minmax(0,1fr);gap:1.4rem}
+  .soiree--alt .soiree__ruban{order:0}
+  .soiree__ruban{height:clamp(320px,110vw,520px)}
+  .soiree__vue img{width:auto;max-width:calc(100vw - 2.5rem)}
+  .soiree__mots,
+  .soiree--alt .soiree__mots{max-width:none;margin-left:0}
+}
+
 /* ══════════════ PAGES SECONDAIRES (/carte, /privatisation, /traiteur) ══════════════ */
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .vp main{padding-top:4.5rem}

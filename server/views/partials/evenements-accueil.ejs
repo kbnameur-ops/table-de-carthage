@@ -16,13 +16,13 @@
       <h2 class="h2 reveal-up">Des nuits qui ne<br>ressemblent à aucune autre</h2>
       <p class="section-head__sub reveal-up">
         Quelques dates dans l'année, un lieu transformé, un nombre de places limité.
-        La réservation se règle en ligne.
+        La réservation se fait en ligne.
       </p>
     </header>
   </div>
 
   <% evenements.forEach((e, i) => { %>
-    <article class="soiree reveal-up<%= i % 2 ? ' soiree--alt' : '' %>">
+    <article class="soiree reveal-up<%= i % 2 ? ' soiree--alt' : '' %><%= (e.photos || []).length ? '' : ' soiree--sans-photo' %>">
       <%
         /* Le bandeau ne défile que s'il y a de quoi défiler. Avec une seule
            photo, une animation ne ferait que faire trembler l'image. */
