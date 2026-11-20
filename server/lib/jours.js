@@ -32,9 +32,19 @@ export function heureParis(instant = new Date()) {
 
 /** Vrai si le créneau (date 'YYYY-MM-DD', heure 'HH:MM', heure de Paris)
  *  est déjà commencé ou passé. Les deux formats se comparent comme du
- *  texte, sans passer par un objet Date et son fuseau. */
-export function creneauPasse(date, heure, instant = new Date()) {
-  return `${date} ${heure}` <= `${aujourdHui(instant)} ${heureParis(instant)}`;
+ *  texte, sans passer par un objet Date et son fuseau.
+ *
+ *  `margeMinutes` avance l'horloge d'autant : avec 30, un créneau qui
+ *  commence dans moins de 30 minutes compte comme passé — c'est le délai de
+ *  préparation d'une commande à emporter. Passer par un instant décalé (et
+ *  non par une addition sur 'HH:MM') gère tout seul le passage de minuit. */
+export function creneauPasse(date, heure, instant = new Date(), margeMinutes = 0) {
+  const creneau = `${date} ${heure}`;
+  const cle = d => `${aujourdHui(d)} ${heureParis(d)}`;
+  if (creneau <= cle(instant)) return true;          // commencé ou passé
+  if (!margeMinutes) return false;
+  // « Au moins 30 minutes » : un créneau pile 30 minutes après reste valable.
+  return creneau < cle(new Date(instant.getTime() + margeMinutes * 60000));
 }
 
 /** Le jour à `decalage` jours d'écart ('2026-08-31', +1) -> '2026-09-01'. */

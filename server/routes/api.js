@@ -24,12 +24,14 @@ api.get('/horaires-retrait', async (req, res, next) => {
     const { date } = req.query;
     if (!dateValide(date)) return res.status(400).json({ erreur: 'Date invalide' });
     const service = await serviceDuJour(date);
-    if (!service) return res.json({ creneaux: [] });
+    if (!service) return res.json({ creneaux: [], ferme: true });
 
-    // Heure de Paris, pas celle du serveur (UTC) : voir lib/jours.js.
+    // Heure de Paris, pas celle du serveur (UTC) : voir lib/jours.js. Le
+    // délai de préparation du service écarte les créneaux trop proches.
+    const delai = service.delai_retrait_minutes ?? 0;
     const creneaux = date < aujourdHui()
       ? []
-      : creneauxDuService(service).filter(h => !creneauPasse(date, h));
-    res.json({ creneaux });
+      : creneauxDuService(service).filter(h => !creneauPasse(date, h, new Date(), delai));
+    res.json({ creneaux, delai });
   } catch (err) { next(err); }
 });

@@ -41,9 +41,17 @@
     </div>
   <% } %>
 
-  <div class="field" style="max-width:200px">
-    <label for="f-pas">Pas entre les créneaux (minutes)</label>
-    <input type="number" id="f-pas" name="pasMinutes" min="5" max="240" value="<%= service ? service.pas_minutes : 30 %>" required>
+  <div class="field--row">
+    <div class="field" style="max-width:260px">
+      <label for="f-pas">Pas entre les créneaux (minutes)</label>
+      <input type="number" id="f-pas" name="pasMinutes" min="5" max="240" value="<%= service ? service.pas_minutes : 30 %>" required>
+      <small class="aide">L'écart entre deux heures proposées au client : 30 → 19:00, 19:30, 20:00…</small>
+    </div>
+    <div class="field" style="max-width:260px">
+      <label for="f-delai">Délai minimum avant retrait (minutes)</label>
+      <input type="number" id="f-delai" name="delaiRetrait" min="0" max="1440" step="5" value="<%= service ? service.delai_retrait_minutes : 30 %>" required>
+      <small class="aide">Commandes à emporter : le temps de préparation. Avec 30, à 21:10 le premier retrait proposé est 21:40 ou après. 0 = aucun délai.</small>
+    </div>
   </div>
 
   <% if (service) { %>

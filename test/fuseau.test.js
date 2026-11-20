@@ -29,3 +29,16 @@ test('un créneau du jour déjà commencé à Paris n’est plus proposé', () =
   assert.equal(creneauPasse('2026-11-21', '12:00', hiver), false, 'demain reste ouvert');
   assert.equal(creneauPasse('2026-11-19', '23:00', hiver), true, 'hier est passé');
 });
+
+test('le délai de préparation écarte les retraits trop proches', () => {
+  // 21 h 15 à Paris, délai de 30 minutes : 21 h 45 est le premier retrait possible.
+  assert.equal(creneauPasse('2026-11-20', '21:30', hiver, 30), true);
+  assert.equal(creneauPasse('2026-11-20', '21:40', hiver, 30), true);
+  assert.equal(creneauPasse('2026-11-20', '21:45', hiver, 30), false, 'pile 30 minutes après : accepté');
+  assert.equal(creneauPasse('2026-11-20', '22:00', hiver, 30), false);
+  // Le délai qui franchit minuit : à 23 h 50 avec 30 min, 00 h 15 le lendemain est trop tôt.
+  const tard = new Date('2026-11-20T22:50:00Z'); // 23:50 à Paris
+  assert.equal(creneauPasse('2026-11-21', '00:15', tard, 30), true);
+  assert.equal(creneauPasse('2026-11-21', '00:30', tard, 30), false);
+  assert.equal(creneauPasse('2026-11-20', '22:00', hiver, 0), false, 'délai 0 : comme avant');
+});

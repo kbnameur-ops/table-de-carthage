@@ -64,6 +64,7 @@
             <option value="">— choisir une date —</option>
           </select>
           <% if (erreurs.heure) { %><span class="erreur"><%= erreurs.heure %></span><% } %>
+          <small class="aide" id="aide-delai" hidden></small>
         </div>
       </div>
     </div>
@@ -129,6 +130,7 @@
 
   const dateEl = document.getElementById('f-date');
   const heureSel = document.getElementById('f-heure-select');
+  const aideDelai = document.getElementById('aide-delai');
   const heureVoulue = <%- JSON.stringify(valeurs.heure || '') %>;
   // Même précaution que sur /reserver : ne jamais laisser une réponse
   // périmée (date changée deux fois de suite) écraser la plus récente.
@@ -149,8 +151,15 @@
       const r = await fetch(`/api/horaires-retrait?date=${encodeURIComponent(dateEl.value)}`);
       const d = await r.json();
       if (jeton !== sequenceHoraires) return;
+      aideDelai.hidden = !d.delai;
+      if (d.delai) aideDelai.textContent = `Préparation : comptez au moins ${d.delai} minutes entre votre commande et le retrait.`;
       if (!d.creneaux.length) {
-        heureSel.innerHTML = '<option value="">Fermé ce jour-là</option>';
+        // Fermé ce jour-là, ou ouvert mais trop tard pour préparer une
+        // commande aujourd'hui : deux messages différents, pas un seul
+        // « Fermé » qui tromperait le client à 22 h.
+        heureSel.innerHTML = d.ferme
+          ? '<option value="">Fermé ce jour-là</option>'
+          : '<option value="">Plus de retrait possible ce jour-là</option>';
         return;
       }
       heureSel.innerHTML = d.creneaux.map(h => `<option value="${h}">${h}</option>`).join('');
