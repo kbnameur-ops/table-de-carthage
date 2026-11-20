@@ -653,3 +653,17 @@ ALTER TABLE employes ADD COLUMN IF NOT EXISTS acces_admin BOOLEAN NOT NULL DEFAU
 -- Une soirée à prix texte (ou à 0 €) ne passe pas par le paiement en ligne :
 -- la place est réservée tout de suite, et l'addition se règle sur place.
 ALTER TABLE evenements ADD COLUMN IF NOT EXISTS prix_texte TEXT NOT NULL DEFAULT '';
+
+-- ═══════════════════════════════════════════════════════════
+-- v12 — Un délai de préparation avant le premier retrait possible
+-- ═══════════════════════════════════════════════════════════
+-- Sans lui, à 22 h 10 on pouvait commander à emporter pour 22 h 15. Chaque
+-- service fixe le délai minimum entre la commande et le retrait ; les
+-- créneaux plus proches ne sont plus proposés. 30 min par défaut, y compris
+-- pour les services existants. 0 = pas de délai.
+ALTER TABLE services ADD COLUMN IF NOT EXISTS delai_retrait_minutes INTEGER NOT NULL DEFAULT 30;
+DO $$ BEGIN
+  ALTER TABLE services ADD CONSTRAINT services_delai_retrait_borne
+    CHECK (delai_retrait_minutes BETWEEN 0 AND 1440);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;

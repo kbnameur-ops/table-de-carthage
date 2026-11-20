@@ -109,7 +109,14 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
       } else {
         const creneaux = creneauxDuService(service);
         if (!creneaux.includes(b.heure)) erreurs.heure = 'Horaire de retrait invalide.';
-        if (!erreurs.heure && creneauPasse(b.date, b.heure)) erreurs.heure = 'Cet horaire est déjà passé.';
+        // Revalidé ici et pas seulement dans la liste : la page a pu rester
+        // ouverte un quart d'heure avant l'envoi.
+        const delai = service.delai_retrait_minutes ?? 0;
+        if (!erreurs.heure && creneauPasse(b.date, b.heure)) {
+          erreurs.heure = 'Cet horaire est déjà passé.';
+        } else if (!erreurs.heure && creneauPasse(b.date, b.heure, new Date(), delai)) {
+          erreurs.heure = `Trop tôt pour préparer votre commande : choisissez un retrait au moins ${delai} minutes après maintenant.`;
+        }
       }
     }
 

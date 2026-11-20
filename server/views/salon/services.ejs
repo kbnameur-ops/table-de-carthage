@@ -9,7 +9,7 @@
 
 <div class="table-scroll">
 <table>
-  <thead><tr><th>Service</th><th>Jours</th><th>Horaires</th><th>Salle</th><th>Pas</th><th>Statut</th><th></th></tr></thead>
+  <thead><tr><th>Service</th><th>Jours</th><th>Horaires</th><th>Salle</th><th>Pas</th><th>Délai retrait</th><th>Statut</th><th></th></tr></thead>
   <tbody>
     <% services.forEach(s => { %>
       <tr>
@@ -22,6 +22,7 @@
           </a>
         </td>
         <td><%= s.pas_minutes %> min</td>
+        <td><%= s.delai_retrait_minutes %> min</td>
         <td><span class="badge badge--<%= s.actif ? 'confirmee' : 'annulee' %>"><%= s.actif ? 'Actif' : 'Inactif' %></span></td>
         <td>
           <a class="btn btn--sm" href="/salon/services/<%= s.id %>/tables">Tables</a>

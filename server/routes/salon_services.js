@@ -63,6 +63,8 @@ function validerService(body) {
   if (!heureValide(body.debut) || !heureValide(body.fin) || body.debut >= body.fin) erreurs.push('Horaires invalides.');
   const pas = parseInt(body.pasMinutes, 10);
   if (!Number.isInteger(pas) || pas < 5 || pas > 240) erreurs.push('Le pas entre créneaux doit être entre 5 et 240 minutes.');
+  const delai = Number(body.delaiRetrait);
+  if (!Number.isInteger(delai) || delai < 0 || delai > 1440) erreurs.push('Le délai avant retrait doit être entre 0 et 1440 minutes.');
   return erreurs;
 }
 
@@ -72,11 +74,11 @@ salonServicesRouter.post('/salon/services', exigerAdmin, verifierCsrf, async (re
     if (erreurs.length) return res.redirect('/salon/services/nouveau?erreur=' + encodeURIComponent(erreurs.join(' ')));
     const { p: position } = await une(`SELECT COALESCE(MAX(position), -1) + 1 AS p FROM services`);
     await executer(
-      `INSERT INTO services (nom, jours, debut, fin, pas_minutes, position)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+      `INSERT INTO services (nom, jours, debut, fin, pas_minutes, position, delai_retrait_minutes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         req.body.nom.trim(), joursDepuisCases(req.body), req.body.debut, req.body.fin,
-        parseInt(req.body.pasMinutes, 10), position,
+        parseInt(req.body.pasMinutes, 10), position, Number(req.body.delaiRetrait),
       ]
     );
     res.redirect('/salon/services');
@@ -88,10 +90,11 @@ salonServicesRouter.post('/salon/services/:id', exigerAdmin, verifierCsrf, async
     const erreurs = validerService(req.body);
     if (erreurs.length) return res.redirect(`/salon/services/${req.params.id}/modifier?erreur=` + encodeURIComponent(erreurs.join(' ')));
     await executer(
-      `UPDATE services SET nom = $1, jours = $2, debut = $3, fin = $4, pas_minutes = $5, actif = $6 WHERE id = $7`,
+      `UPDATE services SET nom = $1, jours = $2, debut = $3, fin = $4, pas_minutes = $5, actif = $6,
+              delai_retrait_minutes = $8 WHERE id = $7`,
       [
         req.body.nom.trim(), joursDepuisCases(req.body), req.body.debut, req.body.fin,
-        parseInt(req.body.pasMinutes, 10), !!req.body.actif, req.params.id,
+        parseInt(req.body.pasMinutes, 10), !!req.body.actif, req.params.id, Number(req.body.delaiRetrait),
       ]
     );
     res.redirect('/salon/services');
