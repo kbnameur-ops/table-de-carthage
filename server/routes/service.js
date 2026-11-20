@@ -6,7 +6,7 @@ import { connecterPersonnel, apresConnexion, dejaConnecte } from '../lib/personn
 import { clientParTelephone, creerClientAuComptoir } from '../lib/clients.js';
 import { euros, versCents } from '../lib/money.js';
 import { genererReference } from '../lib/reference.js';
-import { aujourdHui, nomTable } from '../lib/jours.js';
+import { aujourdHui, nomTable, heureParis } from '../lib/jours.js';
 import { serviceDuJour } from '../lib/availability.js';
 import { notifier } from '../lib/notifications.js';
 import { ouvrirOuRejoindreTablee, additionDeTablee, tableeOuverteSurTable } from '../lib/tablees.js';
@@ -24,7 +24,7 @@ import { LIBELLES as libellesCuisine } from '../lib/cuisine.js';
 
 export const serviceRouter = Router();
 
-const maintenant = () => new Date().toTimeString().slice(0, 5);
+const maintenant = () => heureParis();
 
 // ── Connexion ──────────────────────────────────────────────
 serviceRouter.get('/service/connexion', async (req, res, next) => {

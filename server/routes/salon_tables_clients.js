@@ -7,7 +7,7 @@ import { euros, versCents } from '../lib/money.js';
 import { encaisserTablee } from '../lib/encaissement.js';
 import { clientParTelephone, creerClientAuComptoir } from '../lib/clients.js';
 import { genererReference } from '../lib/reference.js';
-import { aujourdHui, jourVoisin, libelleJour, nomTable as nomTableLisible } from '../lib/jours.js';
+import { aujourdHui, jourVoisin, libelleJour, heureParis, nomTable as nomTableLisible } from '../lib/jours.js';
 import {
   tableesDuJour, additionDeTablee, fermerTablee, ouvrirOuRejoindreTablee,
 } from '../lib/tablees.js';
@@ -110,7 +110,7 @@ salonTablesClientsRouter.post('/salon/tables-clients/:id/commande', exigerAdmin,
          VALUES ($1, $2, 'sur_place', $3, $4, $5, $6, $7, 'confirmee') RETURNING id`,
         [
           reference, tablee.client_id, tablee.id, aujourdHui(),
-          new Date().toTimeString().slice(0, 5), total, (req.body.message || '').trim(),
+          heureParis(), total, (req.body.message || '').trim(),
         ]
       );
       for (const l of lignes) {

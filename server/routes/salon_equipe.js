@@ -3,6 +3,7 @@ import { query, une, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
 import { dateValide, heureValide, texteNonVide } from '../lib/validate.js';
 import { hacherMotDePasse } from '../lib/auth.js';
+import { aujourdHui, heureParis } from '../lib/jours.js';
 
 export const salonEquipeRouter = Router();
 
@@ -10,8 +11,7 @@ const POSTES = ['Salle', 'Cuisine', 'Plonge', 'Bar', 'Livraison', 'Direction'];
 const STATUTS = ['present', 'absent', 'conge', 'maladie'];
 const LIBELLES = { present: 'Présent', absent: 'Absent', conge: 'Congé', maladie: 'Maladie' };
 
-const aujourdHui = () => new Date().toISOString().slice(0, 10);
-const hhmm = () => new Date().toTimeString().slice(0, 5);
+const hhmm = () => heureParis();
 
 // ── L'équipe ───────────────────────────────────────────────
 salonEquipeRouter.get('/salon/equipe', exigerAdmin, async (req, res, next) => {

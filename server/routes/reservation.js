@@ -8,13 +8,12 @@ import { verifierCsrf } from '../middleware.js';
 import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
 import { notifier, quand } from '../lib/notifications.js';
 import { clientDeSession, connecterDepuisTunnel, quitterIdentite } from '../lib/tunnel-identite.js';
-import { dateLongue } from '../lib/jours.js';
+import { dateLongue, aujourdHui } from '../lib/jours.js';
 import { envoyerEmail, emailConfirmationReservation, emailNotificationInterne, contactInterne } from '../lib/email.js';
 
 const MAX_SOUMISSIONS_15MIN = 20;
 
 export const reservationRouter = Router();
-const aujourdHui = () => new Date().toISOString().slice(0, 10);
 
 /** Données communes à tous les rendus du formulaire, connecté ou non. */
 async function pageReservation(req, res, extra = {}) {

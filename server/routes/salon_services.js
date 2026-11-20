@@ -3,6 +3,7 @@ import { query, une, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf } from '../middleware.js';
 import { heureValide, dateValide, texteNonVide } from '../lib/validate.js';
 import { creerTables, supprimerTable, additionsParTable, nomsEnDoublon } from '../lib/tables.js';
+import { aujourdHui } from '../lib/jours.js';
 
 export const salonServicesRouter = Router();
 
@@ -30,7 +31,7 @@ async function chargerServicesAvecJours() {
 
 salonServicesRouter.get('/salon/services', exigerAdmin, async (req, res, next) => {
   try {
-    const fermetures = await query(`SELECT * FROM fermetures WHERE date >= to_char(CURRENT_DATE, 'YYYY-MM-DD') ORDER BY date`);
+    const fermetures = await query(`SELECT * FROM fermetures WHERE date >= $1 ORDER BY date`, [aujourdHui()]);
     res.render('salon/services', {
       titre: 'Services & capacité', actif: 'services',
       services: await chargerServicesAvecJours(), fermetures, jours: JOURS,

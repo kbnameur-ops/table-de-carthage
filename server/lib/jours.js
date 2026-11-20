@@ -3,7 +3,39 @@
  *  saute ou répète un jour aux changements d'heure, ce qui ferait
  *  disparaître une journée du carnet deux fois par an. */
 
-export const aujourdHui = () => new Date().toISOString().slice(0, 10);
+/* ── L'heure de la salle ───────────────────────────────────────────────
+   Le serveur (Vercel) tourne en UTC : une ou deux heures de moins qu'à
+   Puteaux selon la saison. Tout ce qui répond à « quel jour sommes-nous ? »
+   ou « quelle heure est-il ? » pour le restaurant passe donc par ici, en
+   heure de Paris. Sans quoi, à 21 h 15, le site proposait encore un retrait
+   à 20 h 30, et à 0 h 30 il croyait être la veille. */
+const FUSEAU = 'Europe/Paris';
+const formatParis = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FUSEAU, year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+});
+function partiesParis(instant = new Date()) {
+  return Object.fromEntries(formatParis.formatToParts(instant).map(p => [p.type, p.value]));
+}
+
+/** La date du jour à Paris, 'YYYY-MM-DD'. */
+export function aujourdHui(instant = new Date()) {
+  const p = partiesParis(instant);
+  return `${p.year}-${p.month}-${p.day}`;
+}
+
+/** L'heure qu'il est à Paris, 'HH:MM'. */
+export function heureParis(instant = new Date()) {
+  const p = partiesParis(instant);
+  return `${p.hour}:${p.minute}`;
+}
+
+/** Vrai si le créneau (date 'YYYY-MM-DD', heure 'HH:MM', heure de Paris)
+ *  est déjà commencé ou passé. Les deux formats se comparent comme du
+ *  texte, sans passer par un objet Date et son fuseau. */
+export function creneauPasse(date, heure, instant = new Date()) {
+  return `${date} ${heure}` <= `${aujourdHui(instant)} ${heureParis(instant)}`;
+}
 
 /** Le jour à `decalage` jours d'écart ('2026-08-31', +1) -> '2026-09-01'. */
 export function jourVoisin(date, decalage) {

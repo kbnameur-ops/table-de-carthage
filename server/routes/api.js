@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { creneauxDisponibles, serviceDuJour, creneauxDuService } from '../lib/availability.js';
 import { dateValide } from '../lib/validate.js';
+import { aujourdHui, creneauPasse } from '../lib/jours.js';
 
 export const api = Router();
 
@@ -25,18 +26,10 @@ api.get('/horaires-retrait', async (req, res, next) => {
     const service = await serviceDuJour(date);
     if (!service) return res.json({ creneaux: [] });
 
-    const aujourdHui = new Date().toISOString().slice(0, 10);
-    let creneaux = creneauxDuService(service);
-    if (date === aujourdHui) {
-      const maintenant = new Date();
-      creneaux = creneaux.filter(h => {
-        const [hh, mm] = h.split(':').map(Number);
-        const t = new Date(); t.setHours(hh, mm, 0, 0);
-        return t > maintenant;
-      });
-    } else if (date < aujourdHui) {
-      creneaux = [];
-    }
+    // Heure de Paris, pas celle du serveur (UTC) : voir lib/jours.js.
+    const creneaux = date < aujourdHui()
+      ? []
+      : creneauxDuService(service).filter(h => !creneauPasse(date, h));
     res.json({ creneaux });
   } catch (err) { next(err); }
 });

@@ -1,4 +1,5 @@
 import { une, query } from '../db.js';
+import { creneauPasse } from './jours.js';
 
 /** Génère les créneaux d'un service, toutes les `pas_minutes`, en excluant
  *  le dernier créneau s'il ne laisse pas au moins un pas avant la fermeture. */
@@ -67,15 +68,6 @@ function meilleureTable(tables, occupees, couverts) {
   return tables.find(t => t.couverts >= couverts && !occupees.has(t.id)) || null;
 }
 
-/** Vrai si le créneau est déjà passé (aujourd'hui) ou la date révolue. */
-function estPasse(date, heure, aujourdHui, maintenant) {
-  if (date < aujourdHui) return true;
-  if (date !== aujourdHui) return false;
-  const [h, m] = heure.split(':').map(Number);
-  const creneau = new Date(maintenant);
-  creneau.setHours(h, m, 0, 0);
-  return creneau <= maintenant;
-}
 
 /** Liste les créneaux du service du jour avec leur disponibilité pour une
  *  tablée donnée. Un créneau est disponible s'il reste au moins une table
@@ -86,15 +78,13 @@ export async function creneauxDisponibles(date, couverts) {
   if (!service) return { service: null, creneaux: [] };
 
   const tables = await tablesDuService(service.id);
-  const aujourdHui = new Date().toISOString().slice(0, 10);
-  const maintenant = new Date();
 
   const creneaux = await Promise.all(creneauxDuService(service).map(async heure => {
     const occupees = await tablesOccupees(date, heure);
     const table = meilleureTable(tables, occupees, couverts);
     return {
       heure,
-      disponible: !!table && !estPasse(date, heure, aujourdHui, maintenant),
+      disponible: !!table && !creneauPasse(date, heure),
       libres: tables.filter(t => !occupees.has(t.id)).length,
     };
   }));
@@ -110,8 +100,7 @@ export async function creneauEncoreValide(date, heure, couverts) {
   const service = await serviceDuJour(date);
   if (!service) return { valide: false, service: null, table: null };
 
-  const aujourdHui = new Date().toISOString().slice(0, 10);
-  if (estPasse(date, heure, aujourdHui, new Date())) {
+  if (creneauPasse(date, heure)) {
     return { valide: false, service, table: null };
   }
   if (!creneauxDuService(service).includes(heure)) {

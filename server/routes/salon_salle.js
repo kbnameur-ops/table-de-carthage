@@ -3,18 +3,18 @@ import { une, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
 import { dateValide, heureValide } from '../lib/validate.js';
 import { etatSalle, creneauxDuService, serviceDuJour } from '../lib/availability.js';
+import { aujourdHui, heureParis } from '../lib/jours.js';
 
 export const salonSalleRouter = Router();
 
-const aujourdHui = () => new Date().toISOString().slice(0, 10);
 
 /** Le créneau le plus proche de l'heure courante, pour que l'écran s'ouvre
  *  déjà sur le service en cours plutôt que sur le premier créneau du midi. */
 function creneauParDefaut(creneaux, date) {
   if (!creneaux.length) return null;
   if (date !== aujourdHui()) return creneaux[0];
-  const maintenant = new Date();
-  const minutes = maintenant.getHours() * 60 + maintenant.getMinutes();
+  const [h, m] = heureParis().split(':').map(Number);
+  const minutes = h * 60 + m;
   const enCours = creneaux.filter(h => {
     const [hh, mm] = h.split(':').map(Number);
     return hh * 60 + mm <= minutes;
