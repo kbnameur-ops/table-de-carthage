@@ -5,7 +5,7 @@ import { validerIdentite, trouverOuCreerClient } from '../lib/clients.js';
 import { clientDeSession, connecterDepuisTunnel, quitterIdentite } from '../lib/tunnel-identite.js';
 import { genererReference } from '../lib/reference.js';
 import { euros } from '../lib/money.js';
-import { nomTable as nomTableLisible } from '../lib/jours.js';
+import { nomTable as nomTableLisible, aujourdHui, heureParis } from '../lib/jours.js';
 import { notifier } from '../lib/notifications.js';
 import {
   tableParCode, ouvrirOuRejoindreTablee, tableeOuverteSurTable, additionDeTablee,
@@ -13,8 +13,7 @@ import {
 
 export const tableRouter = Router();
 
-const aujourdHui = () => new Date().toISOString().slice(0, 10);
-const maintenant = () => new Date().toTimeString().slice(0, 5);
+const maintenant = () => heureParis();
 
 /** La carte servie sur place. Contrairement au tunnel à emporter, le
  *  drapeau `a_emporter` ne filtre rien ici : un plat peut très bien être

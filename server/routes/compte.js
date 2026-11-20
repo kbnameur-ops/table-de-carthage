@@ -3,7 +3,7 @@ import { une, executer, query } from '../db.js';
 import { normaliserTelephone } from '../lib/phone.js';
 import { dateValide } from '../lib/validate.js';
 import { euros } from '../lib/money.js';
-import { libelleJourCourt } from '../lib/jours.js';
+import { libelleJourCourt, aujourdHui as aujourdHuiParis } from '../lib/jours.js';
 import { paiementDisponible } from '../lib/paiement.js';
 import { annulerCommandeDuClient } from '../lib/reglement.js';
 import {
@@ -75,7 +75,7 @@ compteRouter.get('/compte', exigerClient, async (req, res, next) => {
     const client = await une(`SELECT * FROM clients WHERE id = $1`, [req.clientId]);
     if (!client) { await detruireSession(req.session.id); return res.redirect('/compte/connexion'); }
 
-    const aujourdHui = new Date().toISOString().slice(0, 10);
+    const aujourdHui = aujourdHuiParis();
     const reservationsBrutes = await query(
       `SELECT * FROM reservations WHERE client_id = $1 ORDER BY date DESC, heure DESC`, [client.id]
     );

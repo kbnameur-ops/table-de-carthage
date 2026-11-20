@@ -1,4 +1,5 @@
 import { query, une, executer } from '../db.js';
+import { aujourdHui } from './jours.js';
 
 /** Une tablée : les clients installés à une table, de leur arrivée à
  *  l'encaissement. C'est l'objet auquel se rattachent les commandes sur
@@ -8,7 +9,6 @@ import { query, une, executer } from '../db.js';
  *  Une commande à emporter n'a jamais de tablée, même passée depuis la
  *  salle : elle suit son propre circuit, avec son heure de retrait. */
 
-const aujourdHui = () => new Date().toISOString().slice(0, 10);
 
 export async function tableParCode(code) {
   if (!code || !/^[0-9a-f]{16}$/.test(code)) return null;

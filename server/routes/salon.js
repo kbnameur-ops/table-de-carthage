@@ -10,6 +10,7 @@ import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
 import { donneAccesSalon } from '../lib/personnel.js';
 import { listerNotifications, compterNonLues, marquerLue, toutMarquerLu } from '../lib/notifications.js';
 import { euros } from '../lib/money.js';
+import { aujourdHui as aujourdHuiParis } from '../lib/jours.js';
 
 export const salonRouter = Router();
 
@@ -76,7 +77,7 @@ salonRouter.post('/salon/deconnexion', exigerAdmin, verifierCsrf, async (req, re
 
 salonRouter.get('/salon', exigerAdmin, async (req, res, next) => {
   try {
-    const aujourdHui = new Date().toISOString().slice(0, 10);
+    const aujourdHui = aujourdHuiParis();
     const resaAujourdhui = await une(
       `SELECT COALESCE(SUM(couverts),0)::int AS couverts, COUNT(*)::int AS n FROM reservations
        WHERE date = $1 AND statut NOT IN ('annulee','absente')`, [aujourdHui]

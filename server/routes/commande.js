@@ -10,13 +10,12 @@ import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
 import { notifier, quand } from '../lib/notifications.js';
 import { paiementDisponible } from '../lib/paiement.js';
 import { clientDeSession, connecterDepuisTunnel, quitterIdentite } from '../lib/tunnel-identite.js';
-import { dateLongue } from '../lib/jours.js';
+import { dateLongue, aujourdHui, creneauPasse } from '../lib/jours.js';
 import { envoyerEmail, emailConfirmationCommande, emailNotificationInterne, contactInterne } from '../lib/email.js';
 
 const MAX_SOUMISSIONS_15MIN = 20;
 
 export const commandeRouter = Router();
-const aujourdHui = () => new Date().toISOString().slice(0, 10);
 
 async function chargerCarte() {
   const categories = await query(`SELECT * FROM categories WHERE visible = true ORDER BY position`);
@@ -110,11 +109,7 @@ commandeRouter.post('/commander', verifierCsrf, async (req, res, next) => {
       } else {
         const creneaux = creneauxDuService(service);
         if (!creneaux.includes(b.heure)) erreurs.heure = 'Horaire de retrait invalide.';
-        if (b.date === aujourdHui() && !erreurs.heure) {
-          const [hh, mm] = b.heure.split(':').map(Number);
-          const t = new Date(); t.setHours(hh, mm, 0, 0);
-          if (t <= new Date()) erreurs.heure = 'Cet horaire est déjà passé.';
-        }
+        if (!erreurs.heure && creneauPasse(b.date, b.heure)) erreurs.heure = 'Cet horaire est déjà passé.';
       }
     }
 
