@@ -126,6 +126,18 @@ export function emailConfirmationCommande({ client, reference, dateLisible, heur
   };
 }
 
+export function emailConfirmationEvenement({ client, reference, titre, dateLisible, heure, places, tarif }) {
+  return {
+    sujet: `Réservation ${reference} — ${titre}`,
+    html: enveloppe(`
+      <p>Bonjour ${echapper(client.prenom)},</p>
+      <p>Votre place pour « ${echapper(titre)} » est réservée.</p>
+      <table>${ligne('Référence', reference)}${ligne('Date', `${dateLisible} à ${heure}`)}${ligne('Places', places)}${ligne('Tarif', echapper(tarif))}</table>
+      <p>Le règlement se fait sur place, au restaurant. Conservez cette référence : elle apparaît aussi dans votre espace client.</p>
+    `),
+  };
+}
+
 export function emailConfirmationPaiement({ client, reference, montantCents, libelle }) {
   return {
     sujet: `Paiement confirmé — ${NOM}`,

@@ -52,8 +52,10 @@
     <div class="field--row">
       <div class="field">
         <label for="e-prix">Prix par personne</label>
-        <input type="text" id="e-prix" name="prix" inputmode="decimal" required
-               value="<%= (evenement.prix_cents / 100).toFixed(2).replace('.', ',') %>">
+        <input type="text" id="e-prix" name="prix" required maxlength="60"
+               placeholder="45 — ou un texte : À la carte"
+               value="<%= prixSaisi(evenement) %>">
+        <small class="aide">Un montant est réglé en ligne à la réservation. Un texte (« À la carte ») réserve la place sans paiement : l'addition se règle sur place.</small>
       </div>
       <div class="field">
         <label for="e-places">Places</label>
@@ -144,7 +146,7 @@
             <small><%= r.email %></small>
           </td>
           <td data-l="Places"><%= r.places %></td>
-          <td data-l="Total"><%= euros(r.total_cents) %></td>
+          <td data-l="Total"><%= evenement.prix_texte && !r.total_cents ? "Sur place" : euros(r.total_cents) %></td>
           <td data-l="Statut">
             <span class="badge badge--<%= r.statut === 'confirmee' || r.statut === 'honoree' ? 'confirmee' : r.statut === 'annulee' ? 'annulee' : 'apayer' %>">
               <%= r.statut === 'a_payer' ? 'à régler' : r.statut %>

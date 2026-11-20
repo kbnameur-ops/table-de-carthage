@@ -40,8 +40,13 @@
     <aside class="soiree-detail__reserver">
       <div class="card">
         <p class="montant-du">
-          <span>Par personne</span>
-          <b><%= euros(evenement.prix_cents) %></b>
+          <% if (evenement.prix_texte) { %>
+            <span>Tarif</span>
+            <b><%= evenement.prix_texte %></b>
+          <% } else { %>
+            <span>Par personne</span>
+            <b><%= euros(evenement.prix_cents) %></b>
+          <% } %>
         </p>
         <p class="aide" style="margin-top:.4rem">
           <% if (evenement.estPasse) { %>
@@ -85,12 +90,21 @@
       <%- blocIdentite %>
 
       <div class="btn-row">
-        <button type="submit" class="btn">Réserver et payer</button>
+        <% if (evenement.prix_texte || !evenement.prix_cents) { %>
+          <button type="submit" class="btn">Réserver</button>
+      </div>
+      <p class="aide">
+        Rien à régler en ligne : votre place est réservée tout de suite, et
+        l'addition se règle sur place, au restaurant.
+      </p>
+        <% } else { %>
+          <button type="submit" class="btn">Réserver et payer</button>
       </div>
       <p class="aide">
         Le règlement se fait maintenant, en ligne. C'est ce qui garde votre place :
         le nombre de couverts est limité.
       </p>
+        <% } %>
     </form>
   <% } %>
 </div>

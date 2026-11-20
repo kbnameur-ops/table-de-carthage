@@ -644,3 +644,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_paiement_evenement_vivant
 -- besoin de sortir de l'application pour donner l'accès au salon à
 -- quelqu'un qui a déjà un accès personnel.
 ALTER TABLE employes ADD COLUMN IF NOT EXISTS acces_admin BOOLEAN NOT NULL DEFAULT false;
+
+-- ═══════════════════════════════════════════════════════════
+-- v11 — Un prix de soirée qui peut être un texte
+-- ═══════════════════════════════════════════════════════════
+-- Certaines soirées n'ont pas de prix d'entrée : on y dîne « à la carte ».
+-- Le champ prix accepte alors un texte, rangé ici ; `prix_cents` reste à 0.
+-- Une soirée à prix texte (ou à 0 €) ne passe pas par le paiement en ligne :
+-- la place est réservée tout de suite, et l'addition se règle sur place.
+ALTER TABLE evenements ADD COLUMN IF NOT EXISTS prix_texte TEXT NOT NULL DEFAULT '';

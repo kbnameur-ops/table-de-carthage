@@ -4,9 +4,10 @@ import { dateLongue } from '../lib/jours.js';
 import { verifierCsrf } from '../middleware.js';
 import { validerIdentite, trouverOuCreerClient } from '../lib/clients.js';
 import { enregistrerTentative, tropDeTentatives } from '../lib/auth.js';
-import { notifier } from '../lib/notifications.js';
+import { notifier, quand } from '../lib/notifications.js';
 import { clientDeSession, connecterDepuisTunnel, quitterIdentite } from '../lib/tunnel-identite.js';
-import { evenementParSlug, reserverPlaces, paragraphes } from '../lib/evenements.js';
+import { evenementParSlug, reserverPlaces, paragraphes, prixParPersonne } from '../lib/evenements.js';
+import { envoyerEmail, emailConfirmationEvenement, emailNotificationInterne, contactInterne } from '../lib/email.js';
 import { paiementDisponible } from '../lib/paiement.js';
 import { ouvrirPaiementEvenement } from '../lib/reglement.js';
 
@@ -105,15 +106,29 @@ evenementsRouter.post('/evenements/:slug/reserver', verifierCsrf, async (req, re
       }));
     }
 
-    // Sans paiement en ligne, la place est retenue et se règle sur place :
-    // le site ne doit pas devenir un cul-de-sac le jour où Stripe dort.
-    if (!paiementDisponible()) {
-      await notifier({
-        type: 'reservation',
-        titre: `Soirée — ${evenement.titre}`,
-        detail: `${client.prenom} ${client.nom} · ${places} place${places > 1 ? 's' : ''} · ${euros(r.reservation.total_cents)} · à régler sur place`,
-        lien: `/salon/evenements/${evenement.id}`,
-      });
+    // Rien à payer en ligne — soirée « à la carte », gratuite, ou Stripe
+    // pas branché : la place est retenue et se règle sur place. Le site ne
+    // doit pas devenir un cul-de-sac le jour où Stripe dort. Le salon et le
+    // client sont prévenus ici, puisqu'aucun webhook de paiement ne le fera.
+    if (!prixParPersonne(evenement) || !paiementDisponible()) {
+      const montant = evenement.prix_texte || euros(r.reservation.total_cents);
+      const titreNotif = `Réservation d'événement — ${evenement.titre}`;
+      const detailNotif = `${client.prenom} ${client.nom} · ${places} place${places > 1 ? 's' : ''} · ${quand(evenement.date, evenement.heure)} · ${montant} · à régler sur place · ${client.telephone_saisi}`;
+      const lienNotif = `/salon/evenements/${evenement.id}`;
+      await notifier({ type: 'reservation', titre: titreNotif, detail: detailNotif, lien: lienNotif });
+      await Promise.allSettled([
+        envoyerEmail({ a: contactInterne(), ...emailNotificationInterne({ titre: titreNotif, detail: detailNotif, lien: lienNotif }) }),
+        client.email
+          ? envoyerEmail({
+              a: client.email,
+              ...emailConfirmationEvenement({
+                client, reference: r.reservation.reference, titre: evenement.titre,
+                dateLisible: dateLongue(evenement.date), heure: evenement.heure,
+                places, tarif: montant,
+              }),
+            })
+          : Promise.resolve(),
+      ]);
       return res.redirect(`/evenements/${evenement.slug}/confirmation?ref=${encodeURIComponent(r.reservation.reference)}`);
     }
 
@@ -127,7 +142,7 @@ evenementsRouter.get('/evenements/reglement/:reference', async (req, res, next) 
   try {
     const { une } = await import('../db.js');
     const resa = await une(
-      `SELECT r.*, e.titre, e.slug, e.date, e.heure FROM evenement_reservations r
+      `SELECT r.*, e.titre, e.slug, e.date, e.heure, e.prix_texte FROM evenement_reservations r
          JOIN evenements e ON e.id = r.evenement_id
         WHERE r.reference = $1`, [req.params.reference]);
     if (!resa) return res.redirect('/');
@@ -162,7 +177,7 @@ evenementsRouter.get('/evenements/:slug/confirmation', async (req, res, next) =>
   try {
     const { une } = await import('../db.js');
     const resa = await une(
-      `SELECT r.*, e.titre, e.slug, e.date, e.heure FROM evenement_reservations r
+      `SELECT r.*, e.titre, e.slug, e.date, e.heure, e.prix_texte FROM evenement_reservations r
          JOIN evenements e ON e.id = r.evenement_id
         WHERE r.reference = $1`, [req.query.ref || '']);
     if (!resa) return res.redirect(`/evenements/${req.params.slug}`);

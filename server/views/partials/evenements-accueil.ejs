@@ -63,8 +63,12 @@
         <% } %>
 
         <p class="soiree__prix">
-          <b><%= euros(e.prix_cents) %></b>
-          <span>par personne</span>
+          <% if (e.prix_texte) { %>
+            <b><%= e.prix_texte %></b>
+          <% } else { %>
+            <b><%= euros(e.prix_cents) %></b>
+            <span>par personne</span>
+          <% } %>
         </p>
 
         <%# Le nombre de places est une donnée d'exploitation : elle sert au
