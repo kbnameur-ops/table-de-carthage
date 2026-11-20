@@ -3,13 +3,13 @@ import multer from 'multer';
 import { une, query, executer } from '../db.js';
 import { exigerAdmin, verifierCsrf, redirigerRetour } from '../middleware.js';
 import { dateValide, heureValide, texteNonVide } from '../lib/validate.js';
-import { euros, versCents } from '../lib/money.js';
+import { euros } from '../lib/money.js';
 import { dateLongue } from '../lib/jours.js';
 import { slugifier, nomFichierUnique } from '../lib/slug.js';
 import { enregistrerPhoto, supprimerPhoto } from '../lib/image.js';
 import {
   evenementsDuSalon, evenementParSlug, reservationsDe,
-  obstacleASuppression, placesRestantes,
+  obstacleASuppression, placesRestantes, lirePrix, prixAffiche, prixSaisi,
 } from '../lib/evenements.js';
 
 export const salonEvenementsRouter = Router();
@@ -27,7 +27,8 @@ function validerEvenement(b) {
   if (!texteNonVide(b.titre, 120)) erreurs.push('Titre requis.');
   if (!dateValide(b.date)) erreurs.push('Date invalide.');
   if (!heureValide(b.heure)) erreurs.push('Heure invalide.');
-  if (versCents(b.prix) === null) erreurs.push('Prix invalide (exemple : 45 ou 45,50).');
+  const prix = lirePrix(b.prix);
+  if (prix.erreur) erreurs.push(prix.erreur);
   const places = parseInt(b.places, 10);
   if (!Number.isInteger(places) || places < 1 || places > 500) erreurs.push('Nombre de places invalide (1 à 500).');
   return erreurs;
@@ -39,7 +40,7 @@ salonEvenementsRouter.get('/salon/evenements', exigerAdmin, async (req, res, nex
     res.render('salon/evenements', {
       titre: 'Soirées', actif: 'evenements',
       evenements: await evenementsDuSalon(),
-      euros, dateLongue,
+      euros, dateLongue, prixAffiche, prixSaisi,
       erreur: req.query.erreur || null, info: req.query.info || null,
       csrfToken: res.locals.csrfToken,
     });
@@ -53,6 +54,7 @@ salonEvenementsRouter.post('/salon/evenements', exigerAdmin, verifierCsrf, async
       return res.redirect('/salon/evenements?erreur=' + encodeURIComponent(erreurs.join(' ')));
     }
     const titre = req.body.titre.trim();
+    const prix = lirePrix(req.body.prix);
     // Un slug déjà pris ferait échouer l'insertion sur la contrainte
     // d'unicité : on le rend libre plutôt que de renvoyer une erreur pour
     // deux soirées qui portent légitimement le même nom d'une année sur
@@ -62,10 +64,10 @@ salonEvenementsRouter.post('/salon/evenements', exigerAdmin, verifierCsrf, async
     for (let i = 2; await une(`SELECT id FROM evenements WHERE slug = $1`, [slug]); i++) slug = `${base}-${i}`;
 
     const e = await une(
-      `INSERT INTO evenements (slug, titre, accroche, texte, date, heure, prix_cents, places, visible, position)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,false,0) RETURNING id`,
+      `INSERT INTO evenements (slug, titre, accroche, texte, date, heure, prix_cents, prix_texte, places, visible, position)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,false,0) RETURNING id`,
       [slug, titre, (req.body.accroche || '').trim(), (req.body.texte || '').trim(),
-       req.body.date, req.body.heure, versCents(req.body.prix), parseInt(req.body.places, 10)]
+       req.body.date, req.body.heure, prix.prix_cents, prix.prix_texte, parseInt(req.body.places, 10)]
     );
     res.redirect(`/salon/evenements/${e.id}`);
   } catch (err) { next(err); }
@@ -85,7 +87,7 @@ salonEvenementsRouter.get('/salon/evenements/:id', exigerAdmin, async (req, res,
       evenement: e, photos, compte,
       reservations: await reservationsDe(e.id),
       obstacle: await obstacleASuppression(e.id),
-      euros, dateLongue,
+      euros, dateLongue, prixAffiche, prixSaisi,
       erreur: req.query.erreur || null, info: req.query.info || null,
       csrfToken: res.locals.csrfToken,
     });
@@ -101,6 +103,7 @@ salonEvenementsRouter.post('/salon/evenements/:id', exigerAdmin, verifierCsrf, a
     // Réduire la capacité en dessous de ce qui est déjà vendu ferait
     // apparaître une soirée en surréservation, sans que rien ne le signale.
     const places = parseInt(req.body.places, 10);
+    const prix = lirePrix(req.body.prix);
     const { vendues } = await placesRestantes(req.params.id);
     if (places < vendues) {
       return res.redirect(`${retour}?erreur=` + encodeURIComponent(
@@ -109,11 +112,12 @@ salonEvenementsRouter.post('/salon/evenements/:id', exigerAdmin, verifierCsrf, a
 
     await executer(
       `UPDATE evenements SET titre=$1, accroche=$2, texte=$3, date=$4, heure=$5,
-              prix_cents=$6, places=$7, visible=$8, position=$9
+              prix_cents=$6, prix_texte=$11, places=$7, visible=$8, position=$9
         WHERE id=$10`,
       [req.body.titre.trim(), (req.body.accroche || '').trim(), (req.body.texte || '').trim(),
-       req.body.date, req.body.heure, versCents(req.body.prix), places,
-       req.body.visible === '1', parseInt(req.body.position, 10) || 0, req.params.id]
+       req.body.date, req.body.heure, prix.prix_cents, places,
+       req.body.visible === '1', parseInt(req.body.position, 10) || 0, req.params.id,
+       prix.prix_texte]
     );
     res.redirect(`${retour}?info=` + encodeURIComponent('Soirée enregistrée.'));
   } catch (err) { next(err); }

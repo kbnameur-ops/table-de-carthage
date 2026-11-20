@@ -182,3 +182,37 @@ test('paragraphes() découpe sur les lignes vides', async () => {
   // un nouveau paragraphe.
   assert.deepEqual(ev.paragraphes('Une phrase\nqui continue.'), ['Une phrase\nqui continue.']);
 });
+
+// ── Le prix peut être un texte : « À la carte » ─────────────────────────
+
+test('le prix saisi au salon : un montant, ou un texte', async () => {
+  const { lirePrix, prixAffiche, prixParPersonne, prixSaisi } = await import('../server/lib/evenements.js');
+  assert.deepEqual(lirePrix('45'), { prix_cents: 4500, prix_texte: '' });
+  assert.deepEqual(lirePrix('45,50'), { prix_cents: 4550, prix_texte: '' });
+  assert.deepEqual(lirePrix('45 €'), { prix_cents: 4500, prix_texte: '' });
+  assert.deepEqual(lirePrix('  À la carte '), { prix_cents: 0, prix_texte: 'À la carte' });
+  assert.ok(lirePrix('').erreur);
+  assert.ok(lirePrix('x'.repeat(61)).erreur);
+
+  const carte = { prix_cents: 0, prix_texte: 'À la carte' };
+  const fixe = { prix_cents: 4500, prix_texte: '' };
+  assert.equal(prixAffiche(carte), 'À la carte');
+  assert.equal(prixAffiche(fixe), '45 €');
+  assert.equal(prixParPersonne(carte), false);
+  assert.equal(prixParPersonne(fixe), true);
+  assert.equal(prixParPersonne({ prix_cents: 0, prix_texte: '' }), false, 'une soirée gratuite ne passe pas au paiement');
+  assert.equal(prixSaisi(carte), 'À la carte');
+  assert.equal(prixSaisi(fixe), '45,00');
+});
+
+test('une soirée « à la carte » réserve la place sans paiement', async (t) => {
+  if (!baseDispo) return t.skip('pas de base de données joignable');
+  const e = await soiree(10, 0);
+  await db.executer(`UPDATE evenements SET prix_texte = 'À la carte' WHERE id = $1`, [e.id]);
+  const r = await ev.reserverPlaces(e.id, client.id, 4);
+  assert.ok(r.reservation, r.erreur);
+  assert.equal(r.reservation.total_cents, 0);
+  assert.equal(r.reservation.statut, 'confirmee', 'rien à régler en ligne : la place est acquise');
+  // Et elle compte bien dans les places vendues.
+  assert.equal((await ev.placesRestantes(e.id)).restantes, 6);
+});

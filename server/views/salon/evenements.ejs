@@ -31,7 +31,7 @@
     <div class="field--row">
       <div class="field">
         <label for="n-prix">Prix par personne</label>
-        <input type="text" id="n-prix" name="prix" inputmode="decimal" required placeholder="45">
+        <input type="text" id="n-prix" name="prix" required maxlength="60" placeholder="45 — ou : À la carte">
       </div>
       <div class="field">
         <label for="n-places">Places</label>
@@ -60,7 +60,7 @@
             <%= e.titre %>
             <br><small style="color:var(--muted)"><%= e.nb_photos %> photo<%= e.nb_photos > 1 ? 's' : '' %></small>
           </td>
-          <td data-l="Prix"><%= euros(e.prix_cents) %></td>
+          <td data-l="Prix"><%= prixAffiche(e) %></td>
           <td data-l="Places"><%= e.places_vendues %> / <%= e.places %></td>
           <td data-l="Encaissé"><%= euros(e.encaisse_cents) %></td>
           <td data-l="Statut">

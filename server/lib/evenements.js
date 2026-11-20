@@ -1,6 +1,35 @@
 import { une, query, executer, transaction } from '../db.js';
 import { genererReference } from './reference.js';
 import { aujourdHui } from './jours.js';
+import { euros, versCents } from './money.js';
+
+/** Le prix d'une soirée tel qu'on le saisit au salon : un montant par
+ *  personne (« 45 », « 45,50 »), ou un texte quand il n'y a pas de prix
+ *  d'entrée (« À la carte », « Selon menu »). Rend les deux colonnes à
+ *  enregistrer, ou une erreur. */
+export function lirePrix(saisie) {
+  const texte = String(saisie ?? '').trim();
+  if (!texte) return { erreur: 'Prix requis : un montant (45 ou 45,50) ou un texte (À la carte).' };
+  const cents = versCents(texte.replace(/\s*€$/, ''));
+  if (cents !== null) return { prix_cents: cents, prix_texte: '' };
+  if (texte.length > 60) return { erreur: 'Le prix en texte ne doit pas dépasser 60 caractères.' };
+  return { prix_cents: 0, prix_texte: texte };
+}
+
+/** Ce qu'on affiche : le texte s'il y en a un, sinon le montant. */
+export function prixAffiche(e) {
+  return e.prix_texte ? e.prix_texte : euros(e.prix_cents);
+}
+
+/** Vrai si la soirée a un prix par personne à régler en ligne. */
+export function prixParPersonne(e) {
+  return !e.prix_texte && e.prix_cents > 0;
+}
+
+/** La valeur à remettre dans le champ du formulaire du salon. */
+export function prixSaisi(e) {
+  return e.prix_texte || (e.prix_cents / 100).toFixed(2).replace('.', ',');
+}
 
 /** Les événements : soirées à thème, concerts, dîners de fête.
  *
@@ -113,10 +142,15 @@ export async function reserverPlaces(evenementId, clientId, placesDemandees) {
       return { erreur: 'Il ne reste pas assez de places pour cette demande. Essayez avec moins de couverts, ou appelez-nous.' };
     }
 
+    // Sans prix par personne (soirée « à la carte », ou gratuite), il n'y a
+    // rien à payer en ligne : la place est acquise tout de suite, et
+    // l'addition se règle sur place comme un dîner ordinaire.
+    const aPayer = prixParPersonne(e);
     const reservation = await t.une(
       `INSERT INTO evenement_reservations (reference, evenement_id, client_id, places, total_cents, statut)
-       VALUES ($1, $2, $3, $4, $5, 'a_payer') RETURNING *`,
-      [genererReference('EVT'), evenementId, clientId, n, e.prix_cents * n]
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [genererReference('EVT'), evenementId, clientId, n, aPayer ? e.prix_cents * n : 0,
+       aPayer ? 'a_payer' : 'confirmee']
     );
     return { reservation, evenement: e };
   });

@@ -20,7 +20,11 @@
       <tr><th>Soirée</th><td><%= resa.titre %></td></tr>
       <tr><th>Quand</th><td><%= dateLongue(resa.date) %> à <%= resa.heure %></td></tr>
       <tr><th>Places</th><td><%= resa.places %></td></tr>
-      <tr><th>Total</th><td><%= euros(resa.total_cents) %></td></tr>
+      <% if (resa.prix_texte) { %>
+        <tr><th>Tarif</th><td><%= resa.prix_texte %> — à régler sur place</td></tr>
+      <% } else { %>
+        <tr><th>Total</th><td><%= euros(resa.total_cents) %></td></tr>
+      <% } %>
       <tr><th>Référence</th><td><%= resa.reference %></td></tr>
     </table>
   </div>
