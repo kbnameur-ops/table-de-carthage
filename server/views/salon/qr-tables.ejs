@@ -1,10 +1,15 @@
 <%- salonEntete %>
+<%# Format d'impression : un QR par page carrée de 15 × 15 cm. Posé ici et
+    non dans app.css, pour ne pas imposer ce format aux autres pages du
+    salon qu'on imprimerait. %>
+<style media="print">@page{size:150mm 150mm;margin:0}</style>
 <div class="page-titre no-print">
   <p class="fil"><a href="/salon/qr">QR des tables</a> · <%= service.nom %></p>
   <h1>QR codes des tables</h1>
   <p class="lead">Un QR par table, à imprimer et coller. Le client le scanne, s'identifie, et commande depuis son téléphone — la commande arrive sur l'addition de cette table.</p>
+  <p class="aide">Impression : une table par page, au format carré 15 × 15 cm. Dans la fenêtre d'impression, choisissez « Taille réelle » (100 %) et non « Ajuster à la page ».</p>
   <div class="btn-row" style="margin-top:1rem">
-    <button type="button" class="btn" onclick="window.print()">Imprimer</button>
+    <button type="button" class="btn" onclick="window.print()">Imprimer (15 × 15 cm)</button>
     <a class="btn btn--ghost" href="/salon/services/<%= service.id %>/tables">Gérer les tables</a>
   </div>
   <% if (services.length > 1) { %>
