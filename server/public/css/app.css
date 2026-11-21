@@ -822,9 +822,26 @@ body:has(.barre-envoi:not([hidden])) main{padding-bottom:7rem}
 @media print{
   .salonbar,.app-foot,.no-print{display:none !important}
   body.salon{background:#fff}
-  body.salon main{padding:0}
-  .planche-qr{grid-template-columns:repeat(2,1fr);gap:1rem}
-  .fiche-qr{border-color:#999}
+  body.salon main{padding:0;margin:0;max-width:none}
+
+  /* Une fiche = une page carrée de 15 × 15 cm (le format de page est posé
+     par la vue qr-tables). Le QR fait ~9 cm : il se scanne de loin, d'une
+     table à l'autre, sans que le client ait à se pencher. */
+  .planche-qr{display:block}
+  .fiche-qr{
+    width:150mm;height:150mm;box-sizing:border-box;margin:0;padding:10mm 12mm;
+    /* Filet gris très clair au bord de la page : le repère de coupe si
+       l'on imprime sur une feuille A4 à taille réelle. */
+    border:.25mm solid #d6d6d6;border-radius:0;overflow:hidden;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    break-after:page;page-break-after:always;
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  .fiche-qr:last-child{break-after:auto;page-break-after:auto}
+  .fiche-qr__marque{font-size:4.6mm;margin-bottom:1.5mm}
+  .fiche-qr__table{font-size:11mm;line-height:1.1;margin-bottom:4mm}
+  .fiche-qr__code svg{width:90mm;height:90mm;max-width:none}
+  .fiche-qr__mode{font-size:4.2mm;margin-top:4mm;color:#444}
 }
 
 @media (max-width:640px){
